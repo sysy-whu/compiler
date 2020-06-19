@@ -1,0 +1,45 @@
+/*  普普通通  */
+
+int a = 2;
+int acs = 3;
+const int bs = 5;
+
+void ops1() {
+    int a = 0;
+    int b = 1;
+    int c = 2;
+    if (a == b) {
+        a=a+1;
+    }
+    if (a != b) {
+        a=a+1;
+    }
+    if (a > b) {
+        a=a+1;
+    }
+    if (a < b) {
+        a=a+1;
+    }
+    if (a <= b) {
+        a=a+1;
+    }
+    if (a >= b) {
+        a=a+1;
+    }
+
+    if (!a > b) {
+        a=a+1;
+    }
+	if (!(a > b)) {
+        a=a+1;
+    }
+    if (a > b && b > c) {
+        a=a+1;
+    }
+    if (a < b || b < c) {
+        a=a+1;
+    }
+    if (!a >= b || b < c) {
+        a=a+1;
+    }
+}
