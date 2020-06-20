@@ -6,14 +6,12 @@
 *********************************************/
 
 #include <iostream>
-#include <map>
 #include "Lex.h"
 #include "../util/Util.h"
 #include "../util/Error.h"
 #include "../util/MyConstants.h"
 
 FILE *Lex::fp = nullptr;
-std::map<char, int> readableAscii;   //可识别字符表
 
 Lex::Lex() {
     filename = (char *) malloc(sizeof(char) * strlen(Util::getInputUrl()));
@@ -56,7 +54,7 @@ Token Lex::getToken() {
             nextChar();
         }
 
-        // keyword or identifier
+        /// keyword or identifier
         if (IdentifierStr == KEYWORD_INT)
             return Token(TOKEN_INT, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
         else if (IdentifierStr == KEYWORD_VOID)
@@ -79,7 +77,7 @@ Token Lex::getToken() {
 
     } // end if keyword or identifier
 
-    // integer
+    /// integer
     if (isdigit(LastChar)) {
         std::string NumStr;
         do {
@@ -92,11 +90,11 @@ Token Lex::getToken() {
         return Token(TOKEN_NUMBER, filename, startRow, startColumn, endRow, endColumn, nullptr, NumVal);
     }
 
-    // comment
+    /// comment-> "||", "/*"
     if (LastChar == CHAR_SLASH) {
         int ThisChar = LastChar;
         nextChar();
-        if (LastChar == '/') {  // Comment -> end of line.
+        if (LastChar == CHAR_SLASH) {  /// "//" -> end of line.
             do {
                 nextChar();
             } while (LastChar != EOF && LastChar != CHAR_N_BACKEND_SLASH && LastChar != CHAR_R_BACKEND_SLASH);
@@ -104,7 +102,7 @@ Token Lex::getToken() {
                 nextLine();
                 return getToken();
             }
-        } else if (LastChar == CHAR_STAR) {
+        } else if (LastChar == CHAR_STAR) { /// "/*" -> until "*/"
             nextSpaceChar();
             do {
                 ThisChar = LastChar;
@@ -118,21 +116,89 @@ Token Lex::getToken() {
                 nextSpaceChar();
                 return getToken();
             }
-        } else {
-            return Token(ThisChar, filename, startRow, startColumn, endRow, endColumn, std::to_string(ThisChar), 0);
+        } else {  /// "/" -> OP_BO_DIV
+            return Token(OP_BO_DIV, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
         }
     } // end comment
 
-    // end file
-    if (LastChar == EOF)
-        return Token(TOKEN_EOF, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
-
-    // Otherwise, just return the character as its ascii value.
-    int ThisChar = LastChar;
-    if (readableAscii.find(ThisChar) == readableAscii.end()) {
-        Error::errorChar((char) ThisChar, startRow, startColumn);
-        exit(1);
+    /// ">="
+    if (LastChar == CHAR_GREATER) {
+        nextChar();
+        if (LastChar == CHAR_EQ) {  /// ">=" -> OP_BO_GTE
+            return Token(OP_BO_GTE, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+        } else {  /// ">" -> OP_BO_GT
+            return Token(OP_BO_GT, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+        }
     }
+
+    /// "<="
+    if (LastChar == CHAR_LOWER) {
+        nextChar();
+        if (LastChar == CHAR_EQ) {  /// "<=" -> OP_BO_LTE
+            return Token(OP_BO_LTE, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+        } else {                   /// "<" -> OP_BO_LT
+            return Token(OP_BO_LT, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+        }
+    }
+
+    /// "=="
+    if (LastChar == CHAR_EQ) {
+        nextChar();
+        if (LastChar == CHAR_EQ) {  /// "==" -> OP_BO_EQ
+            return Token(OP_BO_EQ, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+        } else {                    /// "=" -> ASSIGN
+            return Token(OP_ASSIGN, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+        }
+    }
+
+    /// "&&"
+    if (LastChar == CHAR_AND) {
+        int ThisChar = LastChar;
+        nextChar();
+        if (LastChar == CHAR_AND) {  /// "&&" -> OP_BO_AND
+            return Token(OP_BO_AND, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+        } else {                     /// SysY2020不支持位运算"&"。考虑在此报错，或者当作Otherwise情况交给Parse处理。此处后者
+            Token token(ThisChar, filename, startRow, startColumn, endRow, endColumn, std::to_string(ThisChar), 0);
+        }
+    }
+
+    /// "||"
+    if (LastChar == CHAR_OR) {
+        int ThisChar = LastChar;
+        nextChar();
+        if (LastChar == CHAR_OR) {  /// "||" -> OP_BO_OR
+            return Token(OP_BO_OR, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+        } else {                    /// SysY2020不支持位运算"|"。考虑在此报错，或者当作Otherwise情况交给Parse处理。此处后者
+            return Token(ThisChar, filename, startRow, startColumn, endRow, endColumn, std::to_string(ThisChar), 0);
+        }
+    }
+
+    /// "!="
+    if (LastChar == CHAR_NOT) {
+        nextChar();
+        if (LastChar == CHAR_EQ) {  /// "!=" -> OP_BO_NEQ
+            return Token(OP_BO_NEQ, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+        } else {                    /// "!" -> OP_UO_NEG
+            return Token(OP_UO_NEG, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+        }
+    }
+
+    switch (LastChar) {
+        case EOF:       /// end file
+            return Token(TOKEN_EOF, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+        case CHAR_ADD:  /// "+" -> OP_BO_ADD
+            return Token(OP_BO_ADD, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+        case CHAR_SUB:  /// "-" -> OP_BO_SUB
+            return Token(OP_BO_SUB, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+        case CHAR_MUL:  /// "*" -> OP_BO_MUL
+            return Token(OP_BO_MUL, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+        case CHAR_REM:  /// "%" -> OP_BO_REM
+            return Token(OP_BO_REM, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+    }
+
+    /// otherwise, just return the character as its ascii value like (, ), [, ], {, }, #...
+    /// pay attention that there are some returns like this in /// "&&" and /// "||"
+    int ThisChar = LastChar;
 
     Token token(ThisChar, filename, startRow, startColumn, endRow, endColumn, std::to_string(ThisChar), 0);
     nextChar();
