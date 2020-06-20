@@ -7,10 +7,10 @@
 #ifndef COMPILER_MYCONSTANTS_H
 #define COMPILER_MYCONSTANTS_H
 
-// on/off
+/// on/off
 static int ifGenIR = 1;
 
-// handle params from console
+/// handle params from console
 static const int PARAMS_PASS = 0;
 static const int PARAMS_FILE_WRONG = 1;
 static const int PARAMS_NUMBER_WRONG = 2;
@@ -23,7 +23,7 @@ static const char *PARAMS_O2 = "-O2";
 static const int O2_TRUE = 1;
 static const int O2_FALSE = 0;
 
-// token
+/// token
 static const int TOKEN_EOF = -1;
 
 static const int TOKEN_INT = -2;
@@ -40,7 +40,7 @@ static const int TOKEN_RETURN = -10;
 static const int TOKEN_IDENTIFIER = -11;
 static const int TOKEN_NUMBER = -12;
 
-// keyword
+/// keyword
 static const std::string KEYWORD_INT = "int";
 static const std::string KEYWORD_VOID = "void";
 static const std::string KEYWORD_CONST = "const";
@@ -52,8 +52,8 @@ static const std::string KEYWORD_BREAK = "break";
 static const std::string KEYWORD_CONTINUE = "continue";
 static const std::string KEYWORD_RETURN = "return";
 
-// some important char, it's mostly used in lexer for now.
-// and we'll be easy to find where such char has been used
+/// some important char, it's mostly used in lexer for now.
+/// and we'll be easy to find where such char has been used
 static const char CHAR_UNDERLINE = '_';
 static const char CHAR_SLASH = '/';
 static const char CHAR_STAR = '*';
@@ -73,7 +73,7 @@ static const char CHAR_MUL = '*';
 static const char CHAR_DIV = '/';
 static const char CHAR_REM = '%';
 
-// some symbols for operation
+/// some symbols for operation
 static const int OP_ASSIGN = -100;
 
 static const int OP_BO_ADD = -101;
@@ -91,7 +91,11 @@ static const int OP_BO_NEQ = -111;
 static const int OP_BO_GTE = -112;
 static const int OP_BO_LTE = -113;
 
-// data type
+static const int OP_UO_NOT = -114;
+static const int OP_UO_POS = -115;
+static const int OP_UO_NEG = -116;
+
+/// data type
 static const std::string TYPE_INT_STR = "int";
 static const std::string TYPE_VOID_STR = "void";
 
