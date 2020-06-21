@@ -1,6 +1,7 @@
 #include <iostream>
 #include "util/Util.h"
 #include "util/MyConstants.h"
+#include "parser/Parse.h"
 #include "lexer/Lex.h"
 #include "syTestFiles/LexTest.h"
 
@@ -12,8 +13,10 @@ int main(int argc, char **argv) {
     } else {
         std::cout << "Hello, World!" << std::endl;
     }
-    Lex lex;
 
+    Parse parse;
+
+//    Lex lex;
 //    test(lex);
 
     return 0;

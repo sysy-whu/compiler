@@ -73,6 +73,16 @@ static const char CHAR_MUL = '*';
 static const char CHAR_DIV = '/';
 static const char CHAR_REM = '%';
 
+static const char CHAR_COMMA = ',';
+static const char CHAR_SEPARATOR = ';';
+static const char CHAR_L_BRACE = '{';
+static const char CHAR_R_BRACE = '}';
+static const char CHAR_L_BRACKET = '[';
+static const char CHAR_R_BRACKET = ']';
+static const char CHAR_L_PARENTHESIS = '(';
+static const char CHAR_R_PARENTHESIS = ')';
+
+
 /// some symbols for operation
 static const int OP_ASSIGN = -100;
 
@@ -102,5 +112,8 @@ static const std::string TYPE_VOID_STR = "void";
 static const int TYPE_INT = -1;
 static const int TYPE_VOID = -2;
 static const int TYPE_INT_ARRAY = -3;
+
+static const int DATA_IS_CONSTANT = 1;
+static const int DATA_NOT_CONSTANT = 0;
 
 #endif //COMPILER_MYCONSTANTS_H

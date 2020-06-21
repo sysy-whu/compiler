@@ -202,7 +202,7 @@ Token Lex::getToken() {
         case CHAR_REM:  /// "%" -> OP_BO_REM
             return Token(OP_BO_REM, filename, startRow, startColumn, endRow, endColumn, ch2str(ThisChar), 0);
         default:
-            /// otherwise, just return the character as its ascii value like (, ), [, ], {, }, #...
+            /// otherwise, just return the character as its ascii value like (, ), [, ], {, }, ,, ; ...
             /// pay attention that there are some returns like this in /// "&&" and /// "||"
             return Token(ThisChar, filename, startRow, startColumn, endRow, endColumn, ch2str(ThisChar), 0);
     }

@@ -9,6 +9,8 @@
 #define COMPILER_DECL_H
 
 #include <string>
+#include <vector>
+
 #include "SourceLocation.h"
 
 class Expr;
@@ -31,26 +33,21 @@ class VarDef : public Decl {
 private:
     std::string ident;
 
-    Expr **subs;
+    std::vector<Expr> subs;
 
     Expr *initVal;
-
-    int isConstant;
 
     SourceLocation identLoc, assignLoc;
 
 public:
-    VarDef(std::string ident, Expr **subs, Expr *initVal, int isConstant, int isDefined, SourceLocation identLoc,
-           SourceLocation assignLoc) : ident(std::move(ident)), subs(subs), initVal(initVal), isConstant(isConstant),
-                                       identLoc(identLoc), assignLoc(assignLoc) {};
+    VarDef(std::string ident, std::vector<Expr> subs, Expr *initVal, SourceLocation identLoc, SourceLocation assignLoc)
+            : ident(std::move(ident)), subs(subs), initVal(initVal), identLoc(identLoc), assignLoc(assignLoc) {};
 
     std::string getIdent() { return ident; }
 
-    Expr **getSubs() { return subs; }
+    std::vector<Expr> getSubs() { return subs; }
 
     Expr *getInitVal() { return initVal; }
-
-    int getIsConstant() const { return isConstant; }
 
     SourceLocation getIdentLoc() { return identLoc; }
 
@@ -60,24 +57,44 @@ public:
 
 /**
  * declare variable, varDefs's data type can be known by varType
+ * 变量声明 VarDecl → varType VarDef { ',' VarDef } ';'
  */
 class VarDecl : public Decl {
 private:
     int varType;
 
-    VarDef **varDefs;
+    std::vector<VarDef> varDefs;
 
     SourceLocation typeLoc;
 
 public:
-    VarDecl(int varType, VarDef **varDefs, SourceLocation typeLoc) :
+    VarDecl(int varType, std::vector<VarDef> varDefs, SourceLocation typeLoc) :
             varType(varType), varDefs(varDefs), typeLoc(typeLoc) {};
 
     int getVarType() const { return varType; }
 
-    VarDef **getVarDefs() { return varDefs; }
+    std::vector<VarDef> getVarDefs() { return varDefs; }
 
     SourceLocation getTypeLoc() { return typeLoc; }
+
+};
+
+/**
+ * 常量声明 ConstDecl → 'const' VarDecl
+ */
+class ConstantDecl : public Decl {
+private:
+    VarDecl varDecl;
+
+    SourceLocation constantLoc;
+
+public:
+    ConstantDecl(VarDecl varDecl, SourceLocation constantLoc) :
+            varDecl(varDecl), constantLoc(constantLoc) {};
+
+    VarDecl getVarDecl() { return varDecl; }
+
+    SourceLocation getConstantLoc() { return constantLoc; }
 
 };
 
@@ -90,12 +107,12 @@ private:
 
     std::string ident;
 
-    Expr **subs;
+    std::vector<Expr> subs;
 
     SourceLocation typeLoc, identLoc, lBracketLoc, rBracketLoc;
 
 public:
-    FuncFParam(int varType, std::string ident, Expr **subs, SourceLocation typeLoc, SourceLocation identLoc,
+    FuncFParam(int varType, std::string ident, std::vector<Expr> subs, SourceLocation typeLoc, SourceLocation identLoc,
                SourceLocation lBracketLoc, SourceLocation rBracketLoc) :
             varType(varType), ident(std::move(ident)), subs(subs), typeLoc(typeLoc), identLoc(identLoc),
             lBracketLoc(lBracketLoc), rBracketLoc(rBracketLoc) {};
@@ -104,7 +121,7 @@ public:
 
     std::string getIdent() { return ident; }
 
-    Expr **getSubs() { return subs; }
+    std::vector<Expr> getSubs() { return subs; }
 
     SourceLocation getTypeLoc() { return typeLoc; }
 
@@ -121,15 +138,15 @@ public:
  */
 class FuncFParams {
 private:
-    FuncFParam **funcFParams;
+    std::vector<FuncFParam> funcFParams;
 
     SourceLocation lParenthesisLoc, rParenthesisLoc;
 
 public:
-    FuncFParams(FuncFParam **funcParams, SourceLocation lParenthesisLoc, SourceLocation rParenthesisLoc) :
+    FuncFParams(std::vector<FuncFParam> funcParams, SourceLocation lParenthesisLoc, SourceLocation rParenthesisLoc) :
             funcFParams(funcParams), lParenthesisLoc(lParenthesisLoc), rParenthesisLoc(rParenthesisLoc) {};
 
-    FuncFParam **getFuncParams() { return funcFParams; }
+    std::vector<FuncFParam> getFuncParams() { return funcFParams; }
 
     SourceLocation getLParenthesisLoc() { return lParenthesisLoc; }
 
