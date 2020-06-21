@@ -23,30 +23,29 @@ class Stmt {
 
 
 /**
- * { stmt [stmt]* }
+ * 语句块 Block -> '{' { BlockItem } '}'
+ * 同时存在 语句块项 BlockItem -> 语句 Stmt -> 语句块 Block
  */
-class BlockStmt final : public Stmt {
+class BlockStmt : public Stmt {
 private:
-    Stmt **stmts{};
+    std::vector<Stmt> stmts{};
 
     SourceLocation lBraceLoc, rBraceLoc;
 
 public:
-//    BlockStmt()= default;
-
-    BlockStmt(Stmt **stmts, SourceLocation lBraceLoc, SourceLocation rBraceLoc) :
+    BlockStmt(std::vector<Stmt> stmts, SourceLocation lBraceLoc, SourceLocation rBraceLoc) :
             stmts(stmts), lBraceLoc(lBraceLoc), rBraceLoc(rBraceLoc) {};
 
     SourceLocation getLBraceLoc() { return lBraceLoc; }
 
     SourceLocation getRBraceLoc() { return rBraceLoc; }
 
-    Stmt **getStmts() { return stmts; }
+    std::vector<Stmt> getStmts() { return stmts; }
 
 };
 
 /**
- * Declare
+ * 语句块项 BlockItem → ConstantDecl | VarDecl
  */
 class DeclStmt : public Stmt {
 public:
@@ -55,8 +54,6 @@ public:
     SourceLocation startLoc, endLoc;
 
 public:
-//    DeclStmt()= default;
-
     DeclStmt(Decl *decl, SourceLocation startLoc, SourceLocation endLoc) :
             decl(decl), startLoc(startLoc), endLoc(endLoc) {};
 
@@ -69,7 +66,41 @@ public:
 };
 
 /**
- * if ( conditionExpr ) then { BlockStmt } [else { BlockStmt }]
+ * 运算语句 Stmt -> LVal '=' Expr ';'
+ */
+class OpStmt : public Stmt {
+private:
+    Expr *lValExpr, *rExpr;
+
+    SourceLocation assignLoc;
+
+public:
+    OpStmt(Expr *lValExpr, Expr *rExpr, SourceLocation assignLoc) :
+            lValExpr(lValExpr), rExpr(rExpr), assignLoc(assignLoc) {};
+
+    Expr *getLValExpr() { return lValExpr; }
+
+    Expr *getRExpr() { return rExpr; }
+
+    SourceLocation getAssignLoc() { return assignLoc; }
+
+};
+
+/**
+ * 调用语句或没啥意义的语句 Stmt -> [Expr] ';'
+ */
+class ExprStmt : public Stmt {
+private:
+    Expr *expr;
+
+public:
+    ExprStmt(Expr *expr) : expr(expr) {};
+
+    Expr *getExpr() { return expr; }
+};
+
+/**
+ * 控制语句 Stmt -> 'if' '( Cond ')' Stmt [ 'else' Stmt ]
  */
 class IfStmt : public Stmt {
 private:
@@ -77,16 +108,13 @@ private:
 
     Stmt thenStmt, elseStmt;
 
-    int hasVar;
-
+    /// Cond's position
     SourceLocation lParenthesisLoc, rParenthesisLoc;
 
 public:
-//    IfStmt() = default;
-
-    IfStmt(Expr *condition, Stmt thenStmt, Stmt elseStmt, int hasVar, SourceLocation lParenthesisLoc,
+    IfStmt(Expr *condition, Stmt thenStmt, Stmt elseStmt, SourceLocation lParenthesisLoc,
            SourceLocation rParenthesisLoc) :
-            conditionExpr(condition), thenStmt(thenStmt), elseStmt(elseStmt), hasVar(hasVar),
+            conditionExpr(condition), thenStmt(thenStmt), elseStmt(elseStmt),
             lParenthesisLoc(lParenthesisLoc), rParenthesisLoc(rParenthesisLoc) {};
 
     Expr *getCondition() { return conditionExpr; }
@@ -95,9 +123,33 @@ public:
 
     Stmt getElseStmt() { return elseStmt; }
 
-    int getHasVar() const { return hasVar; }
+    SourceLocation getLParenthesisLoc() { return lParenthesisLoc; }
 
-    void setHasVar(int ifHasVar) { this->hasVar = ifHasVar; }
+    SourceLocation getRParenthesisLoc() { return rParenthesisLoc; }
+
+};
+
+/**
+ * 循环语句 Stmt -> 'while' '(' Cond ')' Stmt
+ */
+class WhileStmt : public Stmt {
+private:
+    Expr *conditionExpr;
+
+    Stmt bodyStmt;
+
+    /// Cond's position
+    SourceLocation lParenthesisLoc, rParenthesisLoc;
+
+public:
+    WhileStmt(Expr *conditionExpr, Stmt bodyStmt, SourceLocation lParenthesisLoc,
+              SourceLocation rParenthesisLoc) :
+            conditionExpr(conditionExpr), bodyStmt(bodyStmt), lParenthesisLoc(lParenthesisLoc),
+            rParenthesisLoc(rParenthesisLoc) {};
+
+    Expr *getConditionExpr() { return conditionExpr; }
+
+    Stmt getBodyStmt() { return bodyStmt; }
 
     SourceLocation getLParenthesisLoc() { return lParenthesisLoc; }
 
@@ -106,41 +158,13 @@ public:
 };
 
 /**
- * while( conditionExpr ) { bodyStmt }
- */
-class WhileStmt : public Stmt {
-private:
-    Expr *conditionExpr;
-
-    Stmt bodyStmt;
-
-    int hasVar;
-public:
-//    WhileStmt() = default;
-
-    WhileStmt(Expr *conditionExpr, Stmt bodyStmt, int hasVar) :
-            conditionExpr(conditionExpr), bodyStmt(bodyStmt), hasVar(hasVar) {};
-
-    Expr *getConditionExpr() { return conditionExpr; }
-
-    Stmt getBodyStmt() { return bodyStmt; }
-
-    int getHasVar() const { return hasVar; }
-
-    void setHasVar(int ifHasVar) { this->hasVar = ifHasVar; }
-
-};
-
-/**
- * break;
+ * 跳转语句 Stmt -> 'break' ';'
  */
 class BreakStmt : public Stmt {
 private:
     SourceLocation breakLoc;
 
 public:
-//    BreakStmt() = default;
-
     BreakStmt(SourceLocation breakLoc) : breakLoc(breakLoc) {};
 
     SourceLocation getBreakLoc() { return breakLoc; }
@@ -148,7 +172,21 @@ public:
 };
 
 /**
- * return retExpr;
+ * 跳转语句 Stmt -> 'continue' ';'
+ */
+class ContinueStmt : public Stmt {
+private:
+    SourceLocation continueLoc;
+
+public:
+    ContinueStmt(SourceLocation continueLoc) : continueLoc(continueLoc) {};
+
+    SourceLocation getContinueLoc() { return continueLoc; }
+
+};
+
+/**
+ * 跳转语句 Stmt -> 'return' [Exp] ';'
  */
 class ReturnExpr : public Stmt {
 private:
