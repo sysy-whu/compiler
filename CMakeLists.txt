@@ -3,4 +3,25 @@ project(compiler)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(compiler main.cpp util/Error.h util/MyConstants.h util/Util.cpp util/Util.h lexer/Token.h lexer/Lex.cpp lexer/Lex.h)
+file(GLOB SOURCES
+        *.h
+        *.cpp
+        util/*.h
+        util/*.cpp
+        lexer/*.h
+        lexer/*.cpp
+        ast/*.h
+        ast/*.cpp
+        parser/*.h
+        parser/*.cpp
+        semantic/*.h
+        semantic/*.cpp
+        ir/*.h
+        ir/*.cpp
+        syTestFiles/*.h
+        syTestFiles/*.cpp
+        )
+
+add_executable(compiler main.cpp ${SOURCE_FILES} ${SOURCES})
+
+
