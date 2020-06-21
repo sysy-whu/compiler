@@ -69,7 +69,7 @@ private:
 
     RelExpr parseRelExpr();
 
-    ArrayInitListExpr parseArrayInitListExpr();
+    ArrayInitListExpr parseArrayInitListExpr(int needSep);
 
     CallExpr parseCallExpr();
 

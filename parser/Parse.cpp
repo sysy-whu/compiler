@@ -293,7 +293,7 @@ VarDef Parse::parseOneVarDef(const std::string &ident, SourceLocation identLoc) 
             if (tokens.at(step).getType() == CHAR_EQ) {
                 assignLoc = SourceLocation(tokens.at(step).getStartRow(), tokens.at(step).getStartColumn());
                 step++;  /// jump '='
-                ArrayInitListExpr initListExpr = parseArrayInitListExpr();
+                ArrayInitListExpr initListExpr = parseArrayInitListExpr(1);
                 return VarDef(ident, subs, &initListExpr, identLoc, assignLoc);
             }
             return VarDef(ident, subs, nullptr, identLoc, assignLoc);
@@ -306,10 +306,53 @@ VarDef Parse::parseOneVarDef(const std::string &ident, SourceLocation identLoc) 
     }
 }  /// in fact, here is no need to return anything
 
+/// 变量初值 InitVal → Exp | '{' [ InitVal { ',' InitVal } ] '}'
 /// in this time, token should be {
-ArrayInitListExpr Parse::parseArrayInitListExpr() {
+ArrayInitListExpr Parse::parseArrayInitListExpr(int needSep) {
     std::vector<Expr> subs;
-    return ArrayInitListExpr(subs, SourceLocation(), SourceLocation());
+    SourceLocation lBraceLoc(-1, -1), rBraceLoc(-1, -1);
+
+    if (tokens.at(step).getType() == CHAR_L_BRACE) {
+        lBraceLoc = SourceLocation(tokens.at(step).getStartRow(), tokens.at(step).getStartColumn());
+        step++; /// jump {
+    } else {
+        Error::errorParse("\"{\" expected", tokens.at(step));
+    }
+
+    // 部分情况还需要检查最里层个数，如A[4][3] = {1,2,3,4,{7,8,9},10}不允许;这里没有做
+//    int A[4][3] = {1, 2, 3, 4, {7, 8, 9}, 10};
+
+    while (tokens.at(step).getType() != CHAR_R_BRACE) {
+        if (tokens.at(step).getType() == CHAR_L_BRACE) {
+            ArrayInitListExpr arrayInitListExpr = parseArrayInitListExpr(0);
+            subs.push_back(arrayInitListExpr);
+        } else {
+            Expr expr = parseExpr();
+            subs.push_back(expr);
+            if (tokens.at(step).getType() == CHAR_COMMA) {
+                step++; /// jump ,
+            } else if (tokens.at(step).getType() == CHAR_R_BRACE) {
+                break;
+            } else {
+                Error::errorParse("\"{\" expected", tokens.at(step));
+            }
+        }
+    }
+
+    if (tokens.at(step).getType() == CHAR_R_BRACE) {
+        rBraceLoc = SourceLocation(tokens.at(step).getStartRow(), tokens.at(step).getStartColumn());
+        step++; /// jump '}'
+    } else {
+        Error::errorParse("\"}\" expected", tokens.at(step));
+    }
+
+    if (tokens.at(step).getType() == CHAR_SEPARATOR) {
+        step++; /// jump ';'
+    } else if (needSep == 1) {
+        Error::errorParse("\";\" expected", tokens.at(step));
+    }
+
+    return ArrayInitListExpr(subs, lBraceLoc, rBraceLoc);
 }
 
 ///===------------------------------------------------------------------===///

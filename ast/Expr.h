@@ -39,7 +39,7 @@ public:
 };
 
 /**
- * array initial list like { 1, 2, 3, nullptr, 4, 5 }
+ * 变量初值 InitVal → Exp | '{' [ InitVal { ',' InitVal } ] '}'
  */
 class ArrayInitListExpr : public Expr {
 private:
