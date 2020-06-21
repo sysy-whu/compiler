@@ -51,17 +51,10 @@ class DeclStmt : public Stmt {
 public:
     Decl *decl;
 
-    SourceLocation startLoc, endLoc;
-
 public:
-    DeclStmt(Decl *decl, SourceLocation startLoc, SourceLocation endLoc) :
-            decl(decl), startLoc(startLoc), endLoc(endLoc) {};
+    DeclStmt(Decl *decl) : decl(decl) {};
 
     Decl *getDecl() const { return decl; }
-
-    SourceLocation getStartLoc() const { return startLoc; }
-
-    SourceLocation getEndLoc() const { return endLoc; }
 
 };
 
@@ -106,13 +99,13 @@ class IfStmt : public Stmt {
 private:
     Expr *conditionExpr;
 
-    Stmt thenStmt, elseStmt;
+    Stmt thenStmt, *elseStmt;
 
     /// Cond's position
     SourceLocation lParenthesisLoc, rParenthesisLoc;
 
 public:
-    IfStmt(Expr *condition, Stmt thenStmt, Stmt elseStmt, SourceLocation lParenthesisLoc,
+    IfStmt(Expr *condition, Stmt thenStmt, Stmt *elseStmt, SourceLocation lParenthesisLoc,
            SourceLocation rParenthesisLoc) :
             conditionExpr(condition), thenStmt(thenStmt), elseStmt(elseStmt),
             lParenthesisLoc(lParenthesisLoc), rParenthesisLoc(rParenthesisLoc) {};
@@ -121,7 +114,7 @@ public:
 
     Stmt getThenStmt() { return thenStmt; }
 
-    Stmt getElseStmt() { return elseStmt; }
+    Stmt *getElseStmt() { return elseStmt; }
 
     SourceLocation getLParenthesisLoc() { return lParenthesisLoc; }
 
@@ -190,17 +183,17 @@ public:
  */
 class ReturnExpr : public Stmt {
 private:
-    Stmt retExpr;
+    Stmt *retExpr;
 
     SourceLocation retLoc;
 
 public:
     ReturnExpr() = default;
 
-    ReturnExpr(Stmt retExpr, SourceLocation retLoc) :
+    ReturnExpr(Stmt *retExpr, SourceLocation retLoc) :
             retExpr(retExpr), retLoc(retLoc) {};
 
-    Stmt getRetExpr() { return retExpr; }
+    Stmt *getRetExpr() { return retExpr; }
 
     SourceLocation gerRetLoc() { return retLoc; }
 

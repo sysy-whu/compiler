@@ -36,15 +36,13 @@ private:
 
     FuncFParam parseFuncFParam();
 
-    Stmt parseBlockStmts();
-
     VarDecl parseVarDecl();
 
     ConstantDecl parseConstantDecl();
 
-    VarDecl parseVarDecl(std::string ident, SourceLocation typeLoc, SourceLocation firstIdentLoc);
+    VarDecl parseVarDecl(const std::string &ident, SourceLocation typeLoc, SourceLocation firstIdentLoc);
 
-    std::vector<VarDef> parseVarDef(std::string firstIdent, SourceLocation firstIdentLoc);
+    std::vector<VarDef> parseVarDef(const std::string &firstIdent, SourceLocation firstIdentLoc);
 
     VarDef parseOneVarDef();
 
@@ -76,6 +74,15 @@ private:
     CallExpr parseCallExpr();
 
     FuncRParams parseFuncRParams();
+
+    ///===-----------------------------===///
+    /// Stmts
+    ///===-----------------------------===///
+    Stmt parseBlockStmts();
+
+    std::vector<Stmt> parseBlockItems();
+
+    Stmt parseOneStmt();
 
 public:
     Parse();

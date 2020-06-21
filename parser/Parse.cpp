@@ -184,6 +184,7 @@ FuncFParam Parse::parseFuncFParam() {
 /// Variable -> about varDecl, varDef
 ///===------------------------------------------------------------------------------------===///
 
+/// 变量声明 VarDecl → varType varDefs ';'
 /// in this time, step should be varType
 VarDecl Parse::parseVarDecl() {
     std::string ident;
@@ -206,7 +207,7 @@ VarDecl Parse::parseVarDecl() {
     return parseVarDecl(ident, typeLoc, identLoc);
 }
 
-
+/// 常量声明 ConstDecl → 'const' varDecl
 /// in this time, step should be constant
 ConstantDecl Parse::parseConstantDecl() {
     SourceLocation constantLoc(tokens.at(step).getStartRow(), tokens.at(step).getStartColumn());
@@ -215,30 +216,34 @@ ConstantDecl Parse::parseConstantDecl() {
     return ConstantDecl(varDecl, constantLoc);
 }
 
+/// 变量声明 VarDecl → varType varDefs ';'
 /// in this time, step is in the token after the first Identifier
-VarDecl Parse::parseVarDecl(std::string ident, SourceLocation typeLoc, SourceLocation firstIdentLoc) {
-    std::vector<VarDef> varDefs = parseVarDef(std::move(ident), firstIdentLoc);
+VarDecl Parse::parseVarDecl(const std::string &ident, SourceLocation typeLoc, SourceLocation firstIdentLoc) {
+    std::vector<VarDef> varDefs = parseVarDef(ident, firstIdentLoc);
     return VarDecl(TYPE_INT, varDefs, typeLoc);
 }
 
+/// 变量声明之 VarDefs -> VarDef { ',' VarDef } ';'
 /// in this time, step is in the token after the first Identifier
-std::vector<VarDef> Parse::parseVarDef(std::string firstIdent, SourceLocation firstIdentLoc) {
+std::vector<VarDef> Parse::parseVarDef(const std::string &firstIdent, SourceLocation firstIdentLoc) {
     std::vector<VarDef> varDefs;
-    VarDef firstVarDef = parseOneVarDef(std::move(firstIdent), firstIdentLoc);
+    VarDef firstVarDef = parseOneVarDef(firstIdent, firstIdentLoc);
     varDefs.push_back(firstVarDef);
     while (tokens.at(step).getType() == CHAR_COMMA) {
         VarDef varDef = parseOneVarDef();
         varDefs.push_back(varDef);
     }
-    if (tokens.at(step).getType() == CHAR_SEPARATOR)
+    if (tokens.at(step).getType() == CHAR_SEPARATOR) {
+        step++;  /// jump ';'
         return varDefs;
-    else {
+    } else {
         Error::errorParse("\";\" Expected", tokens.at(step));
         exit(-1);
     }
 
 }  /// in fact, here is no need to return anything
 
+/// 单个变量定义 VarDef → Ident { '[' ConstExp ']' } | Ident { '[' ConstExp ']' } '=' InitVal
 /// in this time, step is in the token ',' before a new Identifier
 VarDef Parse::parseOneVarDef() {
     std::string ident;
@@ -253,6 +258,7 @@ VarDef Parse::parseOneVarDef() {
     }
 }  /// in fact, here is no need to return anything
 
+/// 单个变量定义 VarDef → Ident { '[' ConstExp ']' } | Ident { '[' ConstExp ']' } '=' InitVal
 /// in this time, step is in the token after the latest Identifier
 VarDef Parse::parseOneVarDef(const std::string &ident, SourceLocation identLoc) {
     SourceLocation assignLoc(-1, -1);
@@ -304,15 +310,6 @@ VarDef Parse::parseOneVarDef(const std::string &ident, SourceLocation identLoc) 
 ArrayInitListExpr Parse::parseArrayInitListExpr() {
     std::vector<Expr> subs;
     return ArrayInitListExpr(subs, SourceLocation(), SourceLocation());
-}
-
-///===------------------------------------------------------------------------------------===///
-/// Stmts
-///===------------------------------------------------------------------------------------===///
-
-/// in this time, step should be {
-Stmt Parse::parseBlockStmts() {
-    return Stmt();
 }
 
 ///===------------------------------------------------------------------===///
@@ -587,6 +584,148 @@ FuncRParams Parse::parseFuncRParams() {
     step++;   /// jump ) in function
 
     return FuncRParams(args, lParenthesisLoc, rParenthesisLoc);
+}
+
+///===------------------------------------------------------------------------------------===///
+/// Stmts
+///===------------------------------------------------------------------------------------===///
+
+/// in this time, step should be {
+/// 语句块 Block -> '{' { BlockItem } '}'
+Stmt Parse::parseBlockStmts() {
+    SourceLocation lBraceLoc, rBraceLoc;
+
+    if (tokens.at(step).getType() == CHAR_L_BRACE) {
+        lBraceLoc = SourceLocation(tokens.at(step).getStartRow(), tokens.at(step).getStartColumn());
+        step++;  /// jump {
+    } else {
+        Error::errorParse("\"{\" expected", tokens.at(step));
+    }
+
+    std::vector<Stmt> stmts = parseBlockItems();
+
+    if (tokens.at(step).getType() == CHAR_R_BRACE) {
+        rBraceLoc = SourceLocation(tokens.at(step).getStartRow(), tokens.at(step).getStartColumn());
+        step++;  /// jump }
+    } else {
+        Error::errorParse("\"}\" expected", tokens.at(step));
+    }
+
+    return BlockStmt(stmts, lBraceLoc, rBraceLoc);
+}
+
+/// 语句块项 BlockItem → VarDecl | ConstantDecl | Stmt
+std::vector<Stmt> Parse::parseBlockItems() {
+    std::vector<Stmt> stmts;
+
+    /// 要求 parseItem 返回前吃掉 ';'
+    while (tokens.at(step).getType() != CHAR_R_BRACE) {
+        if (tokens.at(step).getType() == TOKEN_CONST) {
+            ConstantDecl constantDecl = parseConstantDecl();
+            stmts.push_back(DeclStmt(&constantDecl));
+        } else if (tokens.at(step).getType() == TOKEN_INT) {
+            VarDecl varDecl = parseVarDecl();
+            stmts.push_back(DeclStmt(&varDecl));
+        } else {
+            stmts.push_back(parseOneStmt());
+        }
+    }
+
+    return stmts;
+}
+
+/// 语句 Stmt -> LVal '=' Exp ';'
+///           | [Exp] ';'
+///           | Block
+///           | 'if' '( Cond ')' Stmt [ 'else' Stmt ]
+///           | 'while' '(' Cond ')' Stmt
+///           | 'break' ';'
+///           | 'continue' ';'
+///           | 'return' [Exp] ';'
+/// 条件表达式 Cond → LOrExp
+Stmt Parse::parseOneStmt() {
+    switch (tokens.at(step).getType()) {
+        case CHAR_L_BRACE:
+            return parseBlockStmts();
+        case TOKEN_IF: {
+            if (tokens.at(++step).getType() != CHAR_L_PARENTHESIS) {
+                Error::errorParse("\"(\" expected!", tokens.at(step));
+            }
+            SourceLocation lParenthesisLoc = SourceLocation(tokens.at(step).getStartRow(),
+                                                            tokens.at(step).getStartColumn());
+
+            step++;  /// jump "("
+            Expr condExpr = parseLOrExpr();
+
+            if (tokens.at(++step).getType() != CHAR_L_PARENTHESIS) {
+                Error::errorParse("\"(\" expected!", tokens.at(step));
+            }
+            SourceLocation rParenthesisLoc = SourceLocation(tokens.at(step).getStartRow(),
+                                                            tokens.at(step).getStartColumn());
+            step++;  /// jump ")"
+            Stmt thenStmt = parseOneStmt();
+
+            if (tokens.at(step).getType() == TOKEN_ELSE) {
+                step++;   /// jump "else"
+                Stmt elseStmt = parseOneStmt();
+                return IfStmt(&condExpr, thenStmt, &elseStmt, lParenthesisLoc, rParenthesisLoc);
+            } else {
+                return IfStmt(&condExpr, thenStmt, nullptr, lParenthesisLoc, rParenthesisLoc);
+            }
+        }
+        case TOKEN_WHILE: {
+            if (tokens.at(++step).getType() != CHAR_L_PARENTHESIS) {
+                Error::errorParse("\"(\" expected!", tokens.at(step));
+            }
+            SourceLocation lParenthesisLoc = SourceLocation(tokens.at(step).getStartRow(),
+                                                            tokens.at(step).getStartColumn());
+
+            step++;  /// jump "("
+            Expr condExpr = parseLOrExpr();
+
+            if (tokens.at(++step).getType() != CHAR_L_PARENTHESIS) {
+                Error::errorParse("\"(\" expected!", tokens.at(step));
+            }
+            SourceLocation rParenthesisLoc = SourceLocation(tokens.at(step).getStartRow(),
+                                                            tokens.at(step).getStartColumn());
+            step++;  /// jump ")"
+            Stmt bodyStmt = parseOneStmt();
+
+            return WhileStmt(&condExpr, bodyStmt, lParenthesisLoc, rParenthesisLoc);
+        }
+        case TOKEN_BREAK: {
+            SourceLocation breakLoc(tokens.at(step).getStartRow(), tokens.at(step).getStartColumn());
+            if (tokens.at(++step).getType() != CHAR_SEPARATOR) {
+                Error::errorParse("\";\" expected", tokens.at(step));
+            }
+            step++;  /// jump ';'
+            return BreakStmt(breakLoc);
+        }
+        case TOKEN_CONTINUE: {
+            SourceLocation continueLoc(tokens.at(step).getStartRow(), tokens.at(step).getStartColumn());
+            if (tokens.at(++step).getType() != CHAR_SEPARATOR) {
+                Error::errorParse("\";\" expected", tokens.at(step));
+            }
+            step++;  /// jump ';'
+            return ContinueStmt(continueLoc);
+        }
+        case TOKEN_RETURN: {
+            SourceLocation returnLoc(tokens.at(step).getStartRow(), tokens.at(step).getStartColumn());
+            if (tokens.at(++step).getType() == CHAR_SEPARATOR) {
+                return ReturnExpr(nullptr, returnLoc);
+            }
+            Expr retValue = parseExpr();
+
+            if (tokens.at(step).getType() != CHAR_SEPARATOR) {
+                Error::errorParse("\";\" expected", tokens.at(step));
+            }
+            step++;  /// jump ';'
+            return ReturnExpr(&retValue, returnLoc);
+        }
+        default:
+            Error::errorParse("Error statement!", tokens.at(step));
+            exit(-1);  /// in fact, here is no need to return or exit
+    }
 }
 
 
