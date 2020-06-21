@@ -75,6 +75,10 @@ Decl Parse::parseFuncOrVar() {
     }
 } /// in fact, here is no need to return anything
 
+///===------------------------------------------------------------------------------------===///
+/// @FuncName -> about funcDef, funcParams
+///===------------------------------------------------------------------------------------===///
+
 /// only void retType can reach here
 FuncDef Parse::parseFunc() {
     SourceLocation typeLoc(tokens.at(step).getStartRow(), tokens.at(step).getStartColumn());
@@ -156,7 +160,8 @@ FuncFParam Parse::parseFuncFParam() {
     std::vector<Expr> subs;
     if (tokens.at(++step).getType() == CHAR_L_BRACKET) {
         lBracketLoc = SourceLocation(tokens.at(step).getStartRow(), tokens.at(step).getStartColumn());
-        while (tokens.at(++step).getType() == CHAR_L_BRACKET) {
+        /// token should be [ here, or others
+        while (tokens.at(step).getType() == CHAR_L_BRACKET) {
             if (tokens.at(++step).getType() == CHAR_R_BRACKET) {   /// a[]...
                 subs.emplace_back(Expr());                            /// Here is not very sure
             } else {
@@ -174,6 +179,10 @@ FuncFParam Parse::parseFuncFParam() {
 
     return FuncFParam(TYPE_INT, ident, subs, typeLoc, identLoc, lBracketLoc, rBracketLoc);
 }
+
+///===------------------------------------------------------------------------------------===///
+/// Variable -> about varDecl, varDef
+///===------------------------------------------------------------------------------------===///
 
 /// in this time, step should be varType
 VarDecl Parse::parseVarDecl() {
@@ -291,19 +300,293 @@ VarDef Parse::parseOneVarDef(const std::string &ident, SourceLocation identLoc) 
     }
 }  /// in fact, here is no need to return anything
 
+/// in this time, token should be {
+ArrayInitListExpr Parse::parseArrayInitListExpr() {
+    std::vector<Expr> subs;
+    return ArrayInitListExpr(subs, SourceLocation(), SourceLocation());
+}
+
+///===------------------------------------------------------------------------------------===///
+/// Stmts
+///===------------------------------------------------------------------------------------===///
+
 /// in this time, step should be {
 Stmt Parse::parseBlockStmts() {
     return Stmt();
 }
 
+///===------------------------------------------------------------------===///
+/// Expr
+///===------------------------------------------------------------------===///
+
 /// in this time, token should be the first token in a expression
+/// 表达式 Exp → AddExp 注：SysY 表达式是 int 型表达式
 Expr Parse::parseExpr() {
-    return Expr();
+    return parseAddExpr();
 }
 
-/// in this time, token should be {
-ArrayInitListExpr Parse::parseArrayInitListExpr() {
-    return ArrayInitListExpr(nullptr, SourceLocation(), SourceLocation());
+/// 加减表达式 AddExp → MulExp | AddExp ('+' | '−') MulExp
+AddExpr Parse::parseAddExpr() {
+    int opType = 0;
+    SourceLocation opLoc(-1, -1);
+    int stepAux = step;
+
+    AddExpr addExpr = parseAddExpr();
+    if (tokens.at(step).getType() == OP_BO_ADD || tokens.at(step).getType() == OP_BO_SUB) {
+        opType = tokens.at(step).getType();
+        opLoc = SourceLocation(tokens.at(step).getStartRow(), tokens.at(step).getStartColumn());
+        step++;  /// jump op
+        MulExpr mulExpr = parseMulExpr();
+        return AddExpr(mulExpr, &addExpr, opType, opLoc);
+    } else {
+        step = stepAux;
+        MulExpr mulExpr = parseMulExpr();
+        return AddExpr(mulExpr, nullptr, opType, opLoc);
+    }
+}
+
+/// 乘除模表达式 MulExp → UnaryExp | MulExp ('*' | '/' | '%') UnaryEx
+MulExpr Parse::parseMulExpr() {
+    int opType = 0;
+    SourceLocation opLoc(-1, -1);
+    int stepAux = step;
+
+    MulExpr mulExpr = parseMulExpr();
+    if (tokens.at(step).getType() == OP_BO_MUL || tokens.at(step).getType() == OP_BO_DIV ||
+        tokens.at(step).getType() == OP_BO_REM) {
+        opType = tokens.at(step).getType();
+        opLoc = SourceLocation(tokens.at(step).getStartRow(), tokens.at(step).getStartColumn());
+        step++;  /// jump op
+        UnaryExpr unaryExpr = parseUnaryExpr();
+        return MulExpr(unaryExpr, &mulExpr, opType, opLoc);
+    } else {
+        step = stepAux;
+        UnaryExpr unaryExpr = parseUnaryExpr();
+        return MulExpr(unaryExpr, nullptr, opType, opLoc);
+    }
+}
+
+/// 一元表达式 UnaryExp → '(' Exp ')' | LValExpr | NumberExpr | CallExpr | UnaryOpType UnaryExp
+/// CallExpr -> ident ( ;;; LValExpr -> ident / ident [ ;;; NumExpr -> constant
+UnaryExpr Parse::parseUnaryExpr() {
+    int opType = 0;
+    SourceLocation opLoc(-1, -1), lParenthesisLoc(-1, -1), rParenthesisLoc(-1, -1);
+    int stepAux = step;
+
+    switch (tokens.at(step).getType()) {
+        case CHAR_ADD:
+        case CHAR_SUB:
+        case CHAR_NOT: {
+            opType = tokens.at(step).getType();
+            opLoc = SourceLocation(tokens.at(step).getStartRow(), tokens.at(step).getStartColumn());
+            UnaryExpr unaryExpr = parseUnaryExpr();
+            return UnaryExpr(unaryExpr, opType, opLoc, lParenthesisLoc, rParenthesisLoc);
+        }
+        case CHAR_L_PARENTHESIS: {
+            opType = tokens.at(step).getType();
+            lParenthesisLoc = SourceLocation(tokens.at(step).getStartRow(), tokens.at(step).getStartColumn());
+            step++;
+            Expr expr = parseExpr();
+
+            if (tokens.at(step).getType() == CHAR_R_PARENTHESIS) {
+                rParenthesisLoc = SourceLocation(tokens.at(step).getStartRow(), tokens.at(step).getStartColumn());
+                return UnaryExpr(expr, opType, opLoc, lParenthesisLoc, rParenthesisLoc);
+            } else {
+                Error::errorParse("\")\" Expected!", tokens.at(step));
+            }
+        }
+        case TOKEN_NUMBER: {
+            NumberExpr numberExpr = parseNumberExpr();
+            return UnaryExpr(numberExpr, opType, opLoc, lParenthesisLoc, rParenthesisLoc);
+        }
+        case TOKEN_IDENTIFIER: {
+            if (tokens.at(++step).getType() == CHAR_L_PARENTHESIS) {
+                step = stepAux;  /// back to funcName
+                CallExpr callExpr = parseCallExpr();
+                return UnaryExpr(callExpr, opType, opLoc, lParenthesisLoc, rParenthesisLoc);
+            } else {
+                step = stepAux;  /// back to funcName
+                LValExpr lValExpr = parseLValExpr();
+                return UnaryExpr(lValExpr, opType, opLoc, lParenthesisLoc, rParenthesisLoc);
+            }
+        }
+        default: {
+            Error::errorParse("UnaryExpr Expected!", tokens.at(step));
+            exit(-1);
+        }
+    }
+}
+
+/// 左值表达式 LVal → Ident {'[' Exp ']'}
+LValExpr Parse::parseLValExpr() {
+    std::string ident;
+    std::vector<Expr> subs;
+    SourceLocation identLoc, firstBracketLoc(-1, -1), lastBracketLoc(-1, -1);
+
+    if (tokens.at(step).getType() == TOKEN_IDENTIFIER) {
+        ident = tokens.at(step).getIdentifierStr();
+        identLoc = SourceLocation(tokens.at(step).getStartRow(), tokens.at(step).getStartColumn());
+    } else {
+        Error::errorParse("Identifier expected!", tokens.at(step));
+    }
+
+    /// maybe [
+    if (tokens.at(++step).getType() == CHAR_L_BRACKET) {
+        firstBracketLoc = SourceLocation(tokens.at(step).getStartRow(), tokens.at(step).getStartColumn());
+        while (tokens.at(step).getType() == CHAR_L_BRACKET) {
+            if (tokens.at(++step).getType() == CHAR_R_BRACKET) {   /// a[]...
+                subs.emplace_back(Expr());                            /// Here is not very sure
+            } else {
+                Expr arraySize = parseExpr();
+                subs.emplace_back(arraySize);
+                if (tokens.at(step).getType() == CHAR_R_BRACKET) {
+                    lastBracketLoc = SourceLocation(tokens.at(step).getStartRow(), tokens.at(step).getStartColumn());
+                } else {
+                    Error::errorParse("\"]\" expected!", tokens.at(step));
+                }
+            }
+            step++;  /// jump ']'
+        }
+    }
+
+    return LValExpr(ident, subs, identLoc, firstBracketLoc, lastBracketLoc);
+
+}
+
+/// 数值 Number → IntConst
+NumberExpr Parse::parseNumberExpr() {
+    if (tokens.at(step).getType() == TOKEN_NUMBER) {
+        SourceLocation numLoc(tokens.at(step).getStartRow(), tokens.at(step).getStartColumn());
+        int numVal = tokens.at(step).getNumVal();
+        step++;
+        return NumberExpr(numVal, numLoc);
+    } else {
+        Error::errorParse("Number expected!", tokens.at(step));
+        exit(-1);  /// in fact, it's no need.
+    }
+}
+
+/// 逻辑或表达式 LOrExp → LAndExp | LOrExp '||' LAndExp
+LOrExpr Parse::parseLOrExpr() {
+    SourceLocation opLoc(-1, -1);
+    int stepAux = step;
+
+    LOrExpr lOrExpr = parseLOrExpr();
+    if (tokens.at(step).getType() == OP_BO_OR) {
+        opLoc = SourceLocation(tokens.at(step).getStartRow(), tokens.at(step).getStartColumn());
+        step++;  /// jump op
+        LAndExpr lAndExpr = parseLAndExpr();
+        return LOrExpr(lAndExpr, &lOrExpr, opLoc);
+    } else {
+        step = stepAux;
+        LAndExpr lAndExpr = parseLAndExpr();
+        return LOrExpr(lAndExpr, nullptr, opLoc);
+    }
+}
+
+/// 逻辑与表达式 LAndExp → EqExp | LAndExp '&&' EqExp
+LAndExpr Parse::parseLAndExpr() {
+    SourceLocation opLoc(-1, -1);
+    int stepAux = step;
+
+    LAndExpr lAndExpr = parseLAndExpr();
+    if (tokens.at(step).getType() == OP_BO_AND) {
+        opLoc = SourceLocation(tokens.at(step).getStartRow(), tokens.at(step).getStartColumn());
+        step++;  /// jump op
+        EqExpr eqExpr = parseEqExpr();
+        return LAndExpr(eqExpr, &lAndExpr, opLoc);
+    } else {
+        step = stepAux;
+        EqExpr eqExpr = parseEqExpr();
+        return LAndExpr(eqExpr, nullptr, opLoc);
+    }
+}
+
+/// 相等性表达式 EqExp → RelExp | EqExp ('==' | '!=') RelExp
+EqExpr Parse::parseEqExpr() {
+    int opType = 0;
+    SourceLocation opLoc(-1, -1);
+    int stepAux = step;
+
+    EqExpr eqExpr = parseEqExpr();
+    if (tokens.at(step).getType() == OP_BO_EQ || tokens.at(step).getType() == OP_BO_NEQ) {
+        opLoc = SourceLocation(tokens.at(step).getStartRow(), tokens.at(step).getStartColumn());
+        step++;  /// jump op
+        RelExpr relExpr = parseRelExpr();
+        return EqExpr(relExpr, &eqExpr, opType, opLoc);
+    } else {
+        step = stepAux;
+        RelExpr relExpr = parseRelExpr();
+        return EqExpr(relExpr, nullptr, opType, opLoc);
+    }
+}
+
+/// 关系表达式 RelExp → AddExp | RelExp ('<' | '>' | '<=' | '>=') AddExp
+RelExpr Parse::parseRelExpr() {
+    int opType = 0;
+    SourceLocation opLoc(-1, -1);
+    int stepAux = step;
+
+    RelExpr relExpr = parseRelExpr();
+    if (tokens.at(step).getType() == OP_BO_GT || tokens.at(step).getType() == OP_BO_GTE ||
+        tokens.at(step).getType() == OP_BO_LT || tokens.at(step).getType() == OP_BO_LTE) {
+        opLoc = SourceLocation(tokens.at(step).getStartRow(), tokens.at(step).getStartColumn());
+        step++;  /// jump op
+        AddExpr addExpr = parseAddExpr();
+        return RelExpr(addExpr, &relExpr, opType, opLoc);
+    } else {
+        step = stepAux;
+        AddExpr addExpr = parseAddExpr();
+        return RelExpr(addExpr, nullptr, opType, opLoc);
+    }
+}
+
+/// 函数调用一元表达式 CallExpr -> Ident '(' [FuncRParams] ')'
+CallExpr Parse::parseCallExpr() {
+    std::string ident;
+    SourceLocation callLoc;
+
+    if (tokens.at(step).getType() == TOKEN_IDENTIFIER) {
+        ident = tokens.at(step).getIdentifierStr();
+        callLoc = SourceLocation(tokens.at(step).getStartRow(), tokens.at(step).getStartColumn());
+    } else {
+        Error::errorParse("Identifier expected!", tokens.at(step));
+    }
+
+    step++;  /// jump Identifier
+    FuncRParams funcRParams = parseFuncRParams();
+
+    return CallExpr(ident, funcRParams, callLoc);
+}
+
+/// 函数实参表 FuncRParams → '(' Exp { ',' Exp } ')'
+FuncRParams Parse::parseFuncRParams() {
+    std::vector<Expr> args;
+    SourceLocation lParenthesisLoc, rParenthesisLoc;
+
+    if (tokens.at(step).getType() == CHAR_L_PARENTHESIS) {
+        lParenthesisLoc = SourceLocation(tokens.at(step).getStartRow(), tokens.at(step).getStartColumn());
+    }
+    step++;  /// jump (
+
+    while (tokens.at(step).getType() != CHAR_R_PARENTHESIS) {
+        Expr item = parseExpr();
+        /// in this time, step is , or )
+        if (tokens.at(step).getType() == CHAR_COMMA) {
+            step++;
+        }
+        args.push_back(item);
+    }
+
+    /// parse )
+    if (tokens.at(step).getType() == CHAR_R_PARENTHESIS) {
+        rParenthesisLoc = SourceLocation(tokens.at(step).getStartRow(), tokens.at(step).getStartColumn());
+    } else {
+        Error::errorParse("\")\" or \",\" Expected in Function.", tokens.at(step));
+    }
+    step++;   /// jump ) in function
+
+    return FuncRParams(args, lParenthesisLoc, rParenthesisLoc);
 }
 
 

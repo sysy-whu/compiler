@@ -43,15 +43,15 @@ public:
  */
 class ArrayInitListExpr : public Expr {
 private:
-    Expr **items;
+    std::vector<Expr> items;
 
     SourceLocation lBraceLoc, rBraceLoc;
 
 public:
-    ArrayInitListExpr(Expr **items, SourceLocation lBraceLoc, SourceLocation rBraceLoc) :
+    ArrayInitListExpr(std::vector<Expr> items, SourceLocation lBraceLoc, SourceLocation rBraceLoc) :
             items(items), lBraceLoc(lBraceLoc), rBraceLoc(rBraceLoc) {};
 
-    Expr **getItems() { return items; }
+    std::vector<Expr> getItems() { return items; }
 
     SourceLocation getLBraceLoc() { return lBraceLoc; }
 
@@ -65,19 +65,19 @@ class LValExpr : public Expr {
 private:
     std::string ident;
 
-    Expr **subs;
+    std::vector<Expr> subs;
 
     SourceLocation identLoc, firstBracketLoc, lastBracketLoc;
 
 public:
-    LValExpr(std::string ident, Expr **subs, SourceLocation identLoc, SourceLocation firstBracketLoc,
+    LValExpr(std::string ident, std::vector<Expr> subs, SourceLocation identLoc, SourceLocation firstBracketLoc,
              SourceLocation lastBracketLoc) :
             ident(std::move(ident)), subs(subs), identLoc(identLoc), firstBracketLoc(firstBracketLoc),
             lastBracketLoc(lastBracketLoc) {};
 
     std::string getIdent() { return ident; }
 
-    Expr **getSubs() { return subs; }
+    std::vector<Expr> getSubs() { return subs; }
 
     SourceLocation getIdentLoc() { return identLoc; }
 
@@ -88,19 +88,19 @@ public:
 };
 
 /**
- * function argument table (实参表) -> '(' (arg)* ')'
+ * 函数实参表 FuncRParams → Exp { ',' Exp }
  */
-class FuncArgExpr {
+class FuncRParams {
 private:
-    Expr **args;
+    std::vector<Expr> args;
 
     SourceLocation lParenthesisLoc, rParenthesisLoc;
 
 public:
-    FuncArgExpr(Expr **args, SourceLocation lParenthesisLoc, SourceLocation rParenthesisLoc) :
+    FuncRParams(std::vector<Expr> args, SourceLocation lParenthesisLoc, SourceLocation rParenthesisLoc) :
             args(args), lParenthesisLoc(lParenthesisLoc), rParenthesisLoc(rParenthesisLoc) {};
 
-    Expr **getArgs() { return args; }
+    std::vector<Expr> getArgs() { return args; }
 
     SourceLocation getLParenthesisLoc() { return lParenthesisLoc; }
 
@@ -109,48 +109,62 @@ public:
 };
 
 /**
- * function call
+ * 函数调用一元表达式 Ident '(' [FuncRParams] ')'
  */
 class CallExpr : public Expr {
 private:
     std::string ident;
 
-    FuncArgExpr funcArgExpr;
+    FuncRParams funcArgExpr;
 
     SourceLocation callLoc;
 
 public:
-    CallExpr(std::string ident, FuncArgExpr funcArgExpr, SourceLocation callLoc) :
+    CallExpr(std::string ident, FuncRParams funcArgExpr, SourceLocation callLoc) :
             ident(std::move(ident)), funcArgExpr(funcArgExpr), callLoc(callLoc) {};
 
     std::string getIdent() { return ident; }
 
-    FuncArgExpr getFuncArgExpr() { return funcArgExpr; }
+    FuncRParams getFuncArgExpr() { return funcArgExpr; }
 
     SourceLocation getCallLoc() { return callLoc; }
 
 };
 
 /**
- * Unary Operation Expression
+ * 一元表达式 UnaryExp → '(' Exp ')' | LValExpr | NumberExpr | CallExpr | UnaryOpType UnaryExp
  */
-class UnaryExpr : Expr {
+class UnaryExpr : public Expr {
 private:
     Expr expr;
 
     int opType;
 
-    SourceLocation opLoc;
+    SourceLocation opLoc, lParenthesisLoc, rParenthesisLoc;
 
 public:
-    UnaryExpr(Expr expr, int opType, SourceLocation uOpLoc) :
-            expr(expr), opType(opType), opLoc(uOpLoc) {};
+    /**
+     * 一元表达式构造函数
+     * @param expr Expr
+     * @param opType 表 UnaryExpr -> UnaryOpType UnaryExp
+     * @param uOpLoc 表 UnaryExpr -> UnaryOpType UnaryExp
+     * @param lParenthesisLoc 表 UnaryExp -> '(' Exp ')'
+     * @param rParenthesisLoc 表 UnaryExp -> '(' Exp ')'
+     */
+    UnaryExpr(Expr expr, int opType, SourceLocation uOpLoc, SourceLocation lParenthesisLoc,
+              SourceLocation rParenthesisLoc) :
+            expr(expr), opType(opType), opLoc(uOpLoc), lParenthesisLoc(lParenthesisLoc),
+            rParenthesisLoc(rParenthesisLoc) {};
 
     Expr getExpr() { return expr; }
 
     int getOpType() const { return opType; }
 
     SourceLocation getOpLoc() { return opLoc; }
+
+    SourceLocation getLParenthesisLoc() { return lParenthesisLoc; }
+
+    SourceLocation getRParenthesisLoc() { return rParenthesisLoc; }
 
 };
 

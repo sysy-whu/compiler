@@ -48,11 +48,34 @@ private:
 
     VarDef parseOneVarDef();
 
-    VarDef parseOneVarDef(const std::string& ident, SourceLocation identLoc);
+    VarDef parseOneVarDef(const std::string &ident, SourceLocation identLoc);
 
     Expr parseExpr();
 
+    AddExpr parseAddExpr();
+
+    MulExpr parseMulExpr();
+
+    UnaryExpr parseUnaryExpr();
+
+    LValExpr parseLValExpr();
+
+    NumberExpr parseNumberExpr();
+
+
+    LOrExpr parseLOrExpr();
+
+    LAndExpr parseLAndExpr();
+
+    EqExpr parseEqExpr();
+
+    RelExpr parseRelExpr();
+
     ArrayInitListExpr parseArrayInitListExpr();
+
+    CallExpr parseCallExpr();
+
+    FuncRParams parseFuncRParams();
 
 public:
     Parse();
@@ -63,7 +86,6 @@ public:
     };
 
     void startParse();
-
 
 
 };
