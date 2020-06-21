@@ -92,11 +92,13 @@ private:
 
     Expr **subs;
 
-    SourceLocation typeLoc, identLoc;
+    SourceLocation typeLoc, identLoc, lBracketLoc, rBracketLoc;
 
 public:
-    FuncFParam(int varType, std::string ident, Expr **subs, SourceLocation typeLoc, SourceLocation identLoc) :
-            varType(varType), ident(std::move(ident)), subs(subs), typeLoc(typeLoc), identLoc(identLoc) {};
+    FuncFParam(int varType, std::string ident, Expr **subs, SourceLocation typeLoc, SourceLocation identLoc,
+               SourceLocation lBracketLoc, SourceLocation rBracketLoc) :
+            varType(varType), ident(std::move(ident)), subs(subs), typeLoc(typeLoc), identLoc(identLoc),
+            lBracketLoc(lBracketLoc), rBracketLoc(rBracketLoc) {};
 
     int getVarType() const { return varType; }
 
@@ -108,6 +110,10 @@ public:
 
     SourceLocation getIdentLoc() { return identLoc; }
 
+    SourceLocation getLBracketLoc() { return lBracketLoc; }
+
+    SourceLocation getRBracketLoc() { return rBracketLoc; }
+
 };
 
 /**
@@ -117,17 +123,17 @@ class FuncFParams {
 private:
     FuncFParam **funcFParams;
 
-    SourceLocation lBraceLoc, rBraceLoc;
+    SourceLocation lParenthesisLoc, rParenthesisLoc;
 
 public:
-    FuncFParams(FuncFParam **funcParams, SourceLocation lBraceLoc, SourceLocation rBraceLoc) :
-            funcFParams(funcParams), lBraceLoc(lBraceLoc), rBraceLoc(rBraceLoc) {};
+    FuncFParams(FuncFParam **funcParams, SourceLocation lParenthesisLoc, SourceLocation rParenthesisLoc) :
+            funcFParams(funcParams), lParenthesisLoc(lParenthesisLoc), rParenthesisLoc(rParenthesisLoc) {};
 
     FuncFParam **getFuncParams() { return funcFParams; }
 
-    SourceLocation getLBraceLoc() { return lBraceLoc; }
+    SourceLocation getLParenthesisLoc() { return lParenthesisLoc; }
 
-    SourceLocation getRbraceLoc() { return rBraceLoc; }
+    SourceLocation getRParenthesisLoc() { return rParenthesisLoc; }
 
 };
 

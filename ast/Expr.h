@@ -67,17 +67,23 @@ private:
 
     Expr **subs;
 
-    SourceLocation identLoc;
+    SourceLocation identLoc, firstBracketLoc, lastBracketLoc;
 
 public:
-    LValExpr(std::string ident, Expr **subs, SourceLocation identLoc) :
-            ident(std::move(ident)), subs(subs), identLoc(identLoc) {};
+    LValExpr(std::string ident, Expr **subs, SourceLocation identLoc, SourceLocation firstBracketLoc,
+             SourceLocation lastBracketLoc) :
+            ident(std::move(ident)), subs(subs), identLoc(identLoc), firstBracketLoc(firstBracketLoc),
+            lastBracketLoc(lastBracketLoc) {};
 
     std::string getIdent() { return ident; }
 
     Expr **getSubs() { return subs; }
 
     SourceLocation getIdentLoc() { return identLoc; }
+
+    SourceLocation getFirstBracketLoc() { return firstBracketLoc; }
+
+    SourceLocation getLastBracketLoc() { return lastBracketLoc; }
 
 };
 
@@ -88,17 +94,17 @@ class FuncArgExpr {
 private:
     Expr **args;
 
-    SourceLocation lBraceLoc, rBraceLoc;
+    SourceLocation lParenthesisLoc, rParenthesisLoc;
 
 public:
-    FuncArgExpr(Expr **args, SourceLocation lBraceLoc, SourceLocation rBraceLoc) :
-            args(args), lBraceLoc(lBraceLoc), rBraceLoc(rBraceLoc) {};
+    FuncArgExpr(Expr **args, SourceLocation lParenthesisLoc, SourceLocation rParenthesisLoc) :
+            args(args), lParenthesisLoc(lParenthesisLoc), rParenthesisLoc(rParenthesisLoc) {};
 
     Expr **getArgs() { return args; }
 
-    SourceLocation getLBraceLoc() { return lBraceLoc; }
+    SourceLocation getLParenthesisLoc() { return lParenthesisLoc; }
 
-    SourceLocation getRBraceLoc() { return rBraceLoc; }
+    SourceLocation getRParenthesisLoc() { return rParenthesisLoc; }
 
 };
 

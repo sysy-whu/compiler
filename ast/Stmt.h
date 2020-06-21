@@ -69,7 +69,7 @@ public:
 };
 
 /**
- * if ( conditionExpr ) then (BlockStmt) [else (BlockStmt)]
+ * if ( conditionExpr ) then { BlockStmt } [else { BlockStmt }]
  */
 class IfStmt : public Stmt {
 private:
@@ -79,11 +79,15 @@ private:
 
     int hasVar;
 
+    SourceLocation lParenthesisLoc, rParenthesisLoc;
+
 public:
 //    IfStmt() = default;
 
-    IfStmt(Expr *condition, Stmt thenStmt, Stmt elseStmt, int hasVar) :
-            conditionExpr(condition), thenStmt(thenStmt), elseStmt(elseStmt), hasVar(hasVar) {};
+    IfStmt(Expr *condition, Stmt thenStmt, Stmt elseStmt, int hasVar, SourceLocation lParenthesisLoc,
+           SourceLocation rParenthesisLoc) :
+            conditionExpr(condition), thenStmt(thenStmt), elseStmt(elseStmt), hasVar(hasVar),
+            lParenthesisLoc(lParenthesisLoc), rParenthesisLoc(rParenthesisLoc) {};
 
     Expr *getCondition() { return conditionExpr; }
 
@@ -94,6 +98,10 @@ public:
     int getHasVar() const { return hasVar; }
 
     void setHasVar(int ifHasVar) { this->hasVar = ifHasVar; }
+
+    SourceLocation getLParenthesisLoc() { return lParenthesisLoc; }
+
+    SourceLocation getRParenthesisLoc() { return rParenthesisLoc; }
 
 };
 
