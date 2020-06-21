@@ -23,11 +23,11 @@ Lex::Lex() {
         Error::errorOpenFile(filename);
     }
 
-    endRow = 0;
-    startRow = 0;
+    endRow = 1;
+    startRow = 1;
     endColumn = 0;
     startColumn = 0;
-    NumVal = 0;
+//    NumVal = 0;
     IdentifierStr = "";
     LastChar = ' ';
 
@@ -37,6 +37,7 @@ Lex::Lex() {
 Token Lex::getToken() {
     startColumn = endColumn;
     startRow = endRow;
+    IdentifierStr = "";
 
     while (isspace(LastChar)) {
         if (LastChar == CHAR_N_BACKEND_SLASH || LastChar == CHAR_R_BACKEND_SLASH) {
@@ -46,34 +47,35 @@ Token Lex::getToken() {
     }
 
     if (isalpha(LastChar)) {
-        IdentifierStr = std::to_string(LastChar);
+        IdentifierStr.push_back(LastChar);
         LastChar = fgetc(fp);
         endColumn++;
         while (isalnum(LastChar) || LastChar == CHAR_UNDERLINE) {
-            IdentifierStr += std::to_string(LastChar);
+            IdentifierStr.push_back(LastChar);
             nextChar();
         }
 
         /// keyword or identifier
-        if (IdentifierStr == KEYWORD_INT)
-            return Token(TOKEN_INT, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
-        else if (IdentifierStr == KEYWORD_VOID)
-            return Token(TOKEN_VOID, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+        if (IdentifierStr == KEYWORD_INT) {
+            return Token(TOKEN_INT, filename, startRow, startColumn, endRow, endColumn, IdentifierStr, 0);
+        } else if (IdentifierStr == KEYWORD_VOID)
+            return Token(TOKEN_VOID, filename, startRow, startColumn, endRow, endColumn, IdentifierStr, 0);
         else if (IdentifierStr == KEYWORD_CONST)
-            return Token(TOKEN_CONST, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+            return Token(TOKEN_CONST, filename, startRow, startColumn, endRow, endColumn, IdentifierStr, 0);
         else if (IdentifierStr == KEYWORD_IF)
-            return Token(TOKEN_IF, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+            return Token(TOKEN_IF, filename, startRow, startColumn, endRow, endColumn, IdentifierStr, 0);
         else if (IdentifierStr == KEYWORD_ELSE)
-            return Token(TOKEN_ELSE, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+            return Token(TOKEN_ELSE, filename, startRow, startColumn, endRow, endColumn, IdentifierStr, 0);
         else if (IdentifierStr == KEYWORD_WHILE)
-            return Token(TOKEN_WHILE, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+            return Token(TOKEN_WHILE, filename, startRow, startColumn, endRow, endColumn, IdentifierStr, 0);
         else if (IdentifierStr == KEYWORD_BREAK)
-            return Token(TOKEN_BREAK, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+            return Token(TOKEN_BREAK, filename, startRow, startColumn, endRow, endColumn, IdentifierStr, 0);
         else if (IdentifierStr == KEYWORD_CONTINUE)
-            return Token(TOKEN_CONTINUE, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+            return Token(TOKEN_CONTINUE, filename, startRow, startColumn, endRow, endColumn, IdentifierStr, 0);
         else if (IdentifierStr == KEYWORD_RETURN)
-            return Token(TOKEN_RETURN, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
-        else return Token(TOKEN_IDENTIFIER, filename, startRow, startColumn, endRow, endColumn, IdentifierStr, 0);
+            return Token(TOKEN_RETURN, filename, startRow, startColumn, endRow, endColumn, IdentifierStr, 0);
+        else
+            return Token(TOKEN_IDENTIFIER, filename, startRow, startColumn, endRow, endColumn, IdentifierStr, 0);
 
     } // end if keyword or identifier
 
@@ -85,9 +87,7 @@ Token Lex::getToken() {
             nextChar();
         } while (isdigit(LastChar));
 
-        // 也许可以考虑去掉NumVal
-        NumVal = stoi(NumStr);
-        return Token(TOKEN_NUMBER, filename, startRow, startColumn, endRow, endColumn, nullptr, NumVal);
+        return Token(TOKEN_NUMBER, filename, startRow, startColumn, endRow, endColumn, NumStr, stoi(NumStr));
     }
 
     /// comment-> "||", "/*"
@@ -117,37 +117,40 @@ Token Lex::getToken() {
                 return getToken();
             }
         } else {  /// "/" -> OP_BO_DIV
-            return Token(OP_BO_DIV, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+            return Token(OP_BO_DIV, filename, startRow, startColumn, endRow, endColumn, ch2str(ThisChar), 0);
         }
     } // end comment
 
     /// ">="
     if (LastChar == CHAR_GREATER) {
+        int ThisChar = LastChar;
         nextChar();
         if (LastChar == CHAR_EQ) {  /// ">=" -> OP_BO_GTE
-            return Token(OP_BO_GTE, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+            return Token(OP_BO_GTE, filename, startRow, startColumn, endRow, endColumn, ch2str(ThisChar, LastChar), 0);
         } else {  /// ">" -> OP_BO_GT
-            return Token(OP_BO_GT, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+            return Token(OP_BO_GT, filename, startRow, startColumn, endRow, endColumn, ch2str(ThisChar), 0);
         }
     }
 
     /// "<="
     if (LastChar == CHAR_LOWER) {
+        int ThisChar = LastChar;
         nextChar();
         if (LastChar == CHAR_EQ) {  /// "<=" -> OP_BO_LTE
-            return Token(OP_BO_LTE, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+            return Token(OP_BO_LTE, filename, startRow, startColumn, endRow, endColumn, ch2str(ThisChar, LastChar), 0);
         } else {                   /// "<" -> OP_BO_LT
-            return Token(OP_BO_LT, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+            return Token(OP_BO_LT, filename, startRow, startColumn, endRow, endColumn, ch2str(ThisChar), 0);
         }
     }
 
     /// "=="
     if (LastChar == CHAR_EQ) {
+        int ThisChar = LastChar;
         nextChar();
         if (LastChar == CHAR_EQ) {  /// "==" -> OP_BO_EQ
-            return Token(OP_BO_EQ, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+            return Token(OP_BO_EQ, filename, startRow, startColumn, endRow, endColumn, ch2str(ThisChar, LastChar), 0);
         } else {                    /// "=" -> ASSIGN
-            return Token(OP_ASSIGN, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+            return Token(OP_ASSIGN, filename, startRow, startColumn, endRow, endColumn, ch2str(ThisChar), 0);
         }
     }
 
@@ -156,9 +159,9 @@ Token Lex::getToken() {
         int ThisChar = LastChar;
         nextChar();
         if (LastChar == CHAR_AND) {  /// "&&" -> OP_BO_AND
-            return Token(OP_BO_AND, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+            return Token(OP_BO_AND, filename, startRow, startColumn, endRow, endColumn, ch2str(ThisChar, LastChar), 0);
         } else {                     /// SysY2020不支持位运算"&"。考虑在此报错，或者当作Otherwise情况交给Parse处理。此处后者
-            Token token(ThisChar, filename, startRow, startColumn, endRow, endColumn, std::to_string(ThisChar), 0);
+            Token token(ThisChar, filename, startRow, startColumn, endRow, endColumn, ch2str(ThisChar), 0);
         }
     }
 
@@ -167,43 +170,43 @@ Token Lex::getToken() {
         int ThisChar = LastChar;
         nextChar();
         if (LastChar == CHAR_OR) {  /// "||" -> OP_BO_OR
-            return Token(OP_BO_OR, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+            return Token(OP_BO_OR, filename, startRow, startColumn, endRow, endColumn, ch2str(ThisChar, LastChar), 0);
         } else {                    /// SysY2020不支持位运算"|"。考虑在此报错，或者当作Otherwise情况交给Parse处理。此处后者
-            return Token(ThisChar, filename, startRow, startColumn, endRow, endColumn, std::to_string(ThisChar), 0);
+            return Token(ThisChar, filename, startRow, startColumn, endRow, endColumn, ch2str(ThisChar), 0);
         }
     }
 
     /// "!="
     if (LastChar == CHAR_NOT) {
+        int ThisChar = LastChar;
         nextChar();
         if (LastChar == CHAR_EQ) {  /// "!=" -> OP_BO_NEQ
-            return Token(OP_BO_NEQ, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+            return Token(OP_BO_NEQ, filename, startRow, startColumn, endRow, endColumn, ch2str(ThisChar, LastChar), 0);
         } else {                    /// "!" -> OP_UO_NEG
-            return Token(OP_UO_NEG, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
+            return Token(OP_UO_NEG, filename, startRow, startColumn, endRow, endColumn, ch2str(ThisChar), 0);
         }
     }
 
-    switch (LastChar) {
-        case EOF:       /// end file
-            return Token(TOKEN_EOF, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
-        case CHAR_ADD:  /// "+" -> OP_BO_ADD
-            return Token(OP_BO_ADD, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
-        case CHAR_SUB:  /// "-" -> OP_BO_SUB
-            return Token(OP_BO_SUB, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
-        case CHAR_MUL:  /// "*" -> OP_BO_MUL
-            return Token(OP_BO_MUL, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
-        case CHAR_REM:  /// "%" -> OP_BO_REM
-            return Token(OP_BO_REM, filename, startRow, startColumn, endRow, endColumn, nullptr, 0);
-    }
-
-    /// otherwise, just return the character as its ascii value like (, ), [, ], {, }, #...
-    /// pay attention that there are some returns like this in /// "&&" and /// "||"
     int ThisChar = LastChar;
-
-    Token token(ThisChar, filename, startRow, startColumn, endRow, endColumn, std::to_string(ThisChar), 0);
     nextChar();
 
-    return Token(token);
+    switch (ThisChar) {
+        case EOF:       /// end file
+            return Token(TOKEN_EOF, filename, startRow, startColumn, endRow, endColumn, ch2str(ThisChar), 0);
+        case CHAR_ADD:  /// "+" -> OP_BO_ADD
+            return Token(OP_BO_ADD, filename, startRow, startColumn, endRow, endColumn, ch2str(ThisChar), 0);
+        case CHAR_SUB:  /// "-" -> OP_BO_SUB
+            return Token(OP_BO_SUB, filename, startRow, startColumn, endRow, endColumn, ch2str(ThisChar), 0);
+        case CHAR_MUL:  /// "*" -> OP_BO_MUL
+            return Token(OP_BO_MUL, filename, startRow, startColumn, endRow, endColumn, ch2str(ThisChar), 0);
+        case CHAR_REM:  /// "%" -> OP_BO_REM
+            return Token(OP_BO_REM, filename, startRow, startColumn, endRow, endColumn, ch2str(ThisChar), 0);
+        default:
+            /// otherwise, just return the character as its ascii value like (, ), [, ], {, }, #...
+            /// pay attention that there are some returns like this in /// "&&" and /// "||"
+            return Token(ThisChar, filename, startRow, startColumn, endRow, endColumn, ch2str(ThisChar), 0);
+    }
+
 }
 
 void Lex::nextLine() {

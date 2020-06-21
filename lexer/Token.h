@@ -29,12 +29,19 @@ private:
 
 public:
     Token(int type, char *filename, int startRow, int startColumn, int endRow, int endColumn,
-          std::string IdentifierStr, int NumVal) :
+          const std::string& IdentifierStr, int NumVal) :
             type(type), filename(filename), startRow(startRow), startColumn(startColumn), endRow(endRow),
-            endColumn(endColumn), IdentifierStr(std::move(IdentifierStr)), NumVal(NumVal) {};
+            endColumn(endColumn), IdentifierStr(IdentifierStr), NumVal(NumVal) {
+//        std::cout << IdentifierStr << std::endl;
+    };
 
     Token(const Token &token) {
-        memcpy(filename, token.filename, strlen(token.filename));
+//        memcpy(filename, token.filename, strlen(token.filename));
+        if (token.filename != NULL) {
+            filename = (char *) malloc((strlen(token.filename) + 1) * sizeof(char));
+            strcpy_s(filename, strlen(token.filename) + 1, token.filename);
+        }
+
         IdentifierStr = token.IdentifierStr;
         type = token.type;
         endRow = token.endRow;
