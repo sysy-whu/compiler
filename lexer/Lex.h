@@ -1,10 +1,3 @@
-/********************************************
-* Lex.h                              *
-* Created by zj                             *
-* modified by lugf027 on 2020/6/19.            *
-* Github: https://github.com/lugf027        *
-*********************************************/
-
 #ifndef COMPILER_LEX_H
 #define COMPILER_LEX_H
 

@@ -1,10 +1,3 @@
-/********************************************
-* Stmt.h                              *
-* Created by zt on 2020/6/4
-* Modified by gyj on 2020/6/14
-* modified by lugf027 on 2020/6/20.            *
-*********************************************/
-
 #ifndef COMPILER_STMT_H
 #define COMPILER_STMT_H
 

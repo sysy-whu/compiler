@@ -1,9 +1,3 @@
-/********************************************
-* MyConstants.h                              *
-* Created by lugf027 on 2020/6/19.            *
-* Github: https://github.com/lugf027        *
-*********************************************/
-
 #ifndef COMPILER_MYCONSTANTS_H
 #define COMPILER_MYCONSTANTS_H
 

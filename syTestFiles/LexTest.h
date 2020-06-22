@@ -1,9 +1,3 @@
-/********************************************
-* LexTest.h                              *
-* Created by lugf027 on 2020/6/21.            *
-* Github: https://github.com/lugf027        *
-*********************************************/
-
 #ifndef COMPILER_LEXTEST_H
 #define COMPILER_LEXTEST_H
 

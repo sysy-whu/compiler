@@ -1,9 +1,3 @@
-/********************************************
-* Parse.h                              *
-* Created by gyj on 2020/6/5.
-* Modified by lugf027 on 2020/6/21.            *
-*********************************************/
-
 #ifndef COMPILER_PARSE_H
 #define COMPILER_PARSE_H
 

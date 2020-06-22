@@ -1,9 +1,3 @@
-/********************************************
-* Token.h                              *
-* Created by lugf027 on 2020/6/19.            *
-* Github: https://github.com/lugf027        *
-*********************************************/
-
 #ifndef COMPILER_TOKEN_H
 #define COMPILER_TOKEN_H
 

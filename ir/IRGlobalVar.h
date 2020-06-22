@@ -1,0 +1,10 @@
+#ifndef COMPILER_IRGLOBALVAR_H
+#define COMPILER_IRGLOBALVAR_H
+
+
+class IRGlobalVar {
+
+};
+
+
+#endif //COMPILER_IRGLOBALVAR_H

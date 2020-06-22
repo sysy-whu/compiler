@@ -1,10 +1,3 @@
-/********************************************
-* Lex.cpp                              *
-* Created by zj                             *
-* Created by lugf027 on 2020/6/19.            *
-* Github: https://github.com/lugf027        *
-*********************************************/
-
 #include <iostream>
 #include "Lex.h"
 #include "../util/Util.h"

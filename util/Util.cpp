@@ -1,9 +1,3 @@
-/********************************************
-* Util.cpp                              *
-* Created by lugf027 on 2020/6/19.            *
-* Github: https://github.com/lugf027        *
-*********************************************/
-
 #include "Util.h"
 #include <io.h>
 #include "Error.h"
