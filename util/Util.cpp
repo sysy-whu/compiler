@@ -20,8 +20,8 @@ int Util::handleParams(int argc, char **argv) {
         return PARAMS_WORD_WRONG;
     }
     if (argc == 6) {
-        if (*argv[5] == *PARAMS_O2) {
-            setIfO2(O2_TRUE);
+        if (*argv[5] == *PARAMS_O1) {
+            setIfO2(O1_TRUE);
         } else {
             Error::errorParam();
             return PARAMS_WORD_WRONG;

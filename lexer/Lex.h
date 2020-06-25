@@ -8,14 +8,12 @@ class Lex {
 private:
     static FILE *fp;
 
-    int endRow;
-    int startRow;
+    int row;
     int endColumn;
     int startColumn;
     char *filename;
 
-    std::string IdentifierStr; // Filled when meet tok_identifier
-//    int NumVal;                // Filled when meet tok_int_num
+    std::string str; // Filled when meet TOKEN_IDENTIFIER or TOKEN_NUMBER or TOKEN_STR
 
     int LastChar;
 
@@ -32,15 +30,16 @@ private:
         endColumn++;
     }
 
-    std::string ch2str(int ch){
-        IdentifierStr.push_back(ch);
-        return IdentifierStr;
+    std::string *ch2str(int ch){
+        str.push_back(ch);
+        return &str;
     }
 
-    std::string ch2str(int ch1, int ch2){
-        IdentifierStr.push_back(ch1);
-        IdentifierStr.push_back(ch2);
-        return IdentifierStr;
+    std::string *ch2str(int ch1, int ch2){
+        str.push_back(ch1);
+        str.push_back(ch2);
+        nextChar();
+        return &str;
     }
 
 public:

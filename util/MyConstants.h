@@ -12,12 +12,12 @@ static const int PARAMS_WORD_WRONG = 3;
 
 static const char *PARAMS_S = "-S";
 static const char *PARAMS_O = "-o";
-static const char *PARAMS_O2 = "-O2";
+static const char *PARAMS_O1 = "-O1";
 
-static const int O2_TRUE = 1;
-static const int O2_FALSE = 0;
+static const int O1_TRUE = 1;
+static const int O1_FALSE = 0;
 
-/// token
+/// token (token types)
 static const int TOKEN_EOF = -1;
 
 static const int TOKEN_INT = -2;
@@ -33,6 +33,7 @@ static const int TOKEN_RETURN = -10;
 
 static const int TOKEN_IDENTIFIER = -11;
 static const int TOKEN_NUMBER = -12;
+static const int TOKEN_STR = -13;
 
 /// keyword
 static const std::string KEYWORD_INT = "int";
@@ -53,6 +54,8 @@ static const char CHAR_SLASH = '/';
 static const char CHAR_STAR = '*';
 static const char CHAR_N_BACKEND_SLASH = '\n';
 static const char CHAR_R_BACKEND_SLASH = '\r';
+static const char CHAR_QUOTE_DOUBLE = '\"';
+static const char CHAR_QUOTE_SINGLE = '\'';
 
 static const char CHAR_GREATER = '>';
 static const char CHAR_LOWER = '<';
@@ -64,9 +67,10 @@ static const char CHAR_EQ = '=';
 static const char CHAR_ADD = '+';
 static const char CHAR_SUB = '-';
 static const char CHAR_MUL = '*';
-static const char CHAR_DIV = '/';
+//static const char CHAR_DIV = '/'; // CHAR_SLASH
 static const char CHAR_REM = '%';
 
+// (token types)
 static const char CHAR_COMMA = ',';
 static const char CHAR_SEPARATOR = ';';
 static const char CHAR_L_BRACE = '{';
@@ -77,7 +81,7 @@ static const char CHAR_L_PARENTHESIS = '(';
 static const char CHAR_R_PARENTHESIS = ')';
 
 
-/// some symbols for operation
+/// some symbols for operation  (token types)
 static const int OP_ASSIGN = -100;
 
 static const int OP_BO_ADD = -101;
@@ -96,18 +100,24 @@ static const int OP_BO_GTE = -112;
 static const int OP_BO_LTE = -113;
 
 static const int OP_UO_NOT = -114;
-static const int OP_UO_POS = -115;
-static const int OP_UO_NEG = -116;
+//static const int OP_UO_POS = -115;  // OP_BO_ADD
+//static const int OP_UO_NEG = -116;  // OP_BO_SUB
 
-/// data type
+// data type
 static const std::string TYPE_INT_STR = "int";
 static const std::string TYPE_VOID_STR = "void";
 
 static const int TYPE_INT = -1;
-static const int TYPE_VOID = -2;
-static const int TYPE_INT_ARRAY = -3;
+static const int TYPE_INT_STAR = -2;
+static const int TYPE_VOID = -3;
+static const int TYPE_STR = -4;
 
 static const int DATA_IS_CONSTANT = 1;
 static const int DATA_NOT_CONSTANT = 0;
+
+/// symbolTableType
+static const int SYMBOL_TABLE_EXTERN = -20;
+static const int SYMBOL_TABLE_GLOBAL = -21;
+static const int SYMBOL_TABLE_LOCAL = -22;
 
 #endif //COMPILER_MYCONSTANTS_H

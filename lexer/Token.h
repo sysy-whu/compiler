@@ -13,53 +13,60 @@ private:
     // 不是多个文件就不用
     char *filename{};
 
-    int endRow;
-    int startRow;
-    int endColumn;
-    int startColumn;
+    unsigned int row;
+    unsigned int endColumn;
+    unsigned int startColumn;
 
     std::string IdentifierStr;
     int NumVal;
 
 public:
-    Token(int type, char *filename, int startRow, int startColumn, int endRow, int endColumn,
-          const std::string& IdentifierStr, int NumVal) :
-            type(type), filename(filename), startRow(startRow), startColumn(startColumn), endRow(endRow),
-            endColumn(endColumn), IdentifierStr(IdentifierStr), NumVal(NumVal) {
-//        std::cout << IdentifierStr << std::endl;
+    Token(int type, char *filename, unsigned int row, unsigned int startColumn, unsigned int endColumn,
+          std::string *IdentifierStr, int NumVal) :
+            type(type), filename(filename), row(row), startColumn(startColumn), endColumn(endColumn),
+            IdentifierStr(*IdentifierStr), NumVal(NumVal) {
     };
 
     Token(const Token &token) {
-//        memcpy(filename, token.filename, strlen(token.filename));
-        if (token.filename != NULL) {
+        if (token.filename != nullptr) {
             filename = (char *) malloc((strlen(token.filename) + 1) * sizeof(char));
             strcpy_s(filename, strlen(token.filename) + 1, token.filename);
         }
-
         IdentifierStr = token.IdentifierStr;
         type = token.type;
-        endRow = token.endRow;
+        row = token.row;
         endColumn = token.endColumn;
-        startRow = token.startRow;
         startColumn = token.startColumn;
         NumVal = token.NumVal;
     };
 
-    int getType() { return type; }
+    [[nodiscard]] int getType() const {
+        return type;
+    }
 
-    char *getFilename() { return filename; }
+    [[nodiscard]] char *getFilename() const {
+        return filename;
+    }
 
-    int getEndRow() { return endRow; }
+    [[nodiscard]] unsigned int getRow() const {
+        return row;
+    }
 
-    int getStartRow() { return startRow; }
+    [[nodiscard]] unsigned int getEndColumn() const {
+        return endColumn;
+    }
 
-    int getEndColumn() { return endColumn; }
+    [[nodiscard]] unsigned int getStartColumn() const {
+        return startColumn;
+    }
 
-    int getStartColumn() { return startColumn; }
+    [[nodiscard]] const std::string &getIdentifierStr() const {
+        return IdentifierStr;
+    }
 
-    std::string getIdentifierStr() { return IdentifierStr; }
-
-    int getNumVal() { return NumVal; }
+    [[nodiscard]] int getNumVal() const {
+        return NumVal;
+    }
 };
 
 #endif //COMPILER_TOKEN_H

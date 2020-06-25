@@ -9,8 +9,8 @@
 #include "../lexer/Token.h"
 #include "../lexer/Lex.h"
 
-static void test(Lex lex){
-    std::cout << "type()" << "\t" << "sRow" << "\t" << "eRow" << "\t";
+static void test(Lex lex) {
+    std::cout << "type()" << "\t" << "row" << "\t";
     std::cout << "sCol " << "\t" << "eCol" << "\t" << "numVal" << "\t" << "identifierStr" << std::endl;
 
     std::vector<Token> tokens;
@@ -22,7 +22,7 @@ static void test(Lex lex){
     }
 
     for (Token token1: tokens) {
-        std::cout << token1.getType() << "\t" << token1.getStartRow() << "\t" << token1.getEndRow() << "\t";
+        std::cout << token1.getType() << "\t" << token1.getRow() << "\t";
         std::cout << token1.getStartColumn() << "\t" << token1.getEndColumn() << "\t" << token1.getNumVal() << "\t";
 
         if (!token1.getIdentifierStr().empty()) {

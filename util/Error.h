@@ -5,12 +5,13 @@
 #include <vector>
 #include "MyConstants.h"
 #include "../lexer/Token.h"
+//#include "../ast/Decl.h"
 
 class Error {
 private:
     static void printPos(Token token) {
         std::cout << "Position -> from " << token.getStartColumn() << " to " << token.getEndColumn() << " in line:"
-                  << token.getStartRow() << " with \"" << token.getIdentifierStr() << "\"" << std::endl;
+                  << token.getRow() << " with \"" << token.getIdentifierStr() << "\"" << std::endl;
         exit(-1);
     }
 
@@ -49,6 +50,10 @@ public:
         std::cout << msg << std::endl;
         printPos(token);
     }
+
+//    static void errorSemantic(Decl *decl) {
+//        std::cout << "Error semantic! " << std::endl;
+//    }
 };
 
 #endif //COMPILER_ERROR_H

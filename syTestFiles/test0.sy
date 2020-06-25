@@ -1,10 +1,13 @@
 /*  普普通通  */
 
-int a = 2;
+int a = 25;
 int acs = 3;
 const int bs = 5;
 
 void ops1() {
+    int astar[100] = {};
+    putf("%d: %d(%c), %d(%c)", a, astar[0], astar[0]+48, astar[1], astar[1]+48);
+
     int a = 0;
     int b = 1;
     int c = 2;
