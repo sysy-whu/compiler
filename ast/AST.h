@@ -439,11 +439,11 @@ public:
     BlockItem(ConstDecl *constDecl, VarDecl *varDecl, Stmt *stmt) :
             constDecl(constDecl), varDecl(varDecl), stmt(stmt) {};
 
-    VarDecl *getVarDecl() const {
+    [[nodiscard]] VarDecl *getVarDecl() const {
         return varDecl;
     }
 
-    ConstDecl *getConstDecl() const {
+    [[nodiscard]] ConstDecl *getConstDecl() const {
         return constDecl;
     }
 
