@@ -6,35 +6,47 @@
 #include "SourceLocation.h"
 
 /**
- * 声明 Decl -> ConstDecl | VarDecl
+ * 声明 Decl -> ConstDecl | VarDecl | FuncDef
  */
-class Decl {
+class Decl;
 
-};
+class VarDecl;
+
+class ConstDecl;
 
 /**
  * 表达式 Exp → AddExp 注：SysY 表达式是 int 型表达式
  */
 class Exp;
 
+/**
+ * 语句类 Stmt
+ */
 class Stmt;
 
 /**
- * 函数实参表 FuncRParams → Exp { ',' Exp }
+ * 函数实参表 FuncRParams → Exp { ',' Exp } | '"' ident '"' { ',' Exp }
  */
 class FuncRParams {
 private:
+    std::string strOut;
+
     std::vector<Exp *> *exps;
 
 public:
     /**
      * 函数实参表 FuncRParams
+     * @param strOut 字节流
      * @param exps 实参表
      */
-    explicit FuncRParams(std::vector<Exp *> *exps) : exps(exps) {}
+    FuncRParams(const char *strOut, std::vector<Exp *> *exps) : strOut(strOut), exps(exps) {}
 
     [[nodiscard]] std::vector<Exp *> *getExps() const {
         return exps;
+    }
+
+    const std::string &getStrOut() const {
+        return strOut;
     }
 };
 
@@ -407,24 +419,32 @@ public:
 };
 
 /**
- * 语句块项 BlockItem → Decl | Stmt
+ * 语句块项 BlockItem → VarDecl | ConstDecl | Stmt
  */
 class BlockItem {
 private:
-    Decl *decl;
+    VarDecl *varDecl;
+
+    ConstDecl *constDecl;
 
     Stmt *stmt;
 
 public:
     /**
      * 语句块项 BlockItem
-     * @param decl 声明 Decl
+     * @param constDecl
+     * @param varDecl
      * @param stmt 语句 Stmt
      */
-    BlockItem(Decl *decl, Stmt *stmt) : decl(decl), stmt(stmt) {};
+    BlockItem(ConstDecl *constDecl, VarDecl *varDecl, Stmt *stmt) :
+            constDecl(constDecl), varDecl(varDecl), stmt(stmt) {};
 
-    [[nodiscard]] Decl *getDecl() const {
-        return decl;
+    VarDecl *getVarDecl() const {
+        return varDecl;
+    }
+
+    ConstDecl *getConstDecl() const {
+        return constDecl;
     }
 
     [[nodiscard]] Stmt *getStmt() const {
@@ -582,7 +602,7 @@ public:
 /**
  * 函数定义 FuncDef → funcType Ident '(' [FuncFParams] ')' Block
  */
-class FuncDef : public Locs, public Decl {
+class FuncDef : public Locs {
 private:
     int funcType;
 
@@ -691,7 +711,7 @@ public:
 /**
  * 变量声明 VarDecl → BType VarDef { ',' VarDef } ';'
  */
-class VarDecl : public Decl {
+class VarDecl {
 private:
     int BType;
 
@@ -783,7 +803,7 @@ public:
 /**
  * 常量声明 ConstDecl -> 'const' BType ConstDef { ',' ConstDef } ';'
  */
-class ConstDecl : public Decl, public Locs {
+class ConstDecl : public Locs {
 private:
     int BType;
 
@@ -809,6 +829,32 @@ public:
 };
 
 /**
+ * 声明 Decl -> ConstDecl | VarDecl | FuncDef
+ */
+class Decl {
+private:
+    ConstDecl *constDecl;
+    VarDecl *varDecl;
+    FuncDef *funcDef;
+
+public:
+    Decl(ConstDecl *constDecl, VarDecl *varDecl, FuncDef *funcDef) :
+            constDecl(constDecl), varDecl(varDecl), funcDef(funcDef) {};
+
+    ConstDecl *getConstDecl() const {
+        return constDecl;
+    }
+
+    VarDecl *getVarDecl() const {
+        return varDecl;
+    }
+
+    FuncDef *getFuncDef() const {
+        return funcDef;
+    }
+};
+
+/**
  * 语法分析抽象语法树 AST -> {Decl}
  */
 class AST {
@@ -821,8 +867,6 @@ public:
      * @param decls 全局变量/函数
      */
     explicit AST(std::vector<Decl *> *decls) : decls(decls) {};
-
-    AST() {};
 
     [[nodiscard]] const std::vector<Decl *> *getDecls() const {
         return decls;

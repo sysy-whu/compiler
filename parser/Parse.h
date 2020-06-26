@@ -16,21 +16,19 @@ private:
 //    Lex lex;
     /// token流
     std::vector<Token> tokens;
+    /// AST
+    AST *ast;
 
     ///===--------------------------------------------------------------===///
     /// 变量定义
     ///===--------------------------------------------------------------===///
     ConstDecl *parseConstDecl();
-//    void parseConstDecl(ConstDecl constDecl);
-//    void parseConstDecl(Decl &decl);
 
     ConstDef *parseConstDef();
 
     ConstInitVal *parseConstInitVal();
 
     VarDecl *parseVarDecl();
-
-//    VarDecl *parseVarDecl(int varType, const char *ident);
 
     VarDef *parseVarDef();
 
@@ -40,8 +38,6 @@ private:
     /// 函数定义
     ///===--------------------------------------------------------------===///
     FuncDef *parseFuncDef();
-
-//    FuncDef *parseFuncDef(int funcType, const char *ident);
 
     FuncFParams *parseFuncFParams();
 
@@ -86,12 +82,15 @@ private:
     FuncRParams *parseFuncRParams();
 
 public:
+    /// 构造
     Parse();
 
     ///===--------------------------------------------------------------===///
     /// 根节点
     ///===--------------------------------------------------------------===///
-    void parseAST(AST &ast);
+    void parseAST();
+
+    AST getAST() { return *ast; }
 };
 
 #endif //COMPILER_PARSE_H

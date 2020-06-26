@@ -15,12 +15,14 @@ int main(int argc, char **argv) {
 
 //    Semantic semantic;
     Parse parse;
-    AST ast;
-    parse.parseAST(ast);
+    parse.parseAST();
 
-//    Lex lex;
-//    test(lex);
+    std::cout << parse.getAST().getDecls()->size() << std::endl;
+    Decl *decl = parse.getAST().getDecls()->at(0);
 
     std::cout << "exit,,," << std::endl;
+
+    //    Lex lex;
+    //    test(lex);
     return 0;
 }

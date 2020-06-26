@@ -39,7 +39,6 @@ public:
     explicit Locs(std::vector<SourceLocation *> *locs) : locs(locs) {};
 
     std::vector<SourceLocation *> *getLocs() { return locs; }
-
 };
 
 

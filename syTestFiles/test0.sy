@@ -5,7 +5,14 @@ int acs = 3;
 const int bs = 5;
 
 void ops1() {
+    /*if (!(a > 1)) {  // 文法不支持
+        a=a+1;
+    }*/
+
+    a = a+1;
+
     int astar[100] = {};
+    putf("%d", astar[1]+48);
     putf("%d: %d(%c), %d(%c)", a, astar[0], astar[0]+48, astar[1], astar[1]+48);
 
     int a = 0;
@@ -31,9 +38,6 @@ void ops1() {
     }
 
     if (!a > b) {
-        a=a+1;
-    }
-	if (!(a > b)) {
         a=a+1;
     }
     if (a > b && b > c) {
