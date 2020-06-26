@@ -1,114 +1,97 @@
 #ifndef COMPILER_PARSE_H
 #define COMPILER_PARSE_H
 
-#include <iostream>
-#include <vector>
-
-#include "../ast/Decl.h"
+#include "../ast/AST.h"
 #include "../lexer/Token.h"
 #include "../lexer/Lex.h"
-#include "../ast/Expr.h"
-#include "../ast/Stmt.h"
 
-/**
- * 语法分析器 -> 未测试！
- */
 class Parse {
 private:
+    ///===--------------------------------------------------------------===///
+    /// 成员变量
+    ///===--------------------------------------------------------------===///
     /// 游标
-    int step;
+    int step{};
     /// 词法分析器
-    Lex lex;
+//    Lex lex;
     /// token流
     std::vector<Token> tokens;
-    /// 要返回的AST
-    std::vector<Decl> decls;
 
-    ///===-----------------------------------------------------------------------------------===///
-    /// 内部启动入口
-    ///===-----------------------------------------------------------------------------------===///
+    ///===--------------------------------------------------------------===///
+    /// 变量定义
+    ///===--------------------------------------------------------------===///
+    ConstDecl *parseConstDecl();
+//    void parseConstDecl(ConstDecl constDecl);
+//    void parseConstDecl(Decl &decl);
 
-    void startParse();
+    ConstDef *parseConstDef();
 
-    Decl parseFuncOrVar();
+    ConstInitVal *parseConstInitVal();
 
-    ///===-----------------------------------------------------------------------------------===///
-    /// Function
-    ///===-----------------------------------------------------------------------------------===///
+    VarDecl *parseVarDecl();
 
-    FuncDef parseFunc();
+//    VarDecl *parseVarDecl(int varType, const char *ident);
 
-    FuncDef parseFunc(const std::string &ident, int retType, SourceLocation retTypeLoc, SourceLocation identLoc);
+    VarDef *parseVarDef();
 
-    FuncFParams parseFunFParams();
+    InitVal *parseInitVal();
 
-    FuncFParam parseFuncFParam();
+    ///===--------------------------------------------------------------===///
+    /// 函数定义
+    ///===--------------------------------------------------------------===///
+    FuncDef *parseFuncDef();
 
-    ///===-----------------------------------------------------------------------------------===///
-    /// Variable
-    ///===-----------------------------------------------------------------------------------===///
+//    FuncDef *parseFuncDef(int funcType, const char *ident);
 
-    VarDecl parseVarDecl();
+    FuncFParams *parseFuncFParams();
 
-    ConstantDecl parseConstantDecl();
+    FuncFParam *parseFuncFParam();
 
-    VarDecl parseVarDecl(const std::string &ident, SourceLocation typeLoc, SourceLocation firstIdentLoc);
+    ///===--------------------------------------------------------------===///
+    /// 语句
+    ///===--------------------------------------------------------------===///
+    Block *parseBlock();
 
-    std::vector<VarDef> parseVarDef(const std::string &firstIdent, SourceLocation firstIdentLoc);
+    BlockItem *parseBlockItem();
 
-    VarDef parseOneVarDef();
+    Stmt *parseStmt();
 
-    VarDef parseOneVarDef(const std::string &ident, SourceLocation identLoc);
+    ///===--------------------------------------------------------------===///
+    /// 表达式
+    ///===--------------------------------------------------------------===///
+    Exp *parseExp();
 
-    ///===-----------------------------------------------------------------------------------===///
-    /// Expression
-    ///===-----------------------------------------------------------------------------------===///
+    Cond *parseCond();
 
-    Expr parseExpr();
+    LVal *parseLVal();
 
-    AddExpr parseAddExpr();
+    PrimaryExp *parsePrimaryExp();
 
-    MulExpr parseMulExpr();
+    UnaryExp *parseUnaryExp();
 
-    UnaryExpr parseUnaryExpr();
+    MulExp *parseMulExp();
 
-    LValExpr parseLValExpr();
+    AddExp *parseAddExp();
 
-    NumberExpr parseNumberExpr();
+    RelExp *parseRelExp();
 
-    LOrExpr parseLOrExpr();
+    EqExp *parseEqExp();
 
-    LAndExpr parseLAndExpr();
+    LAndExp *parseLAndExp();
 
-    EqExpr parseEqExpr();
+    LOrExp *parseLOrExp();
 
-    RelExpr parseRelExpr();
+    ConstExp *parseConstExp();
 
-    ArrayInitListExpr parseArrayInitListExpr(int needSep);
-
-    CallExpr parseCallExpr();
-
-    FuncRParams parseFuncRParams();
-
-    ///===---------------------------------------------------------------------------------===///
-    /// Stmts
-    ///===---------------------------------------------------------------------------------===///
-    Stmt parseBlockStmts();
-
-    std::vector<Stmt> parseBlockItems();
-
-    Stmt parseOneStmt();
+    FuncRParams *parseFuncRParams();
 
 public:
     Parse();
 
-    /// 调用接口
-    std::vector<Decl> getDeclsAST() {
-        startParse();
-        return decls;
-    };
-
+    ///===--------------------------------------------------------------===///
+    /// 根节点
+    ///===--------------------------------------------------------------===///
+    void parseAST(AST &ast);
 };
-
 
 #endif //COMPILER_PARSE_H

@@ -17,6 +17,8 @@ class Decl {
  */
 class Exp;
 
+class Stmt;
+
 /**
  * 函数实参表 FuncRParams → Exp { ',' Exp }
  */
@@ -405,70 +407,6 @@ public:
 };
 
 /**
- * 语句 Stmt → LVal '=' Exp ';'
- *          | [Exp] ';'
- *          | Block
- *          | 'if' '( Cond ')' Stmt [ 'else' Stmt ]
- *          | 'while' '(' Cond ')' Stmt
- *          | 'break' ';'
- *          | 'continue' ';'
- *          | 'return' [Exp] ';'
- */
-class Stmt : public Locs {
-private:
-    int stmtType;
-
-    LVal *lVal;
-
-    Exp *exp;
-
-    Cond *cond;
-
-    Stmt *stmtBrBody;
-
-    Stmt *elseBody;
-
-public:
-    /**
-     * 语句 Stmt
-     * @param stmtType
-     * @param lVal
-     * @param exp
-     * @param cond
-     * @param stmtBrBody
-     * @param stmtBody
-     */
-    Stmt(int stmtType, LVal *lVal, Exp *exp, Cond *cond, Stmt *stmtBrBody, Stmt *elseBody,
-         std::vector<SourceLocation *> *sourLocs) :
-            stmtType(stmtType), lVal(lVal), exp(exp), cond(cond), stmtBrBody(stmtBrBody), elseBody(elseBody),
-            Locs(sourLocs) {};
-
-    [[nodiscard]] int getStmtType() const {
-        return stmtType;
-    }
-
-    [[nodiscard]] LVal *getLVal() const {
-        return lVal;
-    }
-
-    [[nodiscard]] Exp *getExp() const {
-        return exp;
-    }
-
-    [[nodiscard]] Cond *getCond() const {
-        return cond;
-    }
-
-    [[nodiscard]] Stmt *getStmtBrBody() const {
-        return stmtBrBody;
-    }
-
-    [[nodiscard]] Stmt *getElseBody() const {
-        return elseBody;
-    }
-};
-
-/**
  * 语句块项 BlockItem → Decl | Stmt
  */
 class BlockItem {
@@ -512,6 +450,78 @@ public:
 
     [[nodiscard]] const std::vector<BlockItem *> *getBlockItems() const {
         return blockItems;
+    }
+};
+
+/**
+ * 语句 Stmt → LVal '=' Exp ';'
+ *          | [Exp] ';'
+ *          | Block
+ *          | 'if' '( Cond ')' Stmt [ 'else' Stmt ]
+ *          | 'while' '(' Cond ')' Stmt
+ *          | 'break' ';'
+ *          | 'continue' ';'
+ *          | 'return' [Exp] ';'
+ */
+class Stmt : public Locs {
+private:
+    int stmtType;
+
+    LVal *lVal;
+
+    Exp *exp;
+
+    Block *block;
+
+    Cond *cond;
+
+    Stmt *stmtBrBody;
+
+    Stmt *elseBody;
+
+public:
+    /**
+     * 语句 Stmt
+     * @param stmtType
+     * @param lVal
+     * @param block
+     * @param exp
+     * @param cond
+     * @param stmtBrBody
+     * @param stmtBody
+     */
+    Stmt(int stmtType, LVal *lVal, Exp *exp, Block *block, Cond *cond, Stmt *stmtBrBody, Stmt *elseBody,
+         std::vector<SourceLocation *> *sourLocs) :
+            stmtType(stmtType), lVal(lVal), exp(exp), block(block), cond(cond), stmtBrBody(stmtBrBody),
+            elseBody(elseBody),
+            Locs(sourLocs) {};
+
+    Block *getBlock() const {
+        return block;
+    }
+
+    [[nodiscard]] int getStmtType() const {
+        return stmtType;
+    }
+
+    [[nodiscard]] LVal *getLVal() const {
+        return lVal;
+    }
+
+    [[nodiscard]] Exp *getExp() const {
+        return exp;
+    }
+
+    [[nodiscard]] Cond *getCond() const {
+        return cond;
+    }
+
+    [[nodiscard]] Stmt *getStmtBrBody() const {
+        return stmtBrBody;
+    }
+
+    [[nodiscard]] Stmt *getElseBody() const {
+        return elseBody;
     }
 };
 
@@ -572,7 +582,7 @@ public:
 /**
  * 函数定义 FuncDef → funcType Ident '(' [FuncFParams] ')' Block
  */
-class FuncDef : public Locs, Decl {
+class FuncDef : public Locs, public Decl {
 private:
     int funcType;
 
@@ -773,7 +783,7 @@ public:
 /**
  * 常量声明 ConstDecl -> 'const' BType ConstDef { ',' ConstDef } ';'
  */
-class ConstDecl : public Decl {
+class ConstDecl : public Decl, public Locs {
 private:
     int BType;
 
@@ -784,8 +794,10 @@ public:
      * 常量声明 ConstDecl构造函数
      * @param BType 常量基本数据类型
      * @param constDefs 常量定义，可为多个
+     * @param sourLocs _0: constLoc; _1: typeLoc
      */
-    ConstDecl(int BType, std::vector<ConstDef *> *constDefs) : BType(BType), constDefs(constDefs) {};
+    ConstDecl(int BType, std::vector<ConstDef *> *constDefs, std::vector<SourceLocation *> *sourLocs) :
+            BType(BType), constDefs(constDefs), Locs(sourLocs) {};
 
     [[nodiscard]] int getBType() const {
         return BType;
@@ -809,6 +821,8 @@ public:
      * @param decls 全局变量/函数
      */
     explicit AST(std::vector<Decl *> *decls) : decls(decls) {};
+
+    AST() {};
 
     [[nodiscard]] const std::vector<Decl *> *getDecls() const {
         return decls;

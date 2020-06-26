@@ -115,9 +115,21 @@ static const int TYPE_STR = -4;
 static const int DATA_IS_CONSTANT = 1;
 static const int DATA_NOT_CONSTANT = 0;
 
-/// symbolTableType
+// symbolTableType
 static const int SYMBOL_TABLE_EXTERN = -20;
 static const int SYMBOL_TABLE_GLOBAL = -21;
 static const int SYMBOL_TABLE_LOCAL = -22;
+
+// Stmt type
+static const int STMT_LVAL_ASSIGN = -31;
+static const int STMT_EXP = -31;
+static const int STMT_EXP_BLANK = -31;
+static const int STMT_BLOCK = -31;
+static const int STMT_IF = -31;
+static const int STMT_WHILE = -31;
+static const int STMT_BREAK = -31;
+static const int STMT_CONTINUE = -31;
+static const int STMT_RETURN = -31;
+
 
 #endif //COMPILER_MYCONSTANTS_H

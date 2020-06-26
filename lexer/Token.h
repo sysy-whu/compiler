@@ -27,17 +27,17 @@ public:
             IdentifierStr(*IdentifierStr), NumVal(NumVal) {
     };
 
-    Token(const Token &token) {
-        if (token.filename != nullptr) {
-            filename = (char *) malloc((strlen(token.filename) + 1) * sizeof(char));
-            strcpy_s(filename, strlen(token.filename) + 1, token.filename);
+    Token(Token *token) {
+        if ((*token).filename != nullptr) {
+            filename = (char *) malloc((strlen((*token).filename) + 1) * sizeof(char));
+            strcpy_s(filename, strlen((*token).filename) + 1, (*token).filename);
         }
-        IdentifierStr = token.IdentifierStr;
-        type = token.type;
-        row = token.row;
-        endColumn = token.endColumn;
-        startColumn = token.startColumn;
-        NumVal = token.NumVal;
+        IdentifierStr = (*token).IdentifierStr;
+        type = (*token).type;
+        row = (*token).row;
+        endColumn = (*token).endColumn;
+        startColumn = (*token).startColumn;
+        NumVal = (*token).NumVal;
     };
 
     [[nodiscard]] int getType() const {
