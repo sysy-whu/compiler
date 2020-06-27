@@ -62,8 +62,8 @@ void Parse::parseAST() {
 
     ast = new AST(decls);
 
-    std::cout << &this->ast << std::endl;
-    std::cout << this->ast->getDecls()->size() << std::endl;
+//    std::cout << &this->ast << std::endl;
+//    std::cout << this->ast->getDecls()->size() << std::endl;
 }
 
 /**

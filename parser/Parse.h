@@ -90,7 +90,7 @@ public:
     ///===--------------------------------------------------------------===///
     void parseAST();
 
-    AST getAST() { return *ast; }
+    AST *getAST() { return ast; }
 };
 
 #endif //COMPILER_PARSE_H

@@ -135,7 +135,7 @@ public:
      * IRTree ir根节点
      * @param irGlobals 全局变量/函数列表
      */
-    IRTree(std::vector<IRGlobal *> *irGlobals): irGlobals(irGlobals){};
+    explicit IRTree(std::vector<IRGlobal *> *irGlobals): irGlobals(irGlobals){};
 
     [[nodiscard]] std::vector<IRGlobal *> *getIrGlobals() const {
         return irGlobals;

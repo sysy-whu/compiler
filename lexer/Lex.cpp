@@ -9,7 +9,7 @@ Lex::Lex() {
     filename = (char *) malloc(sizeof(char) * strlen(Util::getInputUrl()));
     strcpy(filename, Util::getInputUrl());
 
-    std::cout << "filename:" << filename << std::endl;
+    std::cout << "source filename:" << filename << std::endl;
     fopen_s(&fp, filename, "r");
     if (!fp) {
         Error::errorOpenFile(filename);
