@@ -35,12 +35,12 @@ void Semantic::startSemantic() {
     for (Decl *decl:*(ast->getDecls())) {
         if (decl->getConstDecl() != nullptr) {
             for (ConstDef *constDef: *decl->getConstDecl()->getConstDefs()) {
-                if (constDef->getConstExps() == nullptr) {  // 常量变量
-                    ConstVar *constVar = semanticConstVar(constDef, decl->getVarDecl()->getBType());
+                if (constDef->getConstExps()->empty()) {  // 常量变量
+                    ConstVar *constVar = semanticConstVar(constDef, decl->getConstDecl()->getBType());
                     auto *symbol = new Symbol(nullptr, nullptr, constVar, nullptr, nullptr);
                     symbolsGlobal->emplace_back(symbol);
                 } else {  // 常量数组
-                    ConstVarArray *constVarArray = semanticConstVarArray(constDef, decl->getVarDecl()->getBType());
+                    ConstVarArray *constVarArray = semanticConstVarArray(constDef, decl->getConstDecl()->getBType());
                     auto *symbol = new Symbol(nullptr, nullptr, nullptr, constVarArray, nullptr);
                     symbolsGlobal->emplace_back(symbol);
                 }
@@ -48,11 +48,11 @@ void Semantic::startSemantic() {
         } else if (decl->getVarDecl() != nullptr) {
             for (VarDef *varDef: *decl->getVarDecl()->getVarDefs()) {
                 if (varDef->getConstExps() == nullptr) {
-                    Var *var = semanticVar(varDef, decl->getConstDecl()->getBType());
+                    Var *var = semanticVar(varDef, decl->getVarDecl()->getBType());
                     auto *symbol = new Symbol(var, nullptr, nullptr, nullptr, nullptr);
                     symbolsGlobal->emplace_back(symbol);
                 } else {
-                    VarArray *varArray = semanticVarArray(varDef, decl->getConstDecl()->getBType());
+                    VarArray *varArray = semanticVarArray(varDef, decl->getVarDecl()->getBType());
                     auto *symbol = new Symbol(nullptr, varArray, nullptr, nullptr, nullptr);
                     symbolsGlobal->emplace_back(symbol);
                 }
@@ -133,11 +133,11 @@ int Semantic::semanticBlockItem(BlockItem *blockItem) {
 ///===-----------------------------------------------------------------------===///
 std::vector<int> *Semantic::calConstArrayInitVals(ConstInitVal *constInitVal, std::vector<int> *subs) {
     auto *valuesRet = new std::vector<int>();
+    int len = 1;
+    for (int i : *subs) {
+        len *= i;
+    }
     if (constInitVal->getConstInitVals()->empty()) {  // {}
-        int len = 1;
-        for (int i : *subs) {
-            len *= i;
-        }
         for (int i = 0; i < len; i++) {
             valuesRet->push_back(0);
         }
@@ -162,6 +162,13 @@ std::vector<int> *Semantic::calConstArrayInitVals(ConstInitVal *constInitVal, st
                 }
             }
         }
+    }
+    if (valuesRet->size() < len) {
+        for (int i = 0; i < len - valuesRet->size(); i++) {
+            valuesRet->push_back(0);
+        }
+    } else if (valuesRet->size() > len) {
+        Error::errorSim("ConstArray len error");
     }
     return valuesRet;
 }
@@ -257,7 +264,7 @@ int Semantic::calPrimaryExp(PrimaryExp *primaryExp) {
 
 int Semantic::calLVal(LVal *lVal) {
     if (lVal->getExps()->empty()) {  // 符号表找常量
-        for (int i = symbolTables->size(); i > 1; i--) {
+        for (int i = symbolTables->size() - 1; i > 0; i--) {
             for (Symbol *symbol:*symbolTables->at(i)->getSymbols()) {
                 if (symbol->getConstVarInner() != nullptr &&
                     symbol->getConstVarInner()->getIdent() == lVal->getIdent())
@@ -270,7 +277,7 @@ int Semantic::calLVal(LVal *lVal) {
         for (Exp *exp:*lVal->getExps()) {
             subs->push_back(calAddExp(exp->getAddExp()));
         }
-        for (int i = symbolTables->size(); i > 1; i--) {
+        for (int i = symbolTables->size() - 1; i > 0; i--) {
             for (Symbol *symbol:*symbolTables->at(i)->getSymbols()) {
                 if (symbol->getConstVarArrayInner() != nullptr &&
                     symbol->getConstVarArrayInner()->getIdent() == lVal->getIdent()) {
@@ -281,7 +288,7 @@ int Semantic::calLVal(LVal *lVal) {
                             for (int k = j + 1; k < subs->size(); k++) {
                                 subs_subs_len *= symbol->getConstVarArrayInner()->getSubs()->at(k);
                             }
-                            pos += subs->at(0) * subs_subs_len;
+                            pos += subs->at(j) * subs_subs_len;
                         }
                         return symbol->getConstVarArrayInner()->getValue()->at(pos);
                     } else {

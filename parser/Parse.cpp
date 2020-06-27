@@ -114,11 +114,12 @@ ConstDef *Parse::parseConstDef() {
         auto *identLoc = new SourceLocation(tokens.at(step).getRow(), tokens.at(step).getStartColumn());
         locs->push_back(identLoc);
         ident = tokens.at(step).getIdentifierStr();
+        step++;  // eat ident
     } else {
         Error::errorParse("Identifier Expected", tokens.at(step));
     }
 
-    while (tokens.at(++step).getType() == CHAR_L_BRACKET) {
+    while (tokens.at(step).getType() == CHAR_L_BRACKET) {
         auto *lLoc = new SourceLocation(tokens.at(step).getRow(), tokens.at(step).getStartColumn());
         locs->push_back(lLoc);
 
@@ -166,6 +167,7 @@ ConstInitVal *Parse::parseConstInitVal() {
         if (tokens.at(step).getType() == CHAR_R_BRACE) {  // {}
             auto *rBraceLoc = new SourceLocation(tokens.at(step).getRow(), tokens.at(step).getStartColumn());
             locs->push_back(rBraceLoc);
+            step++;  // eat '}'
         } else {
             ConstInitVal *constInitValFirst = parseConstInitVal();
             constInitValsInner->push_back(constInitValFirst);
@@ -179,6 +181,7 @@ ConstInitVal *Parse::parseConstInitVal() {
             if (tokens.at(step).getType() == CHAR_R_BRACE) {
                 auto *rBraceLoc = new SourceLocation(tokens.at(step).getRow(), tokens.at(step).getStartColumn());
                 locs->push_back(rBraceLoc);
+                step++;  // eat '}'
             } else {
                 Error::errorParse("'}' or ',' Expected!", tokens.at(step));
             }
@@ -234,8 +237,12 @@ VarDef *Parse::parseVarDef() {
     auto *locs = new std::vector<SourceLocation *>();
 
     if (tokens.at(step).getType() == TOKEN_IDENTIFIER) {
-        ident = tokens.at(step).getIdentifierStr();\
-        step++;
+        auto *identLoc = new SourceLocation(tokens.at(step).getRow(), tokens.at(step).getStartColumn());
+        locs->push_back(identLoc);
+        ident = tokens.at(step).getIdentifierStr();
+        step++;  // eat ident
+    } else {
+        Error::errorParse("Identifier Expected", tokens.at(step));
     }
 
     while (tokens.at(step).getType() == CHAR_L_BRACKET) {
@@ -250,6 +257,8 @@ VarDef *Parse::parseVarDef() {
             auto *rBracketLoc = new SourceLocation(tokens.at(step).getRow(), tokens.at(step).getStartColumn());
             locs->emplace_back(rBracketLoc);
             step++;  // eat ']'
+        } else {
+            Error::errorParse("']' Expected", tokens.at(step));
         }
     }
 
@@ -258,6 +267,8 @@ VarDef *Parse::parseVarDef() {
         locs->emplace_back(assignLoc);
         step++;  // eat '['
         initValInner = parseInitVal();
+    } else {
+        Error::errorParse("'=' or '[' Expected", tokens.at(step));
     }
 
     auto *varDef = new VarDef(ident.c_str(), constExps, initValInner, locs);
