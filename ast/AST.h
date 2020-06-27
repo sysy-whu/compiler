@@ -45,7 +45,7 @@ public:
         return exps;
     }
 
-    const std::string &getStrOut() const {
+    [[nodiscard]] const std::string &getStrOut() const {
         return strOut;
     }
 };
@@ -161,6 +161,10 @@ public:
 
     [[nodiscard]] UnaryExp *getUnaryExp() const {
         return unaryExp;
+    }
+
+    [[nodiscard]] int getOpType() const {
+        return opType;
     }
 };
 
@@ -516,7 +520,7 @@ public:
             elseBody(elseBody),
             Locs(sourLocs) {};
 
-    Block *getBlock() const {
+    [[nodiscard]] Block *getBlock() const {
         return block;
     }
 
@@ -637,7 +641,7 @@ public:
         return funcFParams;
     }
 
-    [[nodiscard]] const Block *getBlock() const {
+    [[nodiscard]] Block *getBlock() const {
         return block;
     }
 };
@@ -755,7 +759,7 @@ public:
                  std::vector<SourceLocation *> *sourLocs) :
             constExp(constExp), constInitVals(constInitVals), Locs(sourLocs) {};
 
-    [[nodiscard]] const ConstExp *getConstExp() const {
+    [[nodiscard]] ConstExp *getConstExp() const {
         return constExp;
     }
 
@@ -795,7 +799,7 @@ public:
         return constExps;
     }
 
-    [[nodiscard]] const ConstInitVal *getConstInitVal() const {
+    [[nodiscard]]  ConstInitVal *getConstInitVal() const {
         return constInitVal;
     }
 };
@@ -841,15 +845,15 @@ public:
     Decl(ConstDecl *constDecl, VarDecl *varDecl, FuncDef *funcDef) :
             constDecl(constDecl), varDecl(varDecl), funcDef(funcDef) {};
 
-    ConstDecl *getConstDecl() const {
+    [[nodiscard]] ConstDecl *getConstDecl() const {
         return constDecl;
     }
 
-    VarDecl *getVarDecl() const {
+    [[nodiscard]] VarDecl *getVarDecl() const {
         return varDecl;
     }
 
-    FuncDef *getFuncDef() const {
+    [[nodiscard]] FuncDef *getFuncDef() const {
         return funcDef;
     }
 };

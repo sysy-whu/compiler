@@ -5,7 +5,7 @@
 #include <vector>
 #include "MyConstants.h"
 #include "../lexer/Token.h"
-//#include "../ast/Decl.h"
+#include "../ast/AST.h"
 
 class Error {
 private:
@@ -16,7 +16,15 @@ private:
     }
 
 public:
-    static void errorParam() { std::cout << "invalid params input" << std::endl; }
+    static void errorSim(std::string msg) {
+        std::cout << msg << std::endl;
+        exit(-1);
+    }
+
+    static void errorParam() {
+        std::cout << "invalid params input" << std::endl;
+        exit(-1);
+    }
 
     static void errorInputFile() { std::cout << "can't access target input file" << std::endl; }
 
@@ -51,9 +59,9 @@ public:
         printPos(token);
     }
 
-//    static void errorSemantic(Decl *decl) {
-//        std::cout << "Error semantic! " << std::endl;
-//    }
+    static void errorSemanticDecl(std::string msg, Decl *decl) {
+        std::cout << msg << std::endl;
+    }
 };
 
 #endif //COMPILER_ERROR_H

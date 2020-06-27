@@ -13,7 +13,7 @@ class Symbol;
 class SymbolTable {
 private:
     /// 符号表类型 global, local, extern...
-    std::string type;
+    int type;
 
     std::vector<Symbol *> *symbols;
 
@@ -23,9 +23,9 @@ public:
      * @param type
      * @param symbol
      */
-    SymbolTable(const char *type, std::vector<Symbol *> *symbols) : type(type), symbols(symbols) {};
+    SymbolTable(int type, std::vector<Symbol *> *symbols) : type(type), symbols(symbols) {};
 
-    [[nodiscard]] std::string getType() const {
+    [[nodiscard]] int getType() const {
         return type;
     }
 
@@ -44,13 +44,13 @@ public:
 };
 
 /**
- * 变量符号VarSymbol
+ * 变量符号 Var
  */
-class VarSymbol {
+class Var {
 private:
     std::string ident;
-    /// 目前仅int
-    std::string varType;
+
+    int varType;
 
     int value, hasInited;
 
@@ -59,14 +59,14 @@ private:
 public:
     /**
      *
-     * @param ident
+     * @param ident TYPE_STR 时存格式串（相当于写死了）
      * @param varType
      * @param value
      * @param hasInited
      * @param row
      * @param column
      */
-    VarSymbol(const char *ident, const char *varType, int value, int hasInited, unsigned int row, unsigned int column) :
+    Var(const char *ident, int varType, int value, int hasInited, unsigned int row, unsigned int column) :
             ident(ident), varType(varType), value(value), hasInited(hasInited), row(row),
             column(column) {};
 
@@ -74,7 +74,7 @@ public:
         return ident;
     }
 
-    [[nodiscard]] std::string getVarType() const {
+    [[nodiscard]] int getVarType() const {
         return varType;
     }
 
@@ -83,7 +83,7 @@ public:
     }
 
     void setValue(int value_) {
-        VarSymbol::value = value_;
+        Var::value = value_;
     }
 
     [[nodiscard]] int getHasInited() const {
@@ -95,7 +95,7 @@ public:
      * @param hasInited
      */
     void setHasInited(int hasInited_) {
-        VarSymbol::hasInited = hasInited_;
+        Var::hasInited = hasInited_;
     }
 
     [[nodiscard]] unsigned int getRow() const {
@@ -109,13 +109,13 @@ public:
 };
 
 /**
- * 常量符号ConstVarSymbol
+ * 常量符号 ConstVar
  */
-class ConstVarSymbol {
+class ConstVar {
 private:
     std::string ident;
 
-    std::string varType;
+    int varType;
 
     int value;
 
@@ -130,14 +130,14 @@ public:
      * @param row
      * @param column
      */
-    ConstVarSymbol(const char *ident, const char *varType, int value, unsigned int row, unsigned int column) :
+    ConstVar(const char *ident, int varType, int value, unsigned int row, unsigned int column) :
             ident(ident), varType(varType), value(value), row(row), column(column) {};
 
     [[nodiscard]] std::string getIdent() const {
         return ident;
     }
 
-    [[nodiscard]] std::string getVarType() const {
+    [[nodiscard]] int getVarType() const {
         return varType;
     }
 
@@ -156,17 +156,17 @@ public:
 };
 
 /**
- * 数组变量符号VarArrSymbol
+ * 数组变量符号 VarArray
  */
-class VarArrSymbol {
+class VarArray {
 private:
     std::string ident;
 
-    std::string varType;
+    int varType;
     /// 目前仅int
-    std::vector<int> value;
+    std::vector<int> *value;
     /// 维度们
-    std::vector<int> subs;
+    std::vector<int> *subs;
 
     int hasInited;
 
@@ -182,37 +182,28 @@ public:
      * @param row
      * @param column
      */
-    VarArrSymbol(std::string ident, std::string varType, std::vector<int> value, std::vector<int> subs, int hasInited,
-                 unsigned int row, unsigned int column) :
-            ident(std::move(ident)), varType(std::move(varType)), value(std::move(value)), subs(std::move(subs)),
-            hasInited(hasInited), row(row), column(column) {};
+    VarArray(const char *ident, int varType, std::vector<int> *value, std::vector<int> *subs, int hasInited,
+             unsigned int row, unsigned int column) :
+            ident(ident), varType(varType), value(value), subs(subs), hasInited(hasInited), row(row), column(column) {};
 
     [[nodiscard]] const std::string &getIdent() const {
         return ident;
     }
 
-    [[nodiscard]] const std::string &getVarType() const {
+    [[nodiscard]] int getVarType() const {
         return varType;
     }
 
-    void setVarType(const std::string &varType_) {
-        VarArrSymbol::varType = varType_;
-    }
-
-    [[nodiscard]] const std::vector<int> &getValue() const {
+    [[nodiscard]] const std::vector<int> *getValue() const {
         return value;
     }
 
-    void setValue(const std::vector<int> &value_) {
-        VarArrSymbol::value = value_;
+    void setValue(std::vector<int> *value_) {
+        VarArray::value = value_;
     }
 
-    [[nodiscard]] const std::vector<int> &getSubs() const {
+    [[nodiscard]] const std::vector<int> *getSubs() const {
         return subs;
-    }
-
-    void setSubs(const std::vector<int> &subs_) {
-        VarArrSymbol::subs = subs_;
     }
 
     [[nodiscard]] int getHasInited() const {
@@ -220,39 +211,30 @@ public:
     }
 
     void setHasInited(int hasInited_) {
-        VarArrSymbol::hasInited = hasInited_;
+        VarArray::hasInited = hasInited_;
     }
 
     [[nodiscard]] unsigned int getRow() const {
         return row;
     }
 
-    void setRow(unsigned int row_) {
-        VarArrSymbol::row = row_;
-    }
-
     [[nodiscard]] unsigned int getColumn() const {
         return column;
     }
-
-    void setColumn(unsigned int column_) {
-        VarArrSymbol::column = column_;
-    }
-
 };
 
 /**
- * 数组常量符号ConstVarArrSymbol
+ * 数组常量符号 ConstVarArray
  */
-class ConstVarArrSymbol {
+class ConstVarArray {
 private:
     std::string ident;
 
-    std::string varType;
+    int varType;
     /// 目前仅int
-    std::vector<int> value;
+    std::vector<int> *value;
     /// 维度们
-    std::vector<int> subs;
+    std::vector<int> *subs;
 
     unsigned int row, column;
 public:
@@ -261,27 +243,27 @@ public:
      * @param ident
      * @param varType
      * @param value
-     * @param subs
+     * @param subs 数组参数，null 表一维; 变量不为null
      * @param row
      * @param column
      */
-    ConstVarArrSymbol(const char *ident, const char *varType, std::vector<int> value, std::vector<int> subs,
-                      unsigned int row, unsigned int column) :
-            ident(ident), varType(varType), value(std::move(value)), subs(std::move(subs)), row(row), column(column) {};
+    ConstVarArray(const char *ident, int varType, std::vector<int> *value, std::vector<int> *subs,
+                  unsigned int row, unsigned int column) :
+            ident(ident), varType(varType), value(value), subs(subs), row(row), column(column) {};
 
     [[nodiscard]] const std::string &getIdent() const {
         return ident;
     }
 
-    [[nodiscard]] const std::string &getVarType() const {
+    [[nodiscard]] int getVarType() const {
         return varType;
     }
 
-    [[nodiscard]] const std::vector<int> &getValue() const {
+    [[nodiscard]] const std::vector<int> *getValue() const {
         return value;
     }
 
-    [[nodiscard]] const std::vector<int> &getSubs() const {
+    [[nodiscard]] const std::vector<int> *getSubs() const {
         return subs;
     }
 
@@ -293,16 +275,19 @@ public:
         return column;
     }
 
+    void setValue(std::vector<int> *value_) {
+        ConstVarArray::value = value_;
+    }
 };
 
 /**
- * 函数符号FuncSymbol
+ * 函数符号 Func
  */
-class FuncSymbol {
+class Func {
 private:
     std::string ident;
 
-    std::string retType;
+    int retType;
 
     std::vector<Symbol *> *params;
 
@@ -318,8 +303,8 @@ public:
      * @param row
      * @param column
      */
-    FuncSymbol(const char *ident, const char *retType, std::vector<Symbol *> *params, unsigned int row,
-               unsigned int column) :
+    Func(const char *ident, int retType, std::vector<Symbol *> *params, unsigned int row,
+         unsigned int column) :
             ident(ident), retType(retType), params(params), row(row), column(column) {};
 
     [[nodiscard]] std::vector<Symbol *> *getParams() const {
@@ -330,7 +315,7 @@ public:
         return ident;
     }
 
-    [[nodiscard]] const std::string &getRetType() const {
+    [[nodiscard]] int getRetType() const {
         return retType;
     }
 
@@ -345,36 +330,35 @@ public:
 
 class Symbol {
 private:
-    VarSymbol *varSymbol;
-    VarArrSymbol *varArrSymbol;
-    ConstVarSymbol *constVarSymbol;
-    ConstVarArrSymbol *constVarArrSymbol;
-    FuncSymbol *funcSymbol;
+    Var *varInner;
+    VarArray *varArrayInner;
+    ConstVar *constVarInner;
+    ConstVarArray *constVarArrayInner;
+    Func *funcInner;
 
 public:
-    Symbol(VarSymbol *varSymbol1, VarArrSymbol *varArrSymbol1, ConstVarSymbol *constVarSymbol1,
-           ConstVarArrSymbol *constVarArrSymbol1, FuncSymbol *funcSymbol1) :
-            varArrSymbol(varArrSymbol1), varSymbol(varSymbol1), constVarArrSymbol(constVarArrSymbol1),
-            constVarSymbol(constVarSymbol1), funcSymbol(funcSymbol1) {};
+    Symbol(Var *var, VarArray *varArray, ConstVar *constVar, ConstVarArray *constVarArray, Func *func) :
+            varInner(var), varArrayInner(varArray), constVarInner(constVar), constVarArrayInner(constVarArray),
+            funcInner(func) {};
 
-    [[nodiscard]] VarSymbol *getVarSymbol() const {
-        return varSymbol;
+    [[nodiscard]] Var *getVarInner() const {
+        return varInner;
     }
 
-    [[nodiscard]] VarArrSymbol *getVarArrSymbol() const {
-        return varArrSymbol;
+    [[nodiscard]] VarArray *getVarArrayInner() const {
+        return varArrayInner;
     }
 
-    [[nodiscard]] ConstVarSymbol *getConstVarSymbol() const {
-        return constVarSymbol;
+    [[nodiscard]] ConstVar *getConstVarInner() const {
+        return constVarInner;
     }
 
-    [[nodiscard]] ConstVarArrSymbol *getConstVarArrSymbol() const {
-        return constVarArrSymbol;
+    [[nodiscard]] ConstVarArray *getConstVarArrayInner() const {
+        return constVarArrayInner;
     }
 
-    [[nodiscard]] FuncSymbol *getFuncSymbol() const {
-        return funcSymbol;
+    [[nodiscard]] Func *getFuncInner() const {
+        return funcInner;
     }
 };
 

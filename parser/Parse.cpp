@@ -158,12 +158,12 @@ ConstInitVal *Parse::parseConstInitVal() {
     auto *constInitValsInner = new std::vector<ConstInitVal *>();
     ConstExp *constExpInner = nullptr;
 
-    if (tokens.at(step).getType() == CHAR_L_BRACE) {
+    if (tokens.at(step).getType() == CHAR_L_BRACE) {  // constArray
         auto *lBraceLoc = new SourceLocation(tokens.at(step).getRow(), tokens.at(step).getStartColumn());
         locs->push_back(lBraceLoc);
         step++;  // eat '{'
 
-        if (tokens.at(step).getType() == CHAR_R_BRACE) {
+        if (tokens.at(step).getType() == CHAR_R_BRACE) {  // {}
             auto *rBraceLoc = new SourceLocation(tokens.at(step).getRow(), tokens.at(step).getStartColumn());
             locs->push_back(rBraceLoc);
         } else {
@@ -183,7 +183,7 @@ ConstInitVal *Parse::parseConstInitVal() {
                 Error::errorParse("'}' or ',' Expected!", tokens.at(step));
             }
         }
-    } else {
+    } else {  // const
         constExpInner = parseConstExp();
     }
 
@@ -767,7 +767,7 @@ PrimaryExp *Parse::parsePrimaryExp() {
  * @return
  */
 UnaryExp *Parse::parseUnaryExp() {
-    int opType = -1;
+    int opType = OP_NULL;
     std::string ident;
     UnaryExp *unaryExpInner = nullptr;
     PrimaryExp *primaryExpInner = nullptr;
@@ -820,7 +820,7 @@ UnaryExp *Parse::parseUnaryExp() {
 MulExp *Parse::parseMulExp() {
     MulExp *mulExpInner = nullptr;
     auto *locs = new std::vector<SourceLocation *>();
-    int opType = -1;
+    int opType = OP_NULL;
 
     UnaryExp *unaryExpInner = parseUnaryExp();
     if (tokens.at(step).getType() == OP_BO_MUL || tokens.at(step).getType() == OP_BO_DIV ||
@@ -843,7 +843,7 @@ MulExp *Parse::parseMulExp() {
 AddExp *Parse::parseAddExp() {
     AddExp *addExpInner = nullptr;
     auto *locs = new std::vector<SourceLocation *>();
-    int opType = -1;
+    int opType = OP_NULL;
 
     MulExp *mulExpInner = parseMulExp();
     if (tokens.at(step).getType() == OP_BO_ADD || tokens.at(step).getType() == OP_BO_SUB) {
@@ -865,7 +865,7 @@ AddExp *Parse::parseAddExp() {
 RelExp *Parse::parseRelExp() {
     RelExp *relExpInner = nullptr;
     auto *locs = new std::vector<SourceLocation *>();
-    int opType = -1;
+    int opType = OP_NULL;
 
     AddExp *addExpInner = parseAddExp();
     if (tokens.at(step).getType() == OP_BO_GT || tokens.at(step).getType() == OP_BO_GTE ||
@@ -888,7 +888,7 @@ RelExp *Parse::parseRelExp() {
 EqExp *Parse::parseEqExp() {
     EqExp *eqExpInner = nullptr;
     auto *locs = new std::vector<SourceLocation *>();
-    int opType = -1;
+    int opType = OP_NULL;
 
     RelExp *relExpInner = parseRelExp();
     if (tokens.at(step).getType() == OP_BO_EQ || tokens.at(step).getType() == OP_BO_NEQ) {

@@ -103,6 +103,8 @@ static const int OP_UO_NOT = -114;
 //static const int OP_UO_POS = -115;  // OP_BO_ADD
 //static const int OP_UO_NEG = -116;  // OP_BO_SUB
 
+static const int OP_NULL = -117;
+
 // data type
 static const std::string TYPE_INT_STR = "int";
 static const std::string TYPE_VOID_STR = "void";
