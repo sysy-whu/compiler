@@ -41,6 +41,11 @@ public:
         symbols->emplace_back(symbol);
     }
 
+    void free() {
+        delete &type;
+        std::vector<Symbol *>().swap(*symbols);
+    }
+
 };
 
 /**
@@ -51,8 +56,6 @@ private:
     std::string ident;
 
     int varType;
-
-    int value, hasInited;
 
     unsigned int row, column;
 
@@ -66,8 +69,8 @@ public:
      * @param row
      * @param column
      */
-    Var(const char *ident, int varType, int value, int hasInited, unsigned int row, unsigned int column) :
-            ident(ident), varType(varType), value(value), hasInited(hasInited), row(row),
+    Var(const char *ident, int varType, unsigned int row, unsigned int column) :
+            ident(ident), varType(varType), row(row),
             column(column) {};
 
     [[nodiscard]] std::string getIdent() const {
@@ -76,26 +79,6 @@ public:
 
     [[nodiscard]] int getVarType() const {
         return varType;
-    }
-
-    [[nodiscard]] int getValue() const {
-        return value;
-    }
-
-    void setValue(int value_) {
-        Var::value = value_;
-    }
-
-    [[nodiscard]] int getHasInited() const {
-        return hasInited;
-    }
-
-    /**
-     * 维护是否已经初始化
-     * @param hasInited
-     */
-    void setHasInited(int hasInited_) {
-        Var::hasInited = hasInited_;
     }
 
     [[nodiscard]] unsigned int getRow() const {
@@ -163,12 +146,9 @@ private:
     std::string ident;
 
     int varType;
-    /// 目前仅int
-    std::vector<int> *value;
+
     /// 维度们
     std::vector<int> *subs;
-
-    int hasInited;
 
     unsigned int row, column;
 public:
@@ -182,9 +162,8 @@ public:
      * @param row
      * @param column
      */
-    VarArray(const char *ident, int varType, std::vector<int> *value, std::vector<int> *subs, int hasInited,
-             unsigned int row, unsigned int column) :
-            ident(ident), varType(varType), value(value), subs(subs), hasInited(hasInited), row(row), column(column) {};
+    VarArray(const char *ident, int varType, std::vector<int> *subs, unsigned int row, unsigned int column) :
+            ident(ident), varType(varType), subs(subs), row(row), column(column) {};
 
     [[nodiscard]] const std::string &getIdent() const {
         return ident;
@@ -194,24 +173,8 @@ public:
         return varType;
     }
 
-    [[nodiscard]] const std::vector<int> *getValue() const {
-        return value;
-    }
-
-    void setValue(std::vector<int> *value_) {
-        VarArray::value = value_;
-    }
-
     [[nodiscard]] const std::vector<int> *getSubs() const {
         return subs;
-    }
-
-    [[nodiscard]] int getHasInited() const {
-        return hasInited;
-    }
-
-    void setHasInited(int hasInited_) {
-        VarArray::hasInited = hasInited_;
     }
 
     [[nodiscard]] unsigned int getRow() const {
@@ -273,10 +236,6 @@ public:
 
     [[nodiscard]] unsigned int getColumn() const {
         return column;
-    }
-
-    void setValue(std::vector<int> *value_) {
-        ConstVarArray::value = value_;
     }
 };
 
@@ -360,6 +319,15 @@ public:
     [[nodiscard]] Func *getFuncInner() const {
         return funcInner;
     }
+
+////     不是很明白如何遍历式释放内存，后需要加上
+//    void free() {
+//        delete varInner;
+//        delete varArrayInner;
+//        delete constVarInner;
+//        delete constVarArrayInner;
+//        delete funcInner;
+//    }
 };
 
 #endif //COMPILER_SIMBOLTABLE_H

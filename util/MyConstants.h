@@ -109,10 +109,11 @@ static const int OP_NULL = -117;
 static const std::string TYPE_INT_STR = "int";
 static const std::string TYPE_VOID_STR = "void";
 
-static const int TYPE_INT = -1;
-static const int TYPE_INT_STAR = -2;
+static const int TYPE_INT = -2;
+static const int TYPE_INT_STAR = -1;
 static const int TYPE_VOID = -3;
 static const int TYPE_STR = -4;
+static const int TYPE_INT_BOOL = -5;
 
 static const int DATA_IS_CONSTANT = 1;
 static const int DATA_NOT_CONSTANT = 0;
@@ -124,14 +125,20 @@ static const int SYMBOL_TABLE_LOCAL = -22;
 
 // Stmt type
 static const int STMT_LVAL_ASSIGN = -31;
-static const int STMT_EXP = -31;
-static const int STMT_EXP_BLANK = -31;
-static const int STMT_BLOCK = -31;
-static const int STMT_IF = -31;
-static const int STMT_WHILE = -31;
-static const int STMT_BREAK = -31;
-static const int STMT_CONTINUE = -31;
-static const int STMT_RETURN = -31;
+static const int STMT_EXP = -32;
+static const int STMT_EXP_BLANK = -33;
+static const int STMT_BLOCK = -34;
+static const int STMT_IF = -35;
+static const int STMT_WHILE = -36;
+static const int STMT_BREAK = -37;
+static const int STMT_CONTINUE = -38;
+static const int STMT_RETURN = -39;
 
+// symbolTableInit
+static const int INIT_FALSE = -1;
+static const int INIT_TRUE = -2;
+
+// Extern func
+static const std::string putFStr = "putf";
 
 #endif //COMPILER_MYCONSTANTS_H

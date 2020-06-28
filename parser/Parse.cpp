@@ -199,7 +199,7 @@ ConstInitVal *Parse::parseConstInitVal() {
  * @return
  */
 VarDecl *Parse::parseVarDecl() {
-    int varType = TOKEN_INT;
+    int varType = TYPE_INT;
     auto *varDefsInner = new std::vector<VarDef *>();
 
     if (tokens.at(step).getType() == TOKEN_INT) {
@@ -394,7 +394,7 @@ FuncFParams *Parse::parseFuncFParams() {
  * @return
  */
 FuncFParam *Parse::parseFuncFParam() {
-    int paramType = TOKEN_INT;
+    int paramType = TYPE_INT;
     std::string ident;
     auto *expsInner = new std::vector<Exp *>();
     auto *locs = new std::vector<SourceLocation *>();
@@ -408,14 +408,16 @@ FuncFParam *Parse::parseFuncFParam() {
     }
 
     if (tokens.at(step).getType() == TOKEN_IDENTIFIER) {
+        ident = tokens.at(step).getIdentifierStr();
         auto *identLoc = new SourceLocation(tokens.at(step).getRow(), tokens.at(step).getStartColumn());
         locs->emplace_back(identLoc);
         step++;
     } else {
-        Error::errorParse("Parameter type Expected!", tokens.at(step));
+        Error::errorParse("Parameter name Expected!", tokens.at(step));
     }
 
     if (tokens.at(step).getType() == CHAR_L_BRACKET) {  // array
+        paramType = TYPE_INT_STAR;
         auto *lBracketLocFirst = new SourceLocation(tokens.at(step).getRow(), tokens.at(step).getStartColumn());
         locs->emplace_back(lBracketLocFirst);
         step++;

@@ -679,7 +679,7 @@ public:
  * 变量定义 VarDef → Ident { '[' ConstExp ']' }
  *               | Ident { '[' ConstExp ']' } '=' InitVal
  */
-class VarDef : Locs {
+class VarDef : public Locs {
 private:
     std::string ident;
 
@@ -707,7 +707,7 @@ public:
         return constExps;
     }
 
-    [[nodiscard]] const InitVal *getInitVal() const {
+    [[nodiscard]] InitVal *getInitVal() const {
         return initVal;
     }
 };

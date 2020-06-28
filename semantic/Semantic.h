@@ -20,6 +20,7 @@ private:
     ///===-----------------------------------------------------------------------===///
     /// 分析 ast 得到符号表相关内容
     ///===-----------------------------------------------------------------------===///
+
     Var *semanticVar(VarDef *varDef, int varType);
 
     VarArray *semanticVarArray(VarDef *varDef, int varType);
@@ -34,16 +35,18 @@ private:
     /// Stmt 语句
     ///===-----------------------------------------------------------------------===///
 
-    int semanticStmt(Stmt *stmt);
+    void semanticStmt(Stmt *stmt, int funcRetType);
 
-    int semanticBlock(Block *block);
-
-    int semanticBlockItem(BlockItem *blockItem);
+    void semanticBlock(Block *block, int funcRetType, std::vector<Symbol *> *paramSymbols);
 
     ///===-----------------------------------------------------------------------===///
-    /// Expr 表达式
+    /// Expr 表达式 CalConst
+    /// @param one kind of Exp or initVal
+    /// @return const value of that Exp or initVal
     ///===-----------------------------------------------------------------------===///
+
     std::vector<int> *calConstArrayInitVals(ConstInitVal *constInitVal, std::vector<int> *subs);
+
     int calConstExp(ConstExp *constExp);
 
     int calAddExp(AddExp *addExp);
@@ -56,9 +59,37 @@ private:
 
     int calLVal(LVal *lVal);
 
-    int semanticAddExp(AddExp *addExp);
+    ///===-----------------------------------------------------------------------===///
+    /// Expr 表达式 Semantic
+    /// @param one kind of Exp
+    /// @return ret type of that Exp
+    ///===-----------------------------------------------------------------------===///
+
+    std::vector<int> *semanticVarArrayInitVals(InitVal *initVal, std::vector<int> *subs);
+
+    int semanticCondExp(Cond *cond);
 
     int semanticLOrExp(LOrExp *lOrExp);
+
+    int semanticLAndExp(LAndExp *lAndExp);
+
+    int semanticEqExp(EqExp *eqExp);
+
+    int semanticRelExp(RelExp *relExp);
+
+    int semanticAddExp(AddExp *addExp);
+
+    int semanticMulExp(MulExp *mulExp);
+
+    int semanticUnaryExp(UnaryExp *unaryExp);
+
+    int semanticPrimaryExp(PrimaryExp *primaryExp);
+
+    int semanticLVal(LVal *lVal);
+
+    void checkRParams(FuncRParams *funcRParams, Func *func);
+
+    void checkExps(std::vector<Exp *> *exps, const char *errMsg);
 
 public:
     Semantic();

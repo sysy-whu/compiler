@@ -49,11 +49,9 @@ public:
      * con_alloca_i32*     opd2(维数)       opd1;
      * global_i32*         opd2(维数)       opd1;
      * con_global_i32*     opd2(维数)       opd1;
-     * getPtr              opd2(维数索引)    opd1;
      *
      *     维数示例： [4 x [2 x i32]] (变量)
      *              i32* | [2 x i32]* (参数)
-     *     维数索引： [0][1][2]
      *
      * @param opd1
      * @param opd2
@@ -70,7 +68,10 @@ public:
      * @param opt 操作符类型
      *
      * opType(算术关系逻辑)  opd2(操作数)   opd3(操作数)        opd1;
-     * br(条件跳转)         opd1(条件)    opd2(opd1=1)       opd3;
+     * br(条件跳转)         opd1(条件)     opd2(opd1=1)       opd3;
+     * getPtr             opd2(维数索引)  opd3(数组)          opd1;
+     *
+     *     维数索引： [0][1][2]
      *
      * @Param line 行号
      * @param row  源代码位置行号

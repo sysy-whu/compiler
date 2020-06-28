@@ -4,6 +4,14 @@ int a = 25;
 int acs = 3;
 const int bs = 5;
 
+int aFunc(){
+    return (0+1);
+}
+
+int bFunc(int a, int b){
+    return a+b;
+}
+
 void ops1() {
     /*if (!(a > 1)) {  // 文法不支持
         a=a+1;
@@ -12,12 +20,34 @@ void ops1() {
     a = a+1;
 
     int astar[100] = {};
+    int abc[2][2] = {};
+
     putf("%d", astar[1]+48);
     putf("%d: %d(%c), %d(%c)", a, astar[0], astar[0]+48, astar[1], astar[1]+48);
+
+
 
     int a = 0;
     int b = 1;
     int c = 2;
+
+    bFunc(b, c);
+    //bFunc(b);
+
+    astar[0] = c;
+    abc[0][0] = b;
+    abc[0][0] = astar[5];
+    //abc[1] = b;
+    //b = astar;
+
+    b=aFunc();
+
+
+
+    while(a > b){
+        b = b+1;
+    }
+
     if (a == b) {
         a=a+1;
     }
@@ -49,4 +79,5 @@ void ops1() {
     if (!a >= b || b < c) {
         a=a+1;
     }
+   // return;
 }

@@ -1,8 +1,6 @@
 #include "Semantic.h"
 #include "../util/Error.h"
 
-int calConstExp(ConstExp *pExp);
-
 ///===-----------------------------------------------------------------------===///
 /// 构造方法
 ///===-----------------------------------------------------------------------===///
@@ -13,13 +11,6 @@ Semantic::Semantic() {
     std::cout << ast->getDecls()->size() << std::endl;
     symbolTables = new std::vector<SymbolTable *>();
 }
-
-
-///===-----------------------------------------------------------------------===///
-/// 内部解析 ast
-///===-----------------------------------------------------------------------===///
-
-
 
 ///===-----------------------------------------------------------------------===///
 /// 启动接口
@@ -47,7 +38,7 @@ void Semantic::startSemantic() {
             } //  end constDefs
         } else if (decl->getVarDecl() != nullptr) {
             for (VarDef *varDef: *decl->getVarDecl()->getVarDefs()) {
-                if (varDef->getConstExps() == nullptr) {
+                if (varDef->getConstExps()->empty()) {
                     Var *var = semanticVar(varDef, decl->getVarDecl()->getBType());
                     auto *symbol = new Symbol(var, nullptr, nullptr, nullptr, nullptr);
                     symbolsGlobal->emplace_back(symbol);
@@ -61,14 +52,6 @@ void Semantic::startSemantic() {
             Func *func = semanticFunc(decl->getFuncDef());
             auto *symbol = new Symbol(nullptr, nullptr, nullptr, nullptr, func);
             symbolsGlobal->emplace_back(symbol);
-
-            if (semanticBlock(decl->getFuncDef()->getBlock()) == 0) {
-                continue;
-            } else {
-                Error::errorSemanticDecl("Error Semantic Func", decl);
-            }
-//            SymbolTable *funcBlockSymbolTable = semanticBlock(decl->getFuncDef()->getBlock());
-//            symbolTables->emplace_back(funcBlockSymbolTable);
         } else {
             Error::errorSemanticDecl("Error Semantic", decl);
         }
@@ -80,11 +63,32 @@ void Semantic::startSemantic() {
 ///===-----------------------------------------------------------------------===///
 
 Var *Semantic::semanticVar(VarDef *varDef, int varType) {
-    return nullptr;
+//    int initState = varDef->getInitVal() == nullptr ? INIT_FALSE : INIT_TRUE;
+    if (varDef->getInitVal() != nullptr &&
+        semanticAddExp(varDef->getInitVal()->getExp()->getAddExp()) != varType) {
+        Error::errorSim("var init wrong when assign");
+        exit(-1);
+    }
+    Var *varRet = new Var(varDef->getIdent().c_str(), varType,
+                          varDef->getLocs()->at(0)->getLine(), varDef->getLocs()->at(0)->getCol());
+    return varRet;
 }
 
 VarArray *Semantic::semanticVarArray(VarDef *varDef, int varType) {
-    return nullptr;
+//    auto *initState = new std::vector<int>();
+    auto *subs = new std::vector<int>();
+    // 计算下标
+    for (ConstExp *constExp:*varDef->getConstExps()) {
+        subs->push_back(calConstExp(constExp));
+    }
+    // 核算初始值
+    if (varDef->getInitVal() != nullptr) {
+        semanticVarArrayInitVals(varDef->getInitVal(), subs);
+    }
+
+    auto *varArray = new VarArray(varDef->getIdent().c_str(), varType, subs,
+                                  varDef->getLocs()->at(0)->getLine(), varDef->getLocs()->at(0)->getCol());
+    return varArray;
 }
 
 ConstVar *Semantic::semanticConstVar(ConstDef *constDef, int constType) {
@@ -104,36 +108,148 @@ ConstVarArray *Semantic::semanticConstVarArray(ConstDef *constDef, int constType
 
     auto *constVarArray =
             new ConstVarArray(constDef->getIdent().c_str(), TYPE_INT, values, subs,
-                              constDef->getLocs()->at(0)->getCol(), constDef->getLocs()->at(0)->getLine());
+                              constDef->getLocs()->at(0)->getLine(), constDef->getLocs()->at(0)->getCol());
     return constVarArray;
 }
 
 Func *Semantic::semanticFunc(FuncDef *funcDef) {
-    return nullptr;
+    auto *params = new std::vector<Symbol *>();
+    // 处理函数部分，后续返回加入符号表
+    if (funcDef->getFuncFParams() != nullptr) {
+        for (FuncFParam *funcFParam:*funcDef->getFuncFParams()->getFuncFParams()) {
+            Symbol *symbol = nullptr;
+            if (funcFParam->getBType() == TYPE_INT) {  // 变量
+                auto *var = new Var(funcFParam->getIdent().c_str(), funcFParam->getBType(),
+                                    funcFParam->getLocs()->at(0)->getLine(), funcFParam->getLocs()->at(0)->getCol());
+                symbol = new Symbol(var, nullptr, nullptr, nullptr, nullptr);
+            } else if (funcFParam->getBType() == TYPE_INT_STAR) {  // 数组 （第一维为空）
+                auto *subs = new std::vector<int>();
+                for (Exp *exp: *funcFParam->getExps()) {
+                    subs->push_back(calAddExp(exp->getAddExp()));
+                }
+                auto *varArray =
+                        new VarArray(funcFParam->getIdent().c_str(), funcFParam->getBType(), subs,
+                                     funcFParam->getLocs()->at(0)->getLine(), funcFParam->getLocs()->at(0)->getCol());
+                symbol = new Symbol(nullptr, varArray, nullptr, nullptr, nullptr);
+            }
+            params->emplace_back(symbol);
+        }
+    }
+
+    // 对函数 Block 语义检查
+    semanticBlock(funcDef->getBlock(), funcDef->getFuncType(), params);
+
+    auto *func = new Func(funcDef->getIdent().c_str(), funcDef->getFuncType(), params,
+                          funcDef->getLocs()->at(0)->getLine(), funcDef->getLocs()->at(0)->getCol());
+    return func;
 }
 
 ///===-----------------------------------------------------------------------===///
 /// Stmt 语句
 ///===-----------------------------------------------------------------------===///
 
-int Semantic::semanticStmt(Stmt *stmt) {
-    return 0;
+void Semantic::semanticStmt(Stmt *stmt, int funcRetType) {
+    switch (stmt->getStmtType()) {
+        case STMT_EXP:
+            semanticAddExp(stmt->getExp()->getAddExp());
+            break;
+        case STMT_BLOCK:
+            semanticBlock(stmt->getBlock(), funcRetType, nullptr);
+            break;
+        case STMT_IF: {
+            semanticCondExp(stmt->getCond());
+            semanticStmt(stmt->getStmtBrBody(), funcRetType);
+            if (stmt->getElseBody() != nullptr)
+                semanticStmt(stmt->getElseBody(), funcRetType);
+            break;
+        }
+        case STMT_WHILE: {
+            semanticCondExp(stmt->getCond());
+            semanticStmt(stmt->getStmtBrBody(), funcRetType);
+            break;
+        }
+        case STMT_LVAL_ASSIGN: {
+            int lType = semanticLVal(stmt->getLVal());
+            int rType = semanticAddExp(stmt->getExp()->getAddExp());
+            if (lType != TYPE_INT || rType != TYPE_INT) {  // 好像 C 子集不能一次赋个数组
+                Error::errorSim("semanticStmt STMT_LVAL_ASSIGN");
+            }
+            break;
+        }
+        case STMT_RETURN: {
+            if (stmt->getExp() == nullptr) {
+                if (funcRetType != TYPE_VOID) {
+                    Error::errorSim("Error func ret type void");
+                }
+            } else {
+                int retType = semanticAddExp(stmt->getExp()->getAddExp());
+                if (retType != TYPE_INT || funcRetType != TYPE_INT) {
+                    Error::errorSim("Error func ret type int");
+                }
+            }
+            break;
+        }
+        case STMT_EXP_BLANK:
+        case STMT_CONTINUE:
+        case STMT_BREAK:
+            break;
+    }
 }
 
-int Semantic::semanticBlock(Block *block) {
-    return 0;
+void Semantic::semanticBlock(Block *block, int funcRetType, std::vector<Symbol *> *paramSymbols) {
+    auto *symbolsLocal = new std::vector<Symbol *>();
+    if (paramSymbols != nullptr)
+        symbolsLocal->insert(symbolsLocal->end(), paramSymbols->begin(), paramSymbols->end());
+    auto *symbolTableLocal = new SymbolTable(SYMBOL_TABLE_GLOBAL, symbolsLocal);
+    symbolTables->emplace_back(symbolTableLocal);
+
+    for (BlockItem *blockItem:*block->getBlockItems()) {
+        if (blockItem->getConstDecl() != nullptr) {
+            for (ConstDef *constDef: *blockItem->getConstDecl()->getConstDefs()) {
+                if (constDef->getConstExps()->empty()) {  // 常量变量
+                    ConstVar *constVar = semanticConstVar(constDef, blockItem->getConstDecl()->getBType());
+                    auto *symbol = new Symbol(nullptr, nullptr, constVar, nullptr, nullptr);
+                    symbolsLocal->emplace_back(symbol);
+                } else {  // 常量数组
+                    ConstVarArray *constVarArray = semanticConstVarArray(constDef,
+                                                                         blockItem->getConstDecl()->getBType());
+                    auto *symbol = new Symbol(nullptr, nullptr, nullptr, constVarArray, nullptr);
+                    symbolsLocal->emplace_back(symbol);
+                }
+            } //  end constDefs
+        } else if (blockItem->getVarDecl() != nullptr) {
+            for (VarDef *varDef: *blockItem->getVarDecl()->getVarDefs()) {
+                if (varDef->getConstExps()->empty()) {
+                    Var *var = semanticVar(varDef, blockItem->getVarDecl()->getBType());
+                    auto *symbol = new Symbol(var, nullptr, nullptr, nullptr, nullptr);
+                    symbolsLocal->emplace_back(symbol);
+                } else {
+                    VarArray *varArray = semanticVarArray(varDef, blockItem->getVarDecl()->getBType());
+                    auto *symbol = new Symbol(nullptr, varArray, nullptr, nullptr, nullptr);
+                    symbolsLocal->emplace_back(symbol);
+                }
+            }  // end varDefs
+        } else if (blockItem->getStmt() != nullptr) {
+            semanticStmt(blockItem->getStmt(), funcRetType);
+        }
+    }
+    // delete & free
+    symbolTables->pop_back();
+//    symbolTables->erase(symbolTables->cend(), symbolTables->cend());
+//    symbolTableLocal->free();
+//    std::vector<Symbol *>().swap(*symbolsLocal);
 }
 
-int Semantic::semanticBlockItem(BlockItem *blockItem) {
-    return 0;
-}
 
 ///===-----------------------------------------------------------------------===///
 /// Expr 表达式 CalConst
+/// @param one kind of Exp or initVal
+/// @return const value of that Exp or initVal
 ///===-----------------------------------------------------------------------===///
+
 std::vector<int> *Semantic::calConstArrayInitVals(ConstInitVal *constInitVal, std::vector<int> *subs) {
     auto *valuesRet = new std::vector<int>();
-    int len = 1;
+    int len = 1;  // 维度展开一维的长度
     for (int i : *subs) {
         len *= i;
     }
@@ -147,11 +263,11 @@ std::vector<int> *Semantic::calConstArrayInitVals(ConstInitVal *constInitVal, st
                 int valueInner = calConstExp(initValInner->getConstExp());
                 valuesRet->push_back(valueInner);
             } else {  // 数组嵌套
-                int sub_first_len = 1;
+                int sub_first_len = 1;  // 子维展开一维的长度
                 for (int i = 1; i < subs->size(); i++) {
                     sub_first_len *= subs->at(i);
                 }
-                if (valuesRet->size() % sub_first_len == 0) {
+                if (valuesRet->size() % sub_first_len == 0) {  // 保证嵌套子维前，已有长度为子维整数倍
                     int tmp = subs->at(0);  // 当前第一维度值
                     subs->erase(subs->begin());
                     std::vector<int> *subs_values_inner = calConstArrayInitVals(initValInner, subs);
@@ -159,11 +275,12 @@ std::vector<int> *Semantic::calConstArrayInitVals(ConstInitVal *constInitVal, st
                     valuesRet->insert(valuesRet->end(), subs_values_inner->begin(), subs_values_inner->end());  // 拼接
                 } else {
                     Error::errorSim("calConstArrayInitVals");
+                    exit(-1);
                 }
             }
         }
     }
-    if (valuesRet->size() < len) {
+    if (valuesRet->size() < len) {  // 长度不足补零
         for (int i = 0; i < len - valuesRet->size(); i++) {
             valuesRet->push_back(0);
         }
@@ -225,7 +342,7 @@ int Semantic::calMulExp(MulExp *mulExp) {
 }
 
 int Semantic::calUnaryExp(UnaryExp *unaryExp) {
-    int intRet = 0;
+    int intRet;
     if (unaryExp->getOpType() != OP_NULL) {
         switch (unaryExp->getOpType()) {
             case OP_BO_ADD:
@@ -264,7 +381,7 @@ int Semantic::calPrimaryExp(PrimaryExp *primaryExp) {
 
 int Semantic::calLVal(LVal *lVal) {
     if (lVal->getExps()->empty()) {  // 符号表找常量
-        for (int i = symbolTables->size() - 1; i > 0; i--) {
+        for (int i = (int) symbolTables->size() - 1; i > 0; i--) {
             for (Symbol *symbol:*symbolTables->at(i)->getSymbols()) {
                 if (symbol->getConstVarInner() != nullptr &&
                     symbol->getConstVarInner()->getIdent() == lVal->getIdent())
@@ -277,7 +394,7 @@ int Semantic::calLVal(LVal *lVal) {
         for (Exp *exp:*lVal->getExps()) {
             subs->push_back(calAddExp(exp->getAddExp()));
         }
-        for (int i = symbolTables->size() - 1; i > 0; i--) {
+        for (int i = (int) symbolTables->size() - 1; i > 0; i--) {
             for (Symbol *symbol:*symbolTables->at(i)->getSymbols()) {
                 if (symbol->getConstVarArrayInner() != nullptr &&
                     symbol->getConstVarArrayInner()->getIdent() == lVal->getIdent()) {
@@ -305,14 +422,292 @@ int Semantic::calLVal(LVal *lVal) {
 
 ///===-----------------------------------------------------------------------===///
 /// Expr 表达式 Semantic
+/// @param one kind of Exp
+/// @return ret type of that Exp
 ///===-----------------------------------------------------------------------===///
 
-int Semantic::semanticAddExp(AddExp *addExp) {
-    return 0;
+std::vector<int> *Semantic::semanticVarArrayInitVals(InitVal *initVal, std::vector<int> *subs) {
+    auto *valuesRet = new std::vector<int>();
+    int len = 1;  // 维度展开一维的长度
+    for (int i : *subs) {
+        len *= i;
+    }
+    // 所有值用零填充
+    if (initVal->getInitVals()->empty()) {  // {}
+        for (int i = 0; i < len; i++) {
+            valuesRet->push_back(0);
+        }
+    } else {
+        for (InitVal *initValInner : *initVal->getInitVals()) {
+            if (initValInner->getExp() != nullptr) {  // 实值
+                valuesRet->push_back(0);
+            } else {  // 数组嵌套
+                int sub_first_len = 1;  // 子维展开一维的长度
+                for (int i = 1; i < subs->size(); i++) {
+                    sub_first_len *= subs->at(i);
+                }
+                if (valuesRet->size() % sub_first_len == 0) {  // 保证嵌套子维前，已有长度为子维整数倍
+                    int tmp = subs->at(0);  // 当前第一维度值
+                    subs->erase(subs->begin());
+                    std::vector<int> *subs_values_inner = semanticVarArrayInitVals(initValInner, subs);
+                    subs->insert(subs->begin(), tmp);
+                    valuesRet->insert(valuesRet->end(), subs_values_inner->begin(), subs_values_inner->end());  // 拼接
+                } else {
+                    Error::errorSim("calConstArrayInitVals");
+                    exit(-1);
+                }
+            }
+        }
+    }
+    if (valuesRet->size() < len) {  // 长度不足补零
+        for (int i = 0; i < len - valuesRet->size(); i++) {
+            valuesRet->push_back(0);
+        }
+    } else if (valuesRet->size() > len) {
+        Error::errorSim("ConstArray len error");
+    }
+    return valuesRet;
+}
+
+int Semantic::semanticCondExp(Cond *cond) {
+    return semanticLOrExp(cond->getLOrExp());
 }
 
 int Semantic::semanticLOrExp(LOrExp *lOrExp) {
-    return 0;
+    if (lOrExp->getLOrExp() == nullptr) {
+        return semanticLAndExp(lOrExp->getLAndExp());
+    } else {
+        if (semanticLOrExp(lOrExp->getLOrExp()) == TYPE_INT_BOOL &&
+            semanticLAndExp(lOrExp->getLAndExp()) == TYPE_INT_BOOL) {
+            return TYPE_INT_BOOL;
+        } else {
+            Error::errorSim("semanticLOrExp");
+            exit(-1);
+        }
+    }
+}
+
+int Semantic::semanticLAndExp(LAndExp *lAndExp) {
+    if (lAndExp->getLAndExp() == nullptr) {
+        return semanticEqExp(lAndExp->getEqExp());
+    } else {
+        if (semanticLAndExp(lAndExp->getLAndExp()) == TYPE_INT_BOOL &&
+            semanticEqExp(lAndExp->getEqExp()) == TYPE_INT_BOOL) {
+            return TYPE_INT_BOOL;
+        } else {
+            Error::errorSim("semanticLAndExp");
+            exit(-1);
+        }
+    }
+}
+
+int Semantic::semanticEqExp(EqExp *eqExp) {
+    if (eqExp->getOpType() == OP_NULL) {
+        return semanticRelExp(eqExp->getRelExp());
+    } else {
+        if (semanticEqExp(eqExp->getEqExp()) == TYPE_INT_BOOL &&
+            semanticRelExp(eqExp->getRelExp()) == TYPE_INT_BOOL) {
+            if (eqExp->getOpType() == OP_BO_EQ || eqExp->getOpType() == OP_BO_NEQ) {
+                return TYPE_INT_BOOL;
+            } else {
+                Error::errorSim("semanticEqExp opType");
+                exit(-1);
+            }
+        } else {
+            Error::errorSim("semanticEqExp");
+            exit(-1);
+        }
+    }
+}
+
+int Semantic::semanticRelExp(RelExp *relExp) {
+    if (relExp->getOpType() == OP_NULL) {
+        if (semanticAddExp(relExp->getAddExp()) == TYPE_INT) {
+            return TYPE_INT_BOOL;
+        } else {
+            Error::errorSim("semanticRelExp addExpInner type");
+            exit(-1);
+        }
+    } else {
+        if (semanticRelExp(relExp->getRelExp()) == TYPE_INT_BOOL &&
+            semanticAddExp(relExp->getAddExp()) == TYPE_INT) {
+            if (relExp->getOpType() == OP_BO_GT || relExp->getOpType() == OP_BO_GTE ||
+                relExp->getOpType() == OP_BO_LT || relExp->getOpType() == OP_BO_LTE) {
+                return TYPE_INT_BOOL;
+            } else {
+                Error::errorSim("semanticRelExp op type");
+                exit(-1);
+            }
+        } else {
+            Error::errorSim("semanticRelExp type");
+            exit(-1);
+        }
+    }
+}
+
+int Semantic::semanticAddExp(AddExp *addExp) {
+    if (addExp->getOpType() == OP_NULL) {
+        return semanticMulExp(addExp->getMulExp());
+    } else {
+        if (semanticAddExp(addExp->getAddExp()) == TYPE_INT && semanticMulExp(addExp->getMulExp()) == TYPE_INT) {
+            if (addExp->getOpType() == OP_BO_ADD || addExp->getOpType() == OP_BO_SUB) {
+                return TYPE_INT;
+            } else {
+                Error::errorSim("semanticAddExp op type");
+                exit(-1);
+            }
+        } else {
+            Error::errorSim("semanticAddExp type");
+            exit(-1);
+        }
+    }
+}
+
+int Semantic::semanticMulExp(MulExp *mulExp) {
+    if (mulExp->getOpType() == OP_NULL) {
+        return semanticUnaryExp(mulExp->getUnaryExp());
+    } else {
+        if (semanticMulExp(mulExp->getMulExp()) == TYPE_INT && semanticUnaryExp(mulExp->getUnaryExp()) == TYPE_INT) {
+            if (mulExp->getOpType() == OP_BO_MUL || mulExp->getOpType() == OP_BO_DIV) {
+                return TYPE_INT;
+            } else {
+                Error::errorSim("semanticMulExp op type");
+                exit(-1);
+            }
+        } else {
+            Error::errorSim("semanticMulExp op type");
+            exit(-1);
+        }
+    }
+}
+
+int Semantic::semanticUnaryExp(UnaryExp *unaryExp) {
+    if (unaryExp->getPrimaryExp() != nullptr) {
+        return semanticPrimaryExp(unaryExp->getPrimaryExp());
+    } else if (unaryExp->getOpType() == OP_BO_ADD || unaryExp->getOpType() == OP_BO_SUB ||
+               unaryExp->getOpType() == OP_UO_NOT) {
+        return semanticUnaryExp(unaryExp->getUnaryExp());
+    } else {
+        // 注意这里写死了 func 在符号表中的索引位置
+        for (int i = 1; i >= 0; i--) {
+            for (Symbol *symbol:*symbolTables->at(i)->getSymbols()) {
+                if (symbol->getFuncInner() != nullptr &&
+                    symbol->getFuncInner()->getIdent() == unaryExp->getIdent()) {
+                    // 检查参数
+                    checkRParams(unaryExp->getFuncRParams(), symbol->getFuncInner());
+                    // 返回函数返回值
+                    return symbol->getFuncInner()->getRetType();
+                } // 检查到函数名
+            } // 某一 symbol table 遍历
+        } // tables[1] tables[0] 遍历
+        Error::errorSim("semanticUnaryExp func name");
+        exit(-1);
+    }
+}
+
+int Semantic::semanticPrimaryExp(PrimaryExp *primaryExp) {
+    if (primaryExp->getExp() != nullptr) {
+        return semanticAddExp(primaryExp->getExp()->getAddExp());
+    } else if (primaryExp->getLVal() != nullptr) {
+        return semanticLVal(primaryExp->getLVal());
+    } else {
+        return TYPE_INT;
+    }
+}
+
+int Semantic::semanticLVal(LVal *lVal) {
+    if (lVal->getExps()->empty()) {  // 整型
+        for (int i = (int) symbolTables->size() - 1; i > 0; i--) {
+            for (Symbol *symbol:*symbolTables->at(i)->getSymbols()) {
+                if ((symbol->getVarInner() != nullptr &&
+                     symbol->getVarInner()->getIdent() == lVal->getIdent()) ||
+                    (symbol->getConstVarInner() != nullptr &&
+                     symbol->getConstVarInner()->getIdent() == lVal->getIdent())) {
+                    return TYPE_INT;
+                }
+            }
+        }
+        Error::errorSim("no such var");
+        exit(-1);
+    } else {  // 整型数组
+        for (int i = (int) symbolTables->size() - 1; i > 0; i--) {
+            for (Symbol *symbol:*symbolTables->at(i)->getSymbols()) {
+                if (symbol->getVarArrayInner() != nullptr &&
+                    symbol->getVarArrayInner()->getIdent() == lVal->getIdent()) {
+                    checkExps(lVal->getExps(), "array sub not int");
+                    if (lVal->getExps()->size() == symbol->getVarArrayInner()->getSubs()->size()) {  // 索引到变量
+                        return TYPE_INT;
+                    } else {  // 索引到数组
+                        return TYPE_INT_STAR;
+                    }
+                } else if (symbol->getConstVarArrayInner() != nullptr &&
+                           symbol->getConstVarArrayInner()->getIdent() == lVal->getIdent()) {
+                    checkExps(lVal->getExps(), "const array sub not int");
+                    if (lVal->getExps()->size() == symbol->getConstVarArrayInner()->getSubs()->size()) { // 索引到变量
+                        return TYPE_INT;
+                    } else {  // 索引到数组
+                        return TYPE_INT_STAR;
+                    }
+                }
+            }// 遍历 table symbol
+        }  // 遍历 tables
+        Error::errorSim("no such array");
+        exit(-1);
+    }  // 整型、整型数组
+}
+
+/**
+ * 检查数组下标
+ * @param exps
+ * @return exit(-1): Error
+ */
+void Semantic::checkExps(std::vector<Exp *> *exps, const char *errMsg) {
+    for (Exp *exp: *exps) {
+        if (semanticAddExp(exp->getAddExp()) != TYPE_INT) {
+            Error::errorSim(errMsg);
+            exit(-1);
+        }
+    }
+}
+
+/**
+ * 检查函数参数
+ * @param funcRParams 实参
+ * @param func 形参
+ * @Return exit(-1) when wrong
+ */
+void Semantic::checkRParams(FuncRParams *funcRParams, Func *func) {
+    if (funcRParams == nullptr && func->getParams()->empty()) {
+        return;
+    } else if (funcRParams->getExps()->size() == func->getParams()->size()) {
+        // j 为索引遍历检查实参
+        for (int j = 0; j < funcRParams->getExps()->size(); j++) {
+            switch (semanticAddExp(funcRParams->getExps()->at(j)->getAddExp())) {
+                case TYPE_INT:
+                    if (func->getParams()->at(j)->getVarInner() != nullptr ||
+                        func->getParams()->at(j)->getConstVarInner() != nullptr) {
+                        break;
+                    } else {
+                        Error::errorSim("semanticUnaryExp func param int");
+                        exit(-1);
+                    }
+                case TYPE_INT_STAR:
+                    if (func->getParams()->at(j)->getVarArrayInner() != nullptr ||
+                        func->getParams()->at(j)->getConstVarArrayInner() != nullptr) {
+                        break;
+                    } else {
+                        Error::errorSim("semanticUnaryExp func param int star");
+                        exit(-1);
+                    }
+                default:
+                    Error::errorSim("semanticUnaryExp func param default");
+                    exit(-1);
+            }
+        }  // 检查各个实参类型
+    } else if (func->getIdent() != putFStr /*&& !funcRParams->getStrOut().empty()*/) {
+        Error::errorSim("semanticUnaryExp func param");
+        exit(-1);
+    }
 }
 
 ///===-----------------------------------------------------------------------===///
@@ -338,7 +733,8 @@ void Semantic::setSyLib_H() {
     std::string getArrayStr = "getarray";
     auto *getArrayParams = new std::vector<Symbol *>();
     // int[]
-    auto *getArrayVarArrayParam = new VarArray(avoidNULL.c_str(), TYPE_INT, nullptr, nullptr, 0, 0, 0);
+    auto *getArrayVarArraySubs = new std::vector<int>();
+    auto *getArrayVarArrayParam = new VarArray(avoidNULL.c_str(), TYPE_INT, getArrayVarArraySubs, 0, 0);
     auto *getArrayVarArraySymbol = new Symbol(nullptr, getArrayVarArrayParam, nullptr, nullptr, nullptr);
     getArrayParams->emplace_back(getArrayVarArraySymbol);
     // int getarray(int[])
@@ -349,7 +745,7 @@ void Semantic::setSyLib_H() {
     std::string putIntStr = "putint";
     auto *putIntParams = new std::vector<Symbol *>();
     // int
-    auto *putIntVarParam = new Var(avoidNULL.c_str(), TYPE_INT, 0, 0, 0, 0);
+    auto *putIntVarParam = new Var(avoidNULL.c_str(), TYPE_INT, 0, 0);
     auto *putIntVarSymbol = new Symbol(putIntVarParam, nullptr, nullptr, nullptr, nullptr);
     putIntParams->emplace_back(putIntVarSymbol);
     // void putint(int)
@@ -360,7 +756,7 @@ void Semantic::setSyLib_H() {
     std::string putChStr = "putch";
     auto *putChParams = new std::vector<Symbol *>();
     // int
-    auto *putChVarParam = new Var(avoidNULL.c_str(), TYPE_INT, 0, 0, 0, 0);
+    auto *putChVarParam = new Var(avoidNULL.c_str(), TYPE_INT, 0, 0);
     auto *putChVarSymbol = new Symbol(putChVarParam, nullptr, nullptr, nullptr, nullptr);
     putChParams->emplace_back(putChVarSymbol);
     // void putch(int)
@@ -371,11 +767,12 @@ void Semantic::setSyLib_H() {
     std::string putArrayStr = "putarray";
     auto *putArrayParams = new std::vector<Symbol *>();
     // int
-    auto *putArrayVarParam = new Var(avoidNULL.c_str(), TYPE_INT, 0, 0, 0, 0);
+    auto *putArrayVarParam = new Var(avoidNULL.c_str(), TYPE_INT, 0, 0);
     auto *putArrayVarSymbol = new Symbol(putArrayVarParam, nullptr, nullptr, nullptr, nullptr);
     putArrayParams->emplace_back(putArrayVarSymbol);
     // int[]
-    auto *putArrayVarArrayParam = new VarArray(avoidNULL.c_str(), TYPE_INT, nullptr, nullptr, 0, 0, 0);
+    auto *putArrayVarArraySubs = new std::vector<int>();
+    auto *putArrayVarArrayParam = new VarArray(avoidNULL.c_str(), TYPE_INT, putArrayVarArraySubs, 0, 0);
     auto *putArrayVarArraySymbol = new Symbol(nullptr, putArrayVarArrayParam, nullptr, nullptr, nullptr);
     putArrayParams->emplace_back(putArrayVarArraySymbol);
     // void putarray(int, int[])
@@ -383,10 +780,10 @@ void Semantic::setSyLib_H() {
     auto *symbolPutArray = new Symbol(nullptr, nullptr, nullptr, nullptr, funcPutArray);
     symbolsLib->emplace_back(symbolPutArray);
 
-    std::string putFStr = "putf";
+
     auto *putFParams = new std::vector<Symbol *>();
     // <格式串>
-    auto *putFStrParam = new Var(avoidNULL.c_str(), TYPE_STR, 0, 0, 0, 0);
+    auto *putFStrParam = new Var(avoidNULL.c_str(), TYPE_STR, 0, 0);
     auto *putFStrSymbol = new Symbol(putFStrParam, nullptr, nullptr, nullptr, nullptr);
     putFParams->emplace_back(putFStrSymbol);
     // int... jump -> 写死判断
