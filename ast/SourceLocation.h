@@ -1,6 +1,8 @@
 #ifndef COMPILER_SOURCELOCATION_H
 #define COMPILER_SOURCELOCATION_H
 
+#include <list>
+
 /**
  * 单个位置类 SourceLocation
  */
@@ -29,16 +31,16 @@ public:
  */
 class Locs {
 protected:
-    std::vector<SourceLocation *> *locs;
+    std::list<SourceLocation *> *locs;
 
 public:
     /**
      * 位置类 Locs
      * @param locs 行列位置
      */
-    explicit Locs(std::vector<SourceLocation *> *locs) : locs(locs) {};
+    explicit Locs(std::list<SourceLocation *> *locs) : locs(locs) {};
 
-    std::vector<SourceLocation *> *getLocs() { return locs; }
+    std::list<SourceLocation *> *getLocs() { return locs; }
 };
 
 

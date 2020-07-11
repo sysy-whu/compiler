@@ -72,7 +72,7 @@ void Parse::parseAST() {
  * @return
  */
 ConstDecl *Parse::parseConstDecl() {
-    auto *locs = new std::vector<SourceLocation *>();
+    auto *locs = new std::list<SourceLocation *>();
     auto *constDefs = new std::vector<ConstDef *>();
 
     if (tokens.at(step).getType() == TOKEN_CONST) {
@@ -106,7 +106,7 @@ ConstDecl *Parse::parseConstDecl() {
  * @return
  */
 ConstDef *Parse::parseConstDef() {
-    auto *locs = new std::vector<SourceLocation *>();
+    auto *locs = new std::list<SourceLocation *>();
     auto *constExpsInner = new std::vector<ConstExp *>();
     std::string ident;
 
@@ -155,7 +155,7 @@ ConstDef *Parse::parseConstDef() {
  * @return
  */
 ConstInitVal *Parse::parseConstInitVal() {
-    auto *locs = new std::vector<SourceLocation *>();
+    auto *locs = new std::list<SourceLocation *>();
     auto *constInitValsInner = new std::vector<ConstInitVal *>();
     ConstExp *constExpInner = nullptr;
 
@@ -234,7 +234,7 @@ VarDef *Parse::parseVarDef() {
     std::string ident;
     InitVal *initValInner = nullptr;
     auto *constExps = new std::vector<ConstExp *>();
-    auto *locs = new std::vector<SourceLocation *>();
+    auto *locs = new std::list<SourceLocation *>();
 
     if (tokens.at(step).getType() == TOKEN_IDENTIFIER) {
         auto *identLoc = new SourceLocation(tokens.at(step).getRow(), tokens.at(step).getStartColumn());
@@ -283,7 +283,7 @@ VarDef *Parse::parseVarDef() {
 InitVal *Parse::parseInitVal() {
     Exp *expInner = nullptr;
     auto *initVals = new std::vector<InitVal *>();
-    auto *locs = new std::vector<SourceLocation *>();
+    auto *locs = new std::list<SourceLocation *>();
 
     if (tokens.at(step).getType() == CHAR_L_BRACE) {
         auto *lBraceLoc = new SourceLocation(tokens.at(step).getRow(), tokens.at(step).getStartColumn());
@@ -328,7 +328,7 @@ FuncDef *Parse::parseFuncDef() {
     int funcType = -1;
     std::string ident;
     FuncFParams *funcFParamsInner = nullptr;
-    auto *locs = new std::vector<SourceLocation *>();
+    auto *locs = new std::list<SourceLocation *>();
 
     if (tokens.at(step).getType() == TOKEN_INT || tokens.at(step).getType() == TOKEN_VOID) {
         funcType = tokens.at(step).getType();
@@ -397,7 +397,7 @@ FuncFParam *Parse::parseFuncFParam() {
     int paramType = TYPE_INT;
     std::string ident;
     auto *expsInner = new std::vector<Exp *>();
-    auto *locs = new std::vector<SourceLocation *>();
+    auto *locs = new std::list<SourceLocation *>();
 
     if (tokens.at(step).getType() == TOKEN_INT) {
         auto *paramTypeLoc = new SourceLocation(tokens.at(step).getRow(), tokens.at(step).getStartColumn());
@@ -455,7 +455,7 @@ FuncFParam *Parse::parseFuncFParam() {
  * @return
  */
 Block *Parse::parseBlock() {
-    auto *locs = new std::vector<SourceLocation *>();
+    auto *locs = new std::list<SourceLocation *>();
     auto *blockItemInner = new std::vector<BlockItem *>();
 
     if (tokens.at(step).getType() == CHAR_L_BRACE) {
@@ -520,7 +520,7 @@ Stmt *Parse::parseStmt() {
     Stmt *stmtBodyInner = nullptr;
     Stmt *stmtElseInner = nullptr;
     Block *blockInner = nullptr;
-    auto *locs = new std::vector<SourceLocation *>();
+    auto *locs = new std::list<SourceLocation *>();
 
     switch (tokens.at(step).getType()) {
         case CHAR_L_BRACE: {  // Block
@@ -708,7 +708,7 @@ Cond *Parse::parseCond() {
 LVal *Parse::parseLVal() {
     std::string ident;
     auto *expsInner = new std::vector<Exp *>();
-    auto *locs = new std::vector<SourceLocation *>();
+    auto *locs = new std::list<SourceLocation *>();
 
     if (tokens.at(step).getType() == TOKEN_IDENTIFIER) {
         ident = tokens.at(step).getIdentifierStr();
@@ -746,7 +746,7 @@ PrimaryExp *Parse::parsePrimaryExp() {
     Exp *expInner = nullptr;
     int numberInner = -1;
     LVal *lValInner = nullptr;
-    auto *locs = new std::vector<SourceLocation *>();
+    auto *locs = new std::list<SourceLocation *>();
 
     if (tokens.at(step).getType() == TOKEN_NUMBER) {
         numberInner = tokens.at(step).getNumVal();
@@ -785,7 +785,7 @@ UnaryExp *Parse::parseUnaryExp() {
     UnaryExp *unaryExpInner = nullptr;
     PrimaryExp *primaryExpInner = nullptr;
     FuncRParams *funcRParamsInner = nullptr;
-    auto *locs = new std::vector<SourceLocation *>();
+    auto *locs = new std::list<SourceLocation *>();
 
     if (tokens.at(step).getType() == TOKEN_IDENTIFIER) {
         int stepAux = step;
@@ -832,7 +832,7 @@ UnaryExp *Parse::parseUnaryExp() {
  */
 MulExp *Parse::parseMulExp() {
     MulExp *mulExpInner = nullptr;
-    auto *locs = new std::vector<SourceLocation *>();
+    auto *locs = new std::list<SourceLocation *>();
     int opType = OP_NULL;
 
     UnaryExp *unaryExpInner = parseUnaryExp();
@@ -855,7 +855,7 @@ MulExp *Parse::parseMulExp() {
  */
 AddExp *Parse::parseAddExp() {
     AddExp *addExpInner = nullptr;
-    auto *locs = new std::vector<SourceLocation *>();
+    auto *locs = new std::list<SourceLocation *>();
     int opType = OP_NULL;
 
     MulExp *mulExpInner = parseMulExp();
@@ -877,7 +877,7 @@ AddExp *Parse::parseAddExp() {
  */
 RelExp *Parse::parseRelExp() {
     RelExp *relExpInner = nullptr;
-    auto *locs = new std::vector<SourceLocation *>();
+    auto *locs = new std::list<SourceLocation *>();
     int opType = OP_NULL;
 
     AddExp *addExpInner = parseAddExp();
@@ -900,7 +900,7 @@ RelExp *Parse::parseRelExp() {
  */
 EqExp *Parse::parseEqExp() {
     EqExp *eqExpInner = nullptr;
-    auto *locs = new std::vector<SourceLocation *>();
+    auto *locs = new std::list<SourceLocation *>();
     int opType = OP_NULL;
 
     RelExp *relExpInner = parseRelExp();
@@ -922,7 +922,7 @@ EqExp *Parse::parseEqExp() {
  */
 LAndExp *Parse::parseLAndExp() {
     LAndExp *lAndExpInner = nullptr;
-    auto *locs = new std::vector<SourceLocation *>();
+    auto *locs = new std::list<SourceLocation *>();
 
     EqExp *eqExpInner = parseEqExp();
     if (tokens.at(step).getType() == OP_BO_AND) {
@@ -942,7 +942,7 @@ LAndExp *Parse::parseLAndExp() {
  */
 LOrExp *Parse::parseLOrExp() {
     LOrExp *lOrExpInner = nullptr;
-    auto *locs = new std::vector<SourceLocation *>();
+    auto *locs = new std::list<SourceLocation *>();
 
     LAndExp *lAndExpInner = parseLAndExp();
     if (tokens.at(step).getType() == OP_BO_OR) {

@@ -67,7 +67,7 @@ public:
      * @param exps 数组各维度 可以为null
      * @param sourLocs _0: identLoc; [_Loc, ]_Loc, ... 数组各维度
      */
-    LVal(const char *ident, std::vector<Exp *> *exps, std::vector<SourceLocation *> *sourLocs) :
+    LVal(const char *ident, std::vector<Exp *> *exps, std::list<SourceLocation *> *sourLocs) :
             ident(ident), exps(exps), Locs(sourLocs) {};
 
     [[nodiscard]] const std::string &getIdent() const {
@@ -98,7 +98,7 @@ public:
      * @param number
      * @param sourLocs 带括号时: _0: (_Loc, _1: )_Loc
      */
-    PrimaryExp(Exp *exp, LVal *lVal, int number, std::vector<SourceLocation *> *sourLocs) :
+    PrimaryExp(Exp *exp, LVal *lVal, int number, std::list<SourceLocation *> *sourLocs) :
             exp(exp), lVal(lVal), number(number), Locs(sourLocs) {};
 
     [[nodiscard]] Exp *getExp() const {
@@ -143,7 +143,7 @@ public:
      *
      */
     UnaryExp(PrimaryExp *primaryExp, const char *ident, FuncRParams *funcRParams, int opType, UnaryExp *unaryExp,
-             std::vector<SourceLocation *> *sourLocs) :
+             std::list<SourceLocation *> *sourLocs) :
             primaryExp(primaryExp), ident(ident), funcRParams(funcRParams), opType(opType), unaryExp(unaryExp),
             Locs(sourLocs) {};
 
@@ -187,7 +187,7 @@ public:
      * @param opType
      * @param sourLocs opType 位置
      */
-    MulExp(MulExp *mulExp, UnaryExp *unaryExp, int opType, std::vector<SourceLocation *> *sourLocs) :
+    MulExp(MulExp *mulExp, UnaryExp *unaryExp, int opType, std::list<SourceLocation *> *sourLocs) :
             mulExp(mulExp), unaryExp(unaryExp), opType(opType), Locs(sourLocs) {};
 
     [[nodiscard]] MulExp *getMulExp() const {
@@ -222,7 +222,7 @@ public:
      * @param opType
      * @param sourLocs opType位置
      */
-    AddExp(AddExp *addExp, MulExp *mulExp, int opType, std::vector<SourceLocation *> *sourLocs) :
+    AddExp(AddExp *addExp, MulExp *mulExp, int opType, std::list<SourceLocation *> *sourLocs) :
             addExp(addExp), mulExp(mulExp), opType(opType), Locs(sourLocs) {};
 
     [[nodiscard]] AddExp *getAddExp() const {
@@ -257,7 +257,7 @@ public:
      * @param opType
      * @param sourLocs opType位置
      */
-    RelExp(RelExp *relExp, AddExp *addExp, int opType, std::vector<SourceLocation *> *sourLocs) :
+    RelExp(RelExp *relExp, AddExp *addExp, int opType, std::list<SourceLocation *> *sourLocs) :
             relExp(relExp), addExp(addExp), opType(opType), Locs(sourLocs) {};
 
     [[nodiscard]] RelExp *getRelExp() const {
@@ -292,7 +292,7 @@ public:
      * @param opType
      * @param sourLocs opType 位置
      */
-    EqExp(EqExp *eqExp, RelExp *relExp, int opType, std::vector<SourceLocation *> *sourLocs) :
+    EqExp(EqExp *eqExp, RelExp *relExp, int opType, std::list<SourceLocation *> *sourLocs) :
             eqExp(eqExp), relExp(relExp), opType(opType), Locs(sourLocs) {};
 
     [[nodiscard]] EqExp *getEqExp() const {
@@ -324,7 +324,7 @@ public:
      * @param eqExp
      * @param sourLocs && 位置
      */
-    LAndExp(LAndExp *lAndExp, EqExp *eqExp, std::vector<SourceLocation *> *sourLocs) :
+    LAndExp(LAndExp *lAndExp, EqExp *eqExp, std::list<SourceLocation *> *sourLocs) :
             lAndExp(lAndExp), eqExp(eqExp), Locs(sourLocs) {};
 
     [[nodiscard]] LAndExp *getLAndExp() const {
@@ -352,7 +352,7 @@ public:
      * @param lAndExp
      * @param sourLocs || 位置
      */
-    LOrExp(LOrExp *lOrExp, LAndExp *lAndExp, std::vector<SourceLocation *> *sourLocs) :
+    LOrExp(LOrExp *lOrExp, LAndExp *lAndExp, std::list<SourceLocation *> *sourLocs) :
             lOrExp(lOrExp), lAndExp(lAndExp), Locs(sourLocs) {};
 
     [[nodiscard]] LOrExp *getLOrExp() const {
@@ -469,7 +469,7 @@ public:
      * @param blockItems 代码块一个个语句
      * @param sourLocs _0: {_Loc, _1: }_Loc
      */
-    Block(std::vector<BlockItem *> *blockItems, std::vector<SourceLocation *> *sourLocs) :
+    Block(std::vector<BlockItem *> *blockItems, std::list<SourceLocation *> *sourLocs) :
             blockItems(blockItems), Locs(sourLocs) {};
 
     [[nodiscard]] const std::vector<BlockItem *> *getBlockItems() const {
@@ -515,7 +515,7 @@ public:
      * @param stmtBody
      */
     Stmt(int stmtType, LVal *lVal, Exp *exp, Block *block, Cond *cond, Stmt *stmtBrBody, Stmt *elseBody,
-         std::vector<SourceLocation *> *sourLocs) :
+         std::list<SourceLocation *> *sourLocs) :
             stmtType(stmtType), lVal(lVal), exp(exp), block(block), cond(cond), stmtBrBody(stmtBrBody),
             elseBody(elseBody),
             Locs(sourLocs) {};
@@ -568,7 +568,7 @@ public:
      * @param exps 数组参数维度，不记录恒为空的的第一维
      * @param sourLocs _0:identLoc; _1:assignLoc; [_Loc、 ]_Loc、...
      */
-    FuncFParam(int BType, const char *ident, std::vector<Exp *> *exps, std::vector<SourceLocation *> *sourLocs) :
+    FuncFParam(int BType, const char *ident, std::vector<Exp *> *exps, std::list<SourceLocation *> *sourLocs) :
             BType(BType), ident(ident), exps(exps), Locs(sourLocs) {};
 
     [[nodiscard]] int getBType() const {
@@ -626,7 +626,7 @@ public:
      * @param sourLocs _0: funcTypeLoc, _1: identLoc, _2: (_Loc, _3: )_Loc
      */
     FuncDef(int funcType, const char *ident, FuncFParams *funcFParams, Block *block,
-            std::vector<SourceLocation *> *sourLocs) :
+            std::list<SourceLocation *> *sourLocs) :
             funcType(funcType), ident(ident), funcFParams(funcFParams), block(block), Locs(sourLocs) {};
 
     [[nodiscard]] int getFuncType() const {
@@ -663,7 +663,7 @@ public:
      * @param initVals 子维
      * @param sourLocs 当前维度的 _0:'{', _1:'}' 位置
      */
-    InitVal(Exp *exp, std::vector<InitVal *> *initVals, std::vector<SourceLocation *> *sourLocs) :
+    InitVal(Exp *exp, std::vector<InitVal *> *initVals, std::list<SourceLocation *> *sourLocs) :
             exp(exp), initVals(initVals), Locs(sourLocs) {};
 
     [[nodiscard]] const Exp *getExp() const {
@@ -696,7 +696,7 @@ public:
      * @param sourLocs _0:identLoc (; _1:assignLoc 可无)
      */
     VarDef(const char *ident, std::vector<ConstExp *> *constExps, InitVal *initVal,
-           std::vector<SourceLocation *> *sourLocs) :
+           std::list<SourceLocation *> *sourLocs) :
             ident(ident), constExps(constExps), initVal(initVal), Locs(sourLocs) {};
 
     [[nodiscard]] const std::string &getIdent() const {
@@ -756,7 +756,7 @@ public:
      * @param sourLocs 当前维度的 _0: '{', _1: '}' 位置
      */
     ConstInitVal(ConstExp *constExp, std::vector<ConstInitVal *> *constInitVals,
-                 std::vector<SourceLocation *> *sourLocs) :
+                 std::list<SourceLocation *> *sourLocs) :
             constExp(constExp), constInitVals(constInitVals), Locs(sourLocs) {};
 
     [[nodiscard]] ConstExp *getConstExp() const {
@@ -788,7 +788,7 @@ public:
      * @param sourLocs _0:identLoc; _1:assignLoc; [_Loc、 ]_Loc、...
      */
     ConstDef(const char *ident, std::vector<ConstExp *> *constExps, ConstInitVal *constInitVal,
-             std::vector<SourceLocation *> *sourLocs) :
+             std::list<SourceLocation *> *sourLocs) :
             ident(ident), constExps(constExps), constInitVal(constInitVal), Locs(sourLocs) {};
 
     [[nodiscard]] const std::string &getIdent() const {
@@ -820,7 +820,7 @@ public:
      * @param constDefs 常量定义，可为多个
      * @param sourLocs _0: constLoc; _1: typeLoc
      */
-    ConstDecl(int BType, std::vector<ConstDef *> *constDefs, std::vector<SourceLocation *> *sourLocs) :
+    ConstDecl(int BType, std::vector<ConstDef *> *constDefs, std::list<SourceLocation *> *sourLocs) :
             BType(BType), constDefs(constDefs), Locs(sourLocs) {};
 
     [[nodiscard]] int getBType() const {

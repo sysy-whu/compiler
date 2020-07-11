@@ -33,18 +33,18 @@ public:
         return symbols;
     }
 
-    void setSymbols(std::vector<Symbol *> *symbol) {
-        SymbolTable::symbols = symbol;
-    }
-
-    void addSymbol(Symbol *symbol) {
-        symbols->emplace_back(symbol);
-    }
-
-    void free() {
-        delete &type;
-        std::vector<Symbol *>().swap(*symbols);
-    }
+//    void setSymbols(std::vector<Symbol *> *symbol) {
+//        SymbolTable::symbols = symbol;
+//    }
+//
+//    void addSymbol(Symbol *symbol) {
+//        symbols->emplace_back(symbol);
+//    }
+//
+//    void free() {
+//        delete &type;
+//        std::vector<Symbol *>().swap(*symbols);
+//    }
 
 };
 
@@ -57,7 +57,7 @@ private:
 
     int varType;
 
-    unsigned int row, column;
+//    unsigned int row, column;
 
 public:
     /**
@@ -69,9 +69,10 @@ public:
      * @param row
      * @param column
      */
-    Var(const char *ident, int varType, unsigned int row, unsigned int column) :
-            ident(ident), varType(varType), row(row),
-            column(column) {};
+    Var(const char *ident, int varType) : ident(ident), varType(varType) {};
+//    Var(const char *ident, int varType, unsigned int row, unsigned int column) :
+//            ident(ident), varType(varType), row(row),
+//            column(column) {};
 
     [[nodiscard]] std::string getIdent() const {
         return ident;
@@ -81,13 +82,13 @@ public:
         return varType;
     }
 
-    [[nodiscard]] unsigned int getRow() const {
-        return row;
-    }
-
-    [[nodiscard]] unsigned int getColumn() const {
-        return column;
-    }
+//    [[nodiscard]] unsigned int getRow() const {
+//        return row;
+//    }
+//
+//    [[nodiscard]] unsigned int getColumn() const {
+//        return column;
+//    }
 
 };
 
@@ -102,7 +103,7 @@ private:
 
     int value;
 
-    unsigned int row, column;
+//    unsigned int row, column;
 
 public:
     /**
@@ -113,8 +114,9 @@ public:
      * @param row
      * @param column
      */
-    ConstVar(const char *ident, int varType, int value, unsigned int row, unsigned int column) :
-            ident(ident), varType(varType), value(value), row(row), column(column) {};
+    ConstVar(const char *ident, int varType, int value) : ident(ident), varType(varType), value(value) {};
+//    ConstVar(const char *ident, int varType, int value, unsigned int row, unsigned int column) :
+//            ident(ident), varType(varType), value(value), row(row), column(column) {};
 
     [[nodiscard]] std::string getIdent() const {
         return ident;
@@ -128,13 +130,13 @@ public:
         return value;
     }
 
-    [[nodiscard]] unsigned int getRow() const {
-        return row;
-    }
-
-    [[nodiscard]] unsigned int getColumn() const {
-        return column;
-    }
+//    [[nodiscard]] unsigned int getRow() const {
+//        return row;
+//    }
+//
+//    [[nodiscard]] unsigned int getColumn() const {
+//        return column;
+//    }
 
 };
 
@@ -150,7 +152,7 @@ private:
     /// 维度们
     std::vector<int> *subs;
 
-    unsigned int row, column;
+//    unsigned int row, column;
 public:
     /**
      *
@@ -162,8 +164,9 @@ public:
      * @param row
      * @param column
      */
-    VarArray(const char *ident, int varType, std::vector<int> *subs, unsigned int row, unsigned int column) :
-            ident(ident), varType(varType), subs(subs), row(row), column(column) {};
+    VarArray(const char *ident, int varType, std::vector<int> *subs) : ident(ident), varType(varType), subs(subs) {};
+//    VarArray(const char *ident, int varType, std::vector<int> *subs, unsigned int row, unsigned int column) :
+//            ident(ident), varType(varType), subs(subs), row(row), column(column) {};
 
     [[nodiscard]] const std::string &getIdent() const {
         return ident;
@@ -177,13 +180,13 @@ public:
         return subs;
     }
 
-    [[nodiscard]] unsigned int getRow() const {
-        return row;
-    }
-
-    [[nodiscard]] unsigned int getColumn() const {
-        return column;
-    }
+//    [[nodiscard]] unsigned int getRow() const {
+//        return row;
+//    }
+//
+//    [[nodiscard]] unsigned int getColumn() const {
+//        return column;
+//    }
 };
 
 /**
@@ -199,7 +202,7 @@ private:
     /// 维度们
     std::vector<int> *subs;
 
-    unsigned int row, column;
+//    unsigned int row, column;
 public:
     /**
      *
@@ -210,9 +213,11 @@ public:
      * @param row
      * @param column
      */
-    ConstVarArray(const char *ident, int varType, std::vector<int> *value, std::vector<int> *subs,
-                  unsigned int row, unsigned int column) :
-            ident(ident), varType(varType), value(value), subs(subs), row(row), column(column) {};
+    ConstVarArray(const char *ident, int varType, std::vector<int> *value, std::vector<int> *subs) :
+            ident(ident), varType(varType), value(value), subs(subs) {};
+//    ConstVarArray(const char *ident, int varType, std::vector<int> *value, std::vector<int> *subs,
+//                  unsigned int row, unsigned int column) :
+//            ident(ident), varType(varType), value(value), subs(subs), row(row), column(column) {};
 
     [[nodiscard]] const std::string &getIdent() const {
         return ident;
@@ -230,13 +235,13 @@ public:
         return subs;
     }
 
-    [[nodiscard]] unsigned int getRow() const {
-        return row;
-    }
-
-    [[nodiscard]] unsigned int getColumn() const {
-        return column;
-    }
+//    [[nodiscard]] unsigned int getRow() const {
+//        return row;
+//    }
+//
+//    [[nodiscard]] unsigned int getColumn() const {
+//        return column;
+//    }
 };
 
 /**
@@ -250,7 +255,7 @@ private:
 
     std::vector<Symbol *> *params;
 
-    unsigned int row, column;
+//    unsigned int row, column;
 
 public:
     /**
@@ -262,9 +267,11 @@ public:
      * @param row
      * @param column
      */
-    Func(const char *ident, int retType, std::vector<Symbol *> *params, unsigned int row,
-         unsigned int column) :
-            ident(ident), retType(retType), params(params), row(row), column(column) {};
+    Func(const char *ident, int retType, std::vector<Symbol *> *params) :
+            ident(ident), retType(retType), params(params) {};
+//    Func(const char *ident, int retType, std::vector<Symbol *> *params, unsigned int row,
+//         unsigned int column) :
+//            ident(ident), retType(retType), params(params), row(row), column(column) {};
 
     [[nodiscard]] std::vector<Symbol *> *getParams() const {
         return params;
@@ -278,13 +285,13 @@ public:
         return retType;
     }
 
-    [[nodiscard]] unsigned int getRow() const {
-        return row;
-    }
-
-    [[nodiscard]] unsigned int getColumn() const {
-        return column;
-    }
+//    [[nodiscard]] unsigned int getRow() const {
+//        return row;
+//    }
+//
+//    [[nodiscard]] unsigned int getColumn() const {
+//        return column;
+//    }
 };
 
 class Symbol {

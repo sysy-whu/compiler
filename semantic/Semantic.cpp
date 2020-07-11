@@ -69,8 +69,7 @@ Var *Semantic::semanticVar(VarDef *varDef, int varType) {
         Error::errorSim("var init wrong when assign");
         exit(-1);
     }
-    Var *varRet = new Var(varDef->getIdent().c_str(), varType,
-                          varDef->getLocs()->at(0)->getLine(), varDef->getLocs()->at(0)->getCol());
+    Var *varRet = new Var(varDef->getIdent().c_str(), varType);
     return varRet;
 }
 
@@ -86,15 +85,13 @@ VarArray *Semantic::semanticVarArray(VarDef *varDef, int varType) {
         semanticVarArrayInitVals(varDef->getInitVal(), subs);
     }
 
-    auto *varArray = new VarArray(varDef->getIdent().c_str(), varType, subs,
-                                  varDef->getLocs()->at(0)->getLine(), varDef->getLocs()->at(0)->getCol());
+    auto *varArray = new VarArray(varDef->getIdent().c_str(), varType, subs);
     return varArray;
 }
 
 ConstVar *Semantic::semanticConstVar(ConstDef *constDef, int constType) {
     int intRet = calConstExp(constDef->getConstInitVal()->getConstExp());
-    auto *constVarRet = new ConstVar(constDef->getIdent().c_str(), TYPE_INT, intRet,
-                                     constDef->getLocs()->at(0)->getLine(), constDef->getLocs()->at(0)->getCol());
+    auto *constVarRet = new ConstVar(constDef->getIdent().c_str(), constType, intRet);
     return constVarRet;
 }
 
@@ -107,8 +104,7 @@ ConstVarArray *Semantic::semanticConstVarArray(ConstDef *constDef, int constType
     std::vector<int> *values = calConstArrayInitVals(constDef->getConstInitVal(), subs);
 
     auto *constVarArray =
-            new ConstVarArray(constDef->getIdent().c_str(), TYPE_INT, values, subs,
-                              constDef->getLocs()->at(0)->getLine(), constDef->getLocs()->at(0)->getCol());
+            new ConstVarArray(constDef->getIdent().c_str(), constType, values, subs);
     return constVarArray;
 }
 
@@ -119,8 +115,7 @@ Func *Semantic::semanticFunc(FuncDef *funcDef) {
         for (FuncFParam *funcFParam:*funcDef->getFuncFParams()->getFuncFParams()) {
             Symbol *symbol = nullptr;
             if (funcFParam->getBType() == TYPE_INT) {  // 变量
-                auto *var = new Var(funcFParam->getIdent().c_str(), funcFParam->getBType(),
-                                    funcFParam->getLocs()->at(0)->getLine(), funcFParam->getLocs()->at(0)->getCol());
+                auto *var = new Var(funcFParam->getIdent().c_str(), funcFParam->getBType());
                 symbol = new Symbol(var, nullptr, nullptr, nullptr, nullptr);
             } else if (funcFParam->getBType() == TYPE_INT_STAR) {  // 数组 （第一维为空）
                 auto *subs = new std::vector<int>();
@@ -128,8 +123,7 @@ Func *Semantic::semanticFunc(FuncDef *funcDef) {
                     subs->push_back(calAddExp(exp->getAddExp()));
                 }
                 auto *varArray =
-                        new VarArray(funcFParam->getIdent().c_str(), funcFParam->getBType(), subs,
-                                     funcFParam->getLocs()->at(0)->getLine(), funcFParam->getLocs()->at(0)->getCol());
+                        new VarArray(funcFParam->getIdent().c_str(), funcFParam->getBType(), subs);
                 symbol = new Symbol(nullptr, varArray, nullptr, nullptr, nullptr);
             }
             params->emplace_back(symbol);
@@ -139,8 +133,7 @@ Func *Semantic::semanticFunc(FuncDef *funcDef) {
     // 对函数 Block 语义检查
     semanticBlock(funcDef->getBlock(), funcDef->getFuncType(), params);
 
-    auto *func = new Func(funcDef->getIdent().c_str(), funcDef->getFuncType(), params,
-                          funcDef->getLocs()->at(0)->getLine(), funcDef->getLocs()->at(0)->getCol());
+    auto *func = new Func(funcDef->getIdent().c_str(), funcDef->getFuncType(), params);
     return func;
 }
 
@@ -619,11 +612,11 @@ int Semantic::semanticLVal(LVal *lVal) {
     if (lVal->getExps()->empty()) {  // 整型
         for (int i = (int) symbolTables->size() - 1; i > 0; i--) {
             for (Symbol *symbol:*symbolTables->at(i)->getSymbols()) {
-                if ((symbol->getVarInner() != nullptr &&
-                     symbol->getVarInner()->getIdent() == lVal->getIdent()) ||
-                    (symbol->getConstVarInner() != nullptr &&
-                     symbol->getConstVarInner()->getIdent() == lVal->getIdent())) {
-                    return TYPE_INT;
+                if (symbol->getVarInner() != nullptr && symbol->getVarInner()->getIdent() == lVal->getIdent()) {
+                    return symbol->getVarInner()->getVarType();
+                } else if (symbol->getConstVarInner() != nullptr &&
+                           symbol->getConstVarInner()->getIdent() == lVal->getIdent()) {
+                    return symbol->getConstVarInner()->getVarType();
                 }
             }
         }
@@ -636,16 +629,20 @@ int Semantic::semanticLVal(LVal *lVal) {
                     symbol->getVarArrayInner()->getIdent() == lVal->getIdent()) {
                     checkExps(lVal->getExps(), "array sub not int");
                     if (lVal->getExps()->size() == symbol->getVarArrayInner()->getSubs()->size()) {  // 索引到变量
-                        return TYPE_INT;
+                        return symbol->getVarArrayInner()->getVarType();
                     } else {  // 索引到数组
+//                        if (symbol->getVarArrayInner()->getVarType() == TYPE_INT)
+//                            return TYPE_INT_STAR;
                         return TYPE_INT_STAR;
                     }
                 } else if (symbol->getConstVarArrayInner() != nullptr &&
                            symbol->getConstVarArrayInner()->getIdent() == lVal->getIdent()) {
                     checkExps(lVal->getExps(), "const array sub not int");
                     if (lVal->getExps()->size() == symbol->getConstVarArrayInner()->getSubs()->size()) { // 索引到变量
-                        return TYPE_INT;
+                        return symbol->getConstVarArrayInner()->getVarType();
                     } else {  // 索引到数组
+//                        if (symbol->getConstVarArrayInner()->getVarType() == TYPE_INT)
+//                            return TYPE_INT_STAR;
                         return TYPE_INT_STAR;
                     }
                 }
@@ -720,13 +717,13 @@ void Semantic::setSyLib_H() {
 
     std::string getIntStr = "getint";
     // int getint()
-    auto *funcGetint = new Func(getIntStr.c_str(), TYPE_INT, nullptr, 0, 0);
+    auto *funcGetint = new Func(getIntStr.c_str(), TYPE_INT, nullptr);
     auto *symbolGetInt = new Symbol(nullptr, nullptr, nullptr, nullptr, funcGetint);
     symbolsLib->emplace_back(symbolGetInt);
 
     std::string getChStr = "getch";
     // int getch()
-    auto *funcGetCh = new Func(getChStr.c_str(), TYPE_INT, nullptr, 0, 0);
+    auto *funcGetCh = new Func(getChStr.c_str(), TYPE_INT, nullptr);
     auto *symbolGetCh = new Symbol(nullptr, nullptr, nullptr, nullptr, funcGetCh);
     symbolsLib->emplace_back(symbolGetCh);
 
@@ -734,73 +731,73 @@ void Semantic::setSyLib_H() {
     auto *getArrayParams = new std::vector<Symbol *>();
     // int[]
     auto *getArrayVarArraySubs = new std::vector<int>();
-    auto *getArrayVarArrayParam = new VarArray(avoidNULL.c_str(), TYPE_INT, getArrayVarArraySubs, 0, 0);
+    auto *getArrayVarArrayParam = new VarArray(avoidNULL.c_str(), TYPE_INT, getArrayVarArraySubs);
     auto *getArrayVarArraySymbol = new Symbol(nullptr, getArrayVarArrayParam, nullptr, nullptr, nullptr);
     getArrayParams->emplace_back(getArrayVarArraySymbol);
     // int getarray(int[])
-    auto *funcGetArray = new Func(getArrayStr.c_str(), TYPE_INT, getArrayParams, 0, 0);
+    auto *funcGetArray = new Func(getArrayStr.c_str(), TYPE_INT, getArrayParams);
     auto *symbolGetArray = new Symbol(nullptr, nullptr, nullptr, nullptr, funcGetArray);
     symbolsLib->emplace_back(symbolGetArray);
 
     std::string putIntStr = "putint";
     auto *putIntParams = new std::vector<Symbol *>();
     // int
-    auto *putIntVarParam = new Var(avoidNULL.c_str(), TYPE_INT, 0, 0);
+    auto *putIntVarParam = new Var(avoidNULL.c_str(), TYPE_INT);
     auto *putIntVarSymbol = new Symbol(putIntVarParam, nullptr, nullptr, nullptr, nullptr);
     putIntParams->emplace_back(putIntVarSymbol);
     // void putint(int)
-    auto *funcPutInt = new Func(putIntStr.c_str(), TYPE_VOID, putIntParams, 0, 0);
+    auto *funcPutInt = new Func(putIntStr.c_str(), TYPE_VOID, putIntParams);
     auto *symbolPutInt = new Symbol(nullptr, nullptr, nullptr, nullptr, funcPutInt);
     symbolsLib->emplace_back(symbolPutInt);
 
     std::string putChStr = "putch";
     auto *putChParams = new std::vector<Symbol *>();
     // int
-    auto *putChVarParam = new Var(avoidNULL.c_str(), TYPE_INT, 0, 0);
+    auto *putChVarParam = new Var(avoidNULL.c_str(), TYPE_INT);
     auto *putChVarSymbol = new Symbol(putChVarParam, nullptr, nullptr, nullptr, nullptr);
     putChParams->emplace_back(putChVarSymbol);
     // void putch(int)
-    auto *funcPutCh = new Func(putChStr.c_str(), TYPE_VOID, putChParams, 0, 0);
+    auto *funcPutCh = new Func(putChStr.c_str(), TYPE_VOID, putChParams);
     auto *symbolPutCh = new Symbol(nullptr, nullptr, nullptr, nullptr, funcPutCh);
     symbolsLib->emplace_back(symbolPutCh);
 
     std::string putArrayStr = "putarray";
     auto *putArrayParams = new std::vector<Symbol *>();
     // int
-    auto *putArrayVarParam = new Var(avoidNULL.c_str(), TYPE_INT, 0, 0);
+    auto *putArrayVarParam = new Var(avoidNULL.c_str(), TYPE_INT);
     auto *putArrayVarSymbol = new Symbol(putArrayVarParam, nullptr, nullptr, nullptr, nullptr);
     putArrayParams->emplace_back(putArrayVarSymbol);
     // int[]
     auto *putArrayVarArraySubs = new std::vector<int>();
-    auto *putArrayVarArrayParam = new VarArray(avoidNULL.c_str(), TYPE_INT, putArrayVarArraySubs, 0, 0);
+    auto *putArrayVarArrayParam = new VarArray(avoidNULL.c_str(), TYPE_INT, putArrayVarArraySubs);
     auto *putArrayVarArraySymbol = new Symbol(nullptr, putArrayVarArrayParam, nullptr, nullptr, nullptr);
     putArrayParams->emplace_back(putArrayVarArraySymbol);
     // void putarray(int, int[])
-    auto *funcPutArray = new Func(putArrayStr.c_str(), TYPE_VOID, putArrayParams, 0, 0);
+    auto *funcPutArray = new Func(putArrayStr.c_str(), TYPE_VOID, putArrayParams);
     auto *symbolPutArray = new Symbol(nullptr, nullptr, nullptr, nullptr, funcPutArray);
     symbolsLib->emplace_back(symbolPutArray);
 
 
     auto *putFParams = new std::vector<Symbol *>();
     // <格式串>
-    auto *putFStrParam = new Var(avoidNULL.c_str(), TYPE_STR, 0, 0);
+    auto *putFStrParam = new Var(avoidNULL.c_str(), TYPE_STR);
     auto *putFStrSymbol = new Symbol(putFStrParam, nullptr, nullptr, nullptr, nullptr);
     putFParams->emplace_back(putFStrSymbol);
     // int... jump -> 写死判断
     // void putf(<格式串>, int, …)
-    auto *funcPutF = new Func(putFStr.c_str(), TYPE_VOID, putFParams, 0, 0);
+    auto *funcPutF = new Func(putFStr.c_str(), TYPE_VOID, putFParams);
     auto *symbolPutF = new Symbol(nullptr, nullptr, nullptr, nullptr, funcPutF);
     symbolsLib->emplace_back(symbolPutF);
 
     std::string startTimeStr = "starttime";
     // void starttime()
-    auto *funcStartTime = new Func(startTimeStr.c_str(), TYPE_VOID, nullptr, 0, 0);
+    auto *funcStartTime = new Func(startTimeStr.c_str(), TYPE_VOID, nullptr);
     auto *symbolStartTime = new Symbol(nullptr, nullptr, nullptr, nullptr, funcStartTime);
     symbolsLib->emplace_back(symbolStartTime);
 
     std::string stopTimeStr = "stoptime";
     // void stoptime()
-    auto *funcStopTime = new Func(stopTimeStr.c_str(), TYPE_VOID, nullptr, 0, 0);
+    auto *funcStopTime = new Func(stopTimeStr.c_str(), TYPE_VOID, nullptr);
     auto *symbolStopTime = new Symbol(nullptr, nullptr, nullptr, nullptr, funcStopTime);
     symbolsLib->emplace_back(symbolStopTime);
 
