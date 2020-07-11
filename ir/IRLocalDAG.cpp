@@ -32,35 +32,27 @@ void DAGRoot::FindNode(DAGNode *newNode, const char *newNodeRetName, const char 
 
   if (isInternalVal) {
     bool isNotOnRoot = true;
-    for (auto item = nodes.begin(); item != nodes.end(); item++) {
+    for (auto item = nodes.end()-1; item >= nodes.begin(); item--) {
       // DAGRoot存在目标node，
       if ((*item)->getRetName() == targetRetName) {
         isNotOnRoot = false;
         auto *dagUse1 = new DAGUse(DAGValue(*item, 0), newNode);
         OperandList.push_back(dagUse1);
-        //  newNodeRetName和opd相等就进行位置替换,否则取消其与DAGroot的联系
+        //  删除该节点与根节点的联系
 
-        if (newNodeRetName == targetRetName) {
-          *item = newNode;
-        } else{
-          nodes.erase(item);
-        }
+        nodes.erase(item);
         break;
       }
+      if (item == nodes.begin())
+        break;
     }
     // DAGRoot不存在目标node，开始深度遍历寻找
 
     if (isNotOnRoot) {
-      for (auto &item : nodes) {
-        DAGNode *targetNode = DepthDAGNode(item, targetRetName);
-        if (targetNode != nullptr) {
-          //  newNodeRetName和opd相等就进行位置替换
 
-          if (newNodeRetName == targetRetName) {
-            for (DAGUse *targetUse = targetNode->getUseList();
-                 targetUse != nullptr; targetUse = targetNode->getUseList())
-              targetUse->set(DAGValue(newNode, 0));
-          }
+      for (auto item = nodes.rbegin(); item != nodes.rend(); item++) {
+        DAGNode *targetNode = DepthDAGNode(*item, targetRetName);
+        if (targetNode != nullptr) {
           auto *dagUse1 = new DAGUse(DAGValue(targetNode, 0), newNode);
           OperandList.push_back(dagUse1);
         }
@@ -75,6 +67,7 @@ void DAGRoot::FindNode(DAGNode *newNode, const char *newNodeRetName, const char 
   }
   newNode->setOperandList(OperandList);
 }
+
 
 bool DAGRoot::AnalysisOpdName(const char *opdName) {
   // 判断是否为临时变量
@@ -104,11 +97,13 @@ bool DAGRoot::AnalysisOpdName(const char *opdName) {
 
 void DAGRoot::AddRet(std::string &opd1) {
   DAGNode *retNode = new DAGNode(count++, DAG_RET, "void");
+  nodes.push_back(retNode);
   FindNode(retNode, retNode->getRetName().c_str(), opd1.c_str());
 }
 
 void DAGRoot::AddBr(std::string &opd1) {
   DAGNode *brNode = new DAGNode(count++, DAG_BR, "void");
+  nodes.push_back(brNode);
   FindNode(brNode, brNode->getRetName().c_str(), opd1.c_str());
 }
 
@@ -136,14 +131,14 @@ void DAGRoot::AddCon_Global(std::string &opd1) {
 
 void DAGRoot::AddStore(std::string &opd1, std::string &opd2) {
   DAGNode *storeNode = new DAGNode(count++, DAG_STORE, opd1);
-
+  nodes.push_back(storeNode);
   FindNode(storeNode, storeNode->getRetName().c_str(), opd1.c_str());
   FindNode(storeNode, storeNode->getRetName().c_str(), opd2.c_str());
 }
 
 void DAGRoot::AddStore(std::string &opd1, int opd2) {
   DAGNode *storeNode = new DAGNode(count++, DAG_STORE, opd1);
-
+  nodes.push_back(storeNode);
   FindNode(storeNode, storeNode->getRetName().c_str(), opd1.c_str());
 
   // 创建立即数的node
@@ -156,6 +151,7 @@ void DAGRoot::AddStore(std::string &opd1, int opd2) {
 
 void DAGRoot::AddLoad(std::string &opd1, std::string &opd2) {
   DAGNode *loadNode = new DAGNode(count++, DAG_LOAD, opd1);
+  nodes.push_back(loadNode);
 
   FindNode(loadNode, loadNode->getRetName().c_str(), opd1.c_str());
   FindNode(loadNode, loadNode->getRetName().c_str(), opd2.c_str());
@@ -163,6 +159,7 @@ void DAGRoot::AddLoad(std::string &opd1, std::string &opd2) {
 
 void DAGRoot::AddLoad(std::string &opd1, int opd2) {
   DAGNode *loadNode = new DAGNode(count++, DAG_STORE, opd1);
+  nodes.push_back(loadNode);
 
   FindNode(loadNode, loadNode->getRetName().c_str(), opd1.c_str());
 
@@ -213,24 +210,31 @@ void DAGRoot::AddCon_Global_Array(std::string &opd1, std::vector<std::string> di
 
 void DAGRoot::AddOp(std::string &opd1, std::string &opd2, std::string &opd3, int opType) {
   DAGNode *opNode = new DAGNode(count++, opType, opd1);
+  nodes.push_back(opNode);
   FindNode(opNode, opNode->getRetName().c_str(), opd2.c_str());
   FindNode(opNode, opNode->getRetName().c_str(), opd3.c_str());
 }
 
 void DAGRoot::AddBr(std::string &opd1, std::string &opd2, std::string &opd3) {
   DAGNode *brNode = new DAGNode(count++, DAG_BR, "void");
+  nodes.push_back(brNode);
+
   FindNode(brNode, brNode->getRetName().c_str(), opd2.c_str());
   FindNode(brNode, brNode->getRetName().c_str(), opd3.c_str());
 }
 
 void DAGRoot::AddGetPtr(std::string &opd1, std::string &opd2, std::string &opd3) {
   DAGNode *getPtrNode = new DAGNode(count++, DAG_GETPTR, opd1);
+  nodes.push_back(getPtrNode);
+
   FindNode(getPtrNode, getPtrNode->getRetName().c_str(), opd2.c_str());
   FindNode(getPtrNode, getPtrNode->getRetName().c_str(), opd3.c_str());
 }
 
 void DAGRoot::AddGetPtr(std::string &opd1, int opd2, std::string &opd3) {
   DAGNode *getPtrNode = new DAGNode(count++, DAG_GETPTR, opd1);
+  nodes.push_back(getPtrNode);
+
   FindNode(getPtrNode, getPtrNode->getRetName().c_str(), opd3.c_str());
 
   // 创建立即数的node
@@ -243,6 +247,8 @@ void DAGRoot::AddGetPtr(std::string &opd1, int opd2, std::string &opd3) {
 
 void DAGRoot::AddCall(std::string &opd1, std::string &opd2, std::vector<std::string> &paramList) {
   DAGNode *callNode = new DAGNode(count++, DAG_CALL, opd1);
+  nodes.push_back(callNode);
+
   FindNode(callNode, callNode->getRetName().c_str(), opd2.c_str());
 
   for (auto &item:paramList) {

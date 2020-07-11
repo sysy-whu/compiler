@@ -29,10 +29,12 @@ int main(int argc, char **argv) {
   // // 移步 parse 构造方法
   // //    Lex lex;
   // //    test(lex);
-  std::vector<std::string> v;
-  test(v);
-  for (auto &it:v) {
-    std::cout << it;
+  std::vector<std::string> nodes;
+  nodes.push_back("aaa");
+  nodes.push_back("bbb");
+  nodes.push_back("ccc");
+  for (auto item = nodes.rbegin(); item != nodes.rend(); item++) {
+    std::cout << *item << std::endl;
   }
 
 }
