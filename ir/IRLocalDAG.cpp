@@ -32,17 +32,19 @@ void DAGRoot::FindNode(DAGNode *newNode, const char *newNodeRetName, const char 
 
   if (isInternalVal) {
     bool isNotOnRoot = true;
-    for (auto &item : nodes) {
+    for (auto item = nodes.begin(); item != nodes.end(); item++) {
       // DAGRoot存在目标node，
-
-      if (item->getRetName() == targetRetName) {
+      if ((*item)->getRetName() == targetRetName) {
         isNotOnRoot = false;
-        auto *dagUse1 = new DAGUse(DAGValue(item, 0), newNode);
+        auto *dagUse1 = new DAGUse(DAGValue(*item, 0), newNode);
         OperandList.push_back(dagUse1);
-        //  newNodeRetName和opd相等就进行位置替换
+        //  newNodeRetName和opd相等就进行位置替换,否则取消其与DAGroot的联系
 
-        if (newNodeRetName == targetRetName)
-          item = newNode;
+        if (newNodeRetName == targetRetName) {
+          *item = newNode;
+        } else{
+          nodes.erase(item);
+        }
         break;
       }
     }
