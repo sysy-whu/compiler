@@ -1,7 +1,8 @@
 #include "Util.h"
-#include <io.h>
+//#include <io.h>
+#include <fstream>
 #include "Error.h"
-#include "MyConstants.h"
+//#include "MyConstants.h"
 
 int Util::ifO2 = 0;
 
@@ -27,14 +28,26 @@ int Util::handleParams(int argc, char **argv) {
             return PARAMS_WORD_WRONG;
         }
     }
-//    std::cout << argv[3] << "\t" << argv[4] << std::endl;
-    if (_access(argv[4], 0) == 0 && _access(argv[4], 2) == 0) {
-        setInputUrl(argv[4]);
-        setOutputUrl(argv[3]);
-//        std::cout << outputUrl << "\t" << inputUrl << std::endl;
-        return PARAMS_PASS;
-    } else {
+    std::fstream _file;
+    _file.open(argv[4], std::ios::in);
+    if(!_file){
         Error::errorInputFile();
         return PARAMS_FILE_WRONG;
+    }else{
+        _file.close();
+        setInputUrl(argv[4]);
+        setOutputUrl(argv[3]);
+        return PARAMS_PASS;
     }
+
+////    std::cout << argv[3] << "\t" << argv[4] << std::endl;
+//    if (_access(argv[4], 0) == 0 && _access(argv[4], 2) == 0) {
+//        setInputUrl(argv[4]);
+//        setOutputUrl(argv[3]);
+////        std::cout << outputUrl << "\t" << inputUrl << std::endl;
+//        return PARAMS_PASS;
+//    } else {
+//        Error::errorInputFile();
+//        return PARAMS_FILE_WRONG;
+//    }
 }
