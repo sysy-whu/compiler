@@ -1,72 +1,59 @@
 #ifndef COMPILER_IRLOCALBLOCK_H
 #define COMPILER_IRLOCALBLOCK_H
-
-
+/**
+ * 详细说明见 SysY2020-WHU_中间码设计.docx
+ */
 #include <utility>
 #include <vector>
 #include <string>
 #include <set>
-#include "IRLocalStmt.h"
+
+#include "IRStmt.h"
 
 /**
  * IRLocalBlock 标签块类
  */
 class IRLocalBlock {
 private:
-    std::vector<IRLocalStmt *> *localStmts;
+    std::string blockName;
 
-    std::string labelName;
+    std::vector<IRStmt *> *stmts;
 
-    unsigned int line;
-
-    std::set<std::string> *fromLineNames;
+    std::set<std::string> *preBlocks;
 
 public:
     /**
-     * IRLocalBlock 标签块类构造方法
-     * @param labelName 分配的标签名
-     * @param localStmts 标签块中的语句
-     * @Param line 行号
-     * @param fromLabelNames 哪些标签块可以跳转到这里
+     * IRLocalBlock 标签块类 构造方法
+     * @param blockName 块名
+     * @param stmts 块内有序语句
+     * @param preBlocks 哪些块会跳转于此
      */
-    IRLocalBlock(const char *labelName, std::vector<IRLocalStmt *> *localStmts, unsigned int line,
-                 std::set<std::string> *fromLabelNames)
-            : labelName(labelName), localStmts(localStmts), line(line), fromLineNames(fromLabelNames) {};
+    IRLocalBlock(const char *blockName, std::vector<IRStmt *> *stmts, std::set<std::string> *preBlocks)
+            : blockName(blockName), stmts(stmts), preBlocks(preBlocks) {};
 
-    std::string getLabelName() { return labelName; }
-
-    // stmt语句代码
-    std::vector<IRLocalStmt *> *getLocalStmts() { return localStmts; }
-
-    void clearLocalStmts() { localStmts->clear(); }
-
-    void modifyLocalStmts(std::vector<IRLocalStmt *> *newLocalStmts) {
-        localStmts->clear();
-        this->localStmts = newLocalStmts;
+    const std::string &getBlockName() const {
+        return blockName;
     }
 
-    void modifyOneLocalStmtByPos(IRLocalStmt *localStmt, unsigned int pos) {
-        localStmts->erase(localStmts->begin() + pos);
-        localStmts->insert(localStmts->begin() + pos, localStmt);
+    std::vector<IRStmt *> *getStmts() const {
+        return stmts;
     }
 
-    void deleteOneLocalStmtByPos(unsigned int pos) {
-        this->localStmts->erase(this->localStmts->begin() + pos);
+    void setStmts(std::vector<IRStmt *> *stmts_) {
+        IRLocalBlock::stmts = stmts_;
     }
 
-    // 行列号
-    [[nodiscard]] unsigned int getLine() const { return line; }
+    void addStmt(IRStmt *irStmt) {
+        IRLocalBlock::stmts->push_back(irStmt);
+    }
 
-    void setLine(unsigned int line_) { this->line = line_; }
+    std::set<std::string> *getPreBlocks() const {
+        return preBlocks;
+    }
 
-    // 来源
-    std::set<std::string> *getFromLabelNames() { return fromLineNames; }
-
-    void addFromLabelNames(const std::string &oneLabelName) { fromLineNames->insert(oneLabelName); }
-
-    void deleteFromLabelNames(const std::string &oneLabelName) { fromLineNames->erase(oneLabelName); }
-
-    void clearFromLabelNames() { fromLineNames->clear(); }
+    void addPreBlock(std::string preBlockName) {
+        IRLocalBlock::preBlocks->insert(preBlockName);
+    }
 };
 
 

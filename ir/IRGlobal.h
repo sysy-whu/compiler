@@ -1,47 +1,47 @@
 #ifndef COMPILER_IRGLOBAL_H
 #define COMPILER_IRGLOBAL_H
-
+/**
+ * 详细说明见 SysY2020-WHU_中间码设计.docx
+ */
 #include <utility>
+#include <map>
+#include <set>
 
 #include "IRLocalBlock.h"
-#include "IRLocalStmt.h"
+#include "IRStmt.h"
 
 /**
  * 全局变量类IRGlobalVar
  */
 class IRGlobalVar {
 private:
-    IRLocalStmt *irLocalStmt;
+    IRStmt *irStmt;
 
 public:
     /**
      * 全局变量类IRGlobalVar构造方法
-     * @param irLocalStmt 变量语句
+     * @param irStmt 变量语句
      */
-    explicit IRGlobalVar(IRLocalStmt *irLocalStmt) : irLocalStmt(irLocalStmt) {};
+    explicit IRGlobalVar(IRStmt *irStmt) : irStmt(irStmt) {};
 
-    IRLocalStmt *getIrLocalStmt() { return irLocalStmt; }
-
-    void setIrLocalStmt(IRLocalStmt *irLocalStmt_) { this->irLocalStmt = irLocalStmt_; }
+    IRStmt *getIrStmt() const {
+        return irStmt;
+    }
 
 };
 
 /**
  * 函数类IRGlobalFunc
  */
-class IRGlobalFunc {
+class IRGlobalFunc{
 private:
     std::string funcName;
 
-    std::string retType;
+    int retType;
 
     std::vector<IRLocalBlock *> *baseBlocks;
 
-    std::set<std::string> *fromLineNames;
-
-    unsigned int line;
-    unsigned int row;
-    unsigned int col;
+    std::multimap<std::string, std::string> *predLocs;
 
 public:
     /**
@@ -49,52 +49,32 @@ public:
      * @param funcName 函数名
      * @param retType 返回类型
      * @param baseBlocks 函数内部IR代码块
-     * @param fromLineNames 哪些行调用了这个函数
-     * @param line 行号所在
-     * @param row 源代码位置行号
-     * @param col 源代码位置列号
+     * @param predLocs 调用此函数的代码块位置
      */
-    IRGlobalFunc(const char *funcName, const char *retType, std::vector<IRLocalBlock *> *baseBlocks,
-                 std::set<std::string> *fromLineNames, unsigned int line, unsigned int row, unsigned int col) :
-            funcName(funcName), retType(retType), baseBlocks(baseBlocks), fromLineNames(fromLineNames),
-            line(line), row(row), col(col) {};
+    IRGlobalFunc(const char *funcName, int retType, std::vector<IRLocalBlock *> *baseBlocks) :
+            funcName(funcName), retType(retType), baseBlocks(baseBlocks){
+        auto *blockNames = new std::set<std::string>();
+    };
 
     std::string getFuncName() { return funcName; }
 
-    std::string getRetType() { return retType; }
+    int getRetType() { return retType; }
 
-    // label代码块
-    [[nodiscard]] std::vector<IRLocalBlock *> *getBaseBlocks() const {
+    std::vector<IRLocalBlock *> *getBaseBlocks() const {
         return baseBlocks;
     }
 
-    void setBaseBlocks(std::vector<IRLocalBlock *> *irLocalBlocks) {
-        IRGlobalFunc::baseBlocks = irLocalBlocks;
+    void setBaseBlocks(std::vector<IRLocalBlock *> *baseBlocks_) {
+        IRGlobalFunc::baseBlocks = baseBlocks_;
     }
 
-    void modifyOneLabelByPos(IRLocalBlock *irLocalBlock, unsigned int pos) {
-        baseBlocks->erase(baseBlocks->begin() + pos);
-        baseBlocks->emplace_back(irLocalBlock);
+    std::multimap<std::string, std::string> *getPredLocs() const {
+        return predLocs;
     }
 
-    // 来源
-    std::set<std::string> *getFromLabelNames() { return fromLineNames; }
-
-    void addFromLabelNames(const std::string &oneLabelName) { fromLineNames->insert(oneLabelName); }
-
-    void deleteFromLabelNames(const std::string &oneLabelName) { fromLineNames->erase(oneLabelName); }
-
-    void clearFromLabelNames() { fromLineNames->clear(); }
-
-
-    // 行列号
-    [[nodiscard]] unsigned int getLine() const { return line; }
-
-    void setLine(unsigned int line_) { this->line = line_; }
-
-    [[nodiscard]] unsigned int getRow() const { return row; }
-
-    [[nodiscard]] unsigned int getColumn() const { return col; }
+    void addPredLocs(const char *callerFuncName, const char *callerBlockName) {
+        IRGlobalFunc::predLocs->insert(std::make_pair(callerFuncName, callerBlockName));
+    }
 };
 
 /**
@@ -126,7 +106,7 @@ public:
 /**
  * ir根节点
  */
-class IRTree{
+class IRTree {
 private:
     std::vector<IRGlobal *> *irGlobals;
 
@@ -135,7 +115,7 @@ public:
      * IRTree ir根节点
      * @param irGlobals 全局变量/函数列表
      */
-    explicit IRTree(std::vector<IRGlobal *> *irGlobals): irGlobals(irGlobals){};
+    explicit IRTree(std::vector<IRGlobal *> *irGlobals) : irGlobals(irGlobals) {};
 
     [[nodiscard]] std::vector<IRGlobal *> *getIrGlobals() const {
         return irGlobals;
