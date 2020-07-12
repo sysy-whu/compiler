@@ -135,8 +135,8 @@ static const int STMT_CONTINUE = -38;
 static const int STMT_RETURN = -39;
 
 // symbolTableInit
-static const int INIT_FALSE = -1;
-static const int INIT_TRUE = -2;
+//static const int INIT_FALSE = -1;
+//static const int INIT_TRUE = -2;
 
 // Extern func
 static const std::string putFStr = "putf";
