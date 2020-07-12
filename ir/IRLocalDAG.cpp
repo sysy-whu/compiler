@@ -208,11 +208,17 @@ void DAGRoot::AddCon_Global_Array(std::string &opd1, std::vector<std::string> di
 
 }
 
-void DAGRoot::AddOp(std::string &opd1, std::string &opd2, std::string &opd3, int opType) {
+void DAGRoot::AddBO(std::string &opd1, std::string &opd2, std::string &opd3, int opType) {
   DAGNode *opNode = new DAGNode(count++, opType, opd1);
   nodes.push_back(opNode);
   FindNode(opNode, opNode->getRetName().c_str(), opd2.c_str());
   FindNode(opNode, opNode->getRetName().c_str(), opd3.c_str());
+}
+
+void DAGRoot::AddUO(std::string &opd1, std::string &opd2, int opType) {
+    DAGNode *opNode = new DAGNode(count++, opType, opd1);
+    nodes.push_back(opNode);
+    FindNode(opNode, opNode->getRetName().c_str(), opd2.c_str());
 }
 
 void DAGRoot::AddBr(std::string &opd1, std::string &opd2, std::string &opd3) {

@@ -233,7 +233,9 @@ public:
 
 
   /// 添加算术逻辑节点
-  void AddOp(std::string &opd1, std::string &opd2, std::string &opd3, int opType);
+  void AddBO(std::string &opd1, std::string &opd2, std::string &opd3, int opType);
+
+  void AddUO(std::string &opd1, std::string &opd2, int opType);
 
   void AddBr(std::string &opd1, std::string &opd2, std::string &opd3);
 
