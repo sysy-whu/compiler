@@ -141,4 +141,36 @@ static const int INIT_TRUE = -2;
 // Extern func
 static const std::string putFStr = "putf";
 
+// DAGNode Type
+static const int DAG_ALLOCA_i32 = -1;
+static const int DAG_GLOBAL_i32 = -2;
+static const int DAG_LOAD = -3;
+static const int DAG_STORE = -4;
+static const int DAG_CALL = -5;
+static const int DAG_IMMEDIATE_DATA = -6;
+static const int DAG_EXTERNAL_DATA= -7;
+static const int DAG_BR= -8;
+static const int DAG_RET= -9;
+static const int DAG_ALLOCA_i32_ARRAY= -10;
+static const int DAG_GLOBAL_i32_ARRAY= -11;
+static const int DAG_ADD= -12;
+static const int DAG_SUB= -13;
+static const int DAG_MUL= -14;
+static const int DAG_DIV = -15;
+static const int DAG_REM = -16;
+static const int DAG_GT = -17;
+static const int DAG_LT = -18;
+static const int DAG_OOR = -19;
+static const int DAG_EQ = -20;
+static const int DAG_AND = -21;
+static const int DAG_NEQ = -22;
+static const int DAG_GTE = -23;
+static const int DAG_LTE = -24;
+static const int DAG_Con_ALLOCA_i32 = -25;
+static const int DAG_Con_GLOBAL_i32 = -26;
+static const int DAG_Con_ALLOCA_ARRAY_i32 = -27;
+static const int DAG_Con_GLOBAL_ARRAY_i32 = -28;
+static const int DAG_GETPTR = -28;
+
+
 #endif //COMPILER_MYCONSTANTS_H
