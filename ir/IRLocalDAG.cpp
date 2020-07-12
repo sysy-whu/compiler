@@ -1,6 +1,10 @@
 #include "IRLocalDAG.h"
 #include "../util/MyConstants.h"
 
+#include <string>
+#include<iostream>
+#include<fstream>
+
 inline DAGValue::DAGValue(DAGNode *node, unsigned resno)
         : Node(node), ResNo(resno) {}
 
@@ -260,6 +264,82 @@ void DAGRoot::AddCall(std::string &opd1, std::string &opd2, std::vector<std::str
   for (auto &item:paramList) {
     FindNode(callNode, callNode->getRetName().c_str(), item.c_str());
   }
+}
+
+
+void DAG::generateDOT(){
+    std::ofstream fout;
+    std::string cont;
+
+    std::string fname  = Name + ".txt";
+
+    fout.open("output/" + fname, std::ios::out | std::ios::app);
+    if(!fout.is_open())
+        std::perror("Failed to open file dot file!" );
+
+    // start building the graph in DOT language
+    cont += "digraph struct { \n "
+            " rankdir = BT \n"
+            "node [shape=record]; \n";
+
+
+    /// Node Structure
+
+    ///  ----------------
+    ///  | OperandList   |
+    ///  ----------------
+    ///  |   opType      |
+    ///  ----------------
+    ///  |  retName      |
+    ///  ----------------
+
+    for (DAGNode* nd : Nodes){
+        std::string id = std::to_string( nd->getID());
+        cont += "node" + id + " [label=\"{ ";
+
+        //operandList  e.g.  {<n1i1> a | <n1i2> b }
+        std::vector<DAGUse*> opList= nd->getOperandList();
+        int opNum = opList.size();
+        if(opNum == 0){
+            cont += " {} ";
+        }
+        else{
+            std::string opStr = "{";
+            for( int i = 0; i < opNum; i++){
+                opStr += " <n"+ std::to_string(nd->getID()) + "i" + std::to_string(i+1) + ">";
+                opStr += opList[i]->Val.getNode()->getRetName() + " |";
+            }
+            opStr.pop_back(); //remove the surplus '|'
+            cont += opStr + " }";
+        }
+
+
+        // opType   e.g.  store
+        cont += " | " + std::to_string( nd->getOpType()) + " | ";
+
+
+        //retName     e.g.  <n1i0> a
+        cont += "<n" + std::to_string( nd->getID()) + "i0" + nd->getRetName();
+
+        cont += "}\"] \n";
+
+
+        ///  Node Connection  e.g.  node1:n1i0 -> node2: n2i1
+        std::string connStr = "";
+        for( int j = 0; j < opNum; j++){
+            connStr += "node" + std::to_string(opList[j]->Val.getNode()->getID()) +
+                       ": n" + std::to_string(opList[j]->Val.getNode()->getID()) + "i0";
+            connStr += " -> ";
+            connStr += "node" + std::to_string(nd->getID()) +
+                       ": n" + std::to_string(nd->getID()) + std::to_string(j+1) + " \n";
+            cont += connStr;
+            connStr = "";
+        }
+    }
+
+    cont += "}";
+    fout << cont;
+    fout.close();
 }
 
 

@@ -2,11 +2,58 @@
 #define COMPILER_IRLOCALDAG_H
 
 #include <string>
+#include <utility>
 #include <vector>
+#include <set>
 #include "../semantic/SymbolTable.h"
 #include "../util/MyConstants.h"
 
+class DAG;
 class DAGNode;
+class DAGValue;
+class DAGUse;
+class DAGRoot;
+
+
+class DAG{
+
+    DAGRoot *Root;
+
+    std::string Name;
+
+    std::set<DAGNode*> Nodes;
+
+
+public:
+
+    DAG(DAGRoot *root, const char *name)
+    : Root(root), Name(name)  {};
+
+    void setRoot(DAGRoot* dagRoot){
+        Root = dagRoot;
+    }
+
+    DAGRoot *getRoot(){
+        return Root;
+    }
+
+    std::string getName(){
+        return Name;
+    }
+
+    void addNode(DAGNode *node){
+        Nodes.insert(node);
+    }
+
+
+
+    // Operations about the overall DAG are defined in this class
+
+    /// generate dot language file for graph
+    void generateDOT();
+
+};
+
 
 class DAGValue {
 private:
@@ -68,6 +115,8 @@ public:
 
 private:
   friend class DAGRoot;
+
+  friend class DAG;
 
   friend class DAGNode;
 
@@ -133,6 +182,11 @@ public:
   DAGUse *getUseList() const {
     return UseList;
   }
+
+  int getID() const{
+      return id;
+  }
+
 
   /**
    * set函数
@@ -244,6 +298,7 @@ public:
   void AddGetPtr(std::string &opd1, int opd2, std::string &opd3);
 
   void AddCall(std::string &opd1, std::string &opd2, std::vector<std::string> &paramList);
+
 
 
 };
