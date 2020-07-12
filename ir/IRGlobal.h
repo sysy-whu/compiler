@@ -15,16 +15,16 @@
  */
 class IRGlobalVar {
 private:
-    IRStmt *irStmt;
+    std::vector<IRStmt *> *irStmt;
 
 public:
     /**
      * 全局变量类IRGlobalVar构造方法
      * @param irStmt 变量语句
      */
-    explicit IRGlobalVar(IRStmt *irStmt) : irStmt(irStmt) {};
+    explicit IRGlobalVar(std::vector<IRStmt *> *irStmt) : irStmt(irStmt) {};
 
-    IRStmt *getIrStmt() const {
+    std::vector<IRStmt *> *getIrStmt() const {
         return irStmt;
     }
 
