@@ -110,15 +110,26 @@ class IRTree {
 private:
     std::vector<IRGlobal *> *irGlobals;
 
+    IRLocalBlock *irLocalBlock;
+
 public:
     /**
      * IRTree ir根节点
      * @param irGlobals 全局变量/函数列表
      */
-    explicit IRTree(std::vector<IRGlobal *> *irGlobals) : irGlobals(irGlobals) {};
+    explicit IRTree(std::vector<IRGlobal *> *irGlobals, IRLocalBlock *irLocalBlock) :
+    irGlobals(irGlobals), irLocalBlock(irLocalBlock) {};
 
     [[nodiscard]] std::vector<IRGlobal *> *getIrGlobals() const {
         return irGlobals;
+    }
+
+    IRLocalBlock *getIrLocalBlock() const {
+        return irLocalBlock;
+    }
+
+    void setIrLocalBlock(IRLocalBlock *irLocalBlock_) {
+        IRTree::irLocalBlock = irLocalBlock_;
     }
 };
 

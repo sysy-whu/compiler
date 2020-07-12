@@ -9,6 +9,7 @@
 #include <set>
 
 #include "IRStmt.h"
+#include "IRLocalDAG.h"
 
 /**
  * IRLocalBlock 标签块类
@@ -20,6 +21,8 @@ private:
     std::vector<IRStmt *> *stmts;
 
     std::set<std::string> *preBlocks;
+
+    DAGRoot *dagRoot = nullptr;
 
 public:
     /**
@@ -53,6 +56,14 @@ public:
 
     void addPreBlock(std::string preBlockName) {
         IRLocalBlock::preBlocks->insert(preBlockName);
+    }
+
+    DAGRoot *getDagRoot() const {
+        return dagRoot;
+    }
+
+    void setDagRoot(DAGRoot *dagRoot_) {
+        IRLocalBlock::dagRoot = dagRoot_;
     }
 };
 
