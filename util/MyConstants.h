@@ -181,4 +181,10 @@ static const int DAG_LTE = OP_BO_LTE;
 
 static const int DAG_NOT = OP_UO_NOT;
 
+// ir like blockName entry
+static const std::string BLOCK_ENTRY = "entry";
+static const std::string REGISTER_GLOBAL = "@";
+static const std::string REGISTER_LOCAL = "%";
+static const std::string OPD_NULL = "";
+
 #endif //COMPILER_MYCONSTANTS_H
