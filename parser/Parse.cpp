@@ -108,6 +108,7 @@ ConstDecl *Parse::parseConstDecl() {
 ConstDef *Parse::parseConstDef() {
     auto *locs = new std::list<SourceLocation *>();
     auto *constExpsInner = new std::vector<ConstExp *>();
+    ConstInitVal *constInitVal = nullptr;
     std::string ident;
 
     if (tokens.at(step).getType() == TOKEN_IDENTIFIER) {
@@ -139,12 +140,9 @@ ConstDef *Parse::parseConstDef() {
     if (tokens.at(step).getType() == OP_ASSIGN) {
         auto *assignLoc = new SourceLocation(tokens.at(step).getRow(), tokens.at(step).getStartColumn());
         locs->emplace_back(assignLoc);
-    } else {
-        Error::errorParse("'=' or '[' Expected", tokens.at(step));
+        step++;  // eat '='
+        constInitVal = parseConstInitVal();
     }
-
-    step++;  // eat =
-    ConstInitVal *constInitVal = parseConstInitVal();
 
     auto *constDefRet = new ConstDef(ident.c_str(), constExpsInner, constInitVal, locs);
     return constDefRet;
@@ -265,10 +263,8 @@ VarDef *Parse::parseVarDef() {
     if (tokens.at(step).getType() == OP_ASSIGN) {
         auto *assignLoc = new SourceLocation(tokens.at(step).getRow(), tokens.at(step).getStartColumn());
         locs->emplace_back(assignLoc);
-        step++;  // eat '['
+        step++;  // eat '='
         initValInner = parseInitVal();
-    } else {
-        Error::errorParse("'=' or '[' Expected", tokens.at(step));
     }
 
     auto *varDef = new VarDef(ident.c_str(), constExps, initValInner, locs);
