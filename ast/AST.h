@@ -666,7 +666,7 @@ public:
     InitVal(Exp *exp, std::vector<InitVal *> *initVals, std::list<SourceLocation *> *sourLocs) :
             exp(exp), initVals(initVals), Locs(sourLocs) {};
 
-    [[nodiscard]] const Exp *getExp() const {
+    [[nodiscard]] Exp *getExp() const {
         return exp;
     }
 

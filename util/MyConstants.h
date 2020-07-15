@@ -186,5 +186,6 @@ static const std::string BLOCK_ENTRY = "entry";
 static const std::string REGISTER_GLOBAL = "@";
 static const std::string REGISTER_LOCAL = "%";
 static const std::string OPD_NULL = "";
+static const int GLOBAL_DEFAULT_VALUE = 0;
 
 #endif //COMPILER_MYCONSTANTS_H
