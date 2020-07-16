@@ -38,7 +38,13 @@ private:
     ///===-----------------------------------------------------------------------===///
 
     const char *genStmt(Stmt *stmt, std::vector<IRLocalBlock *> *basicBlocks, IRLocalBlock *lastBlock,
-                 std::vector<IRStmt *> *lastBlockStmts, int &stepName);
+                 std::vector<IRStmt *> *lastBlockStmts, int &stepName, const char *lastWhile, const char *lastWhileEnd);
+
+    const char *genStmtAuxIf(Stmt *stmt, std::vector<IRLocalBlock *> *basicBlocks, IRLocalBlock *lastBlock,
+                        std::vector<IRStmt *> *lastBlockStmts, int &stepName, const char *lastWhile, const char *lastWhileEnd);
+
+    const char *genStmtAuxWhile(Stmt *stmt, std::vector<IRLocalBlock *> *basicBlocks, IRLocalBlock *lastBlock,
+                        std::vector<IRStmt *> *lastBlockStmts, int &stepName, const char *lastWhile, const char *lastWhileEnd);
 
     const char *genBlock(Block *block, std::vector<IRLocalBlock *> *basicBlocks, IRLocalBlock *lastBlock,
                   std::vector<IRStmt *> *lastBlockStmts, int &stepName);
