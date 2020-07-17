@@ -276,11 +276,11 @@ const char *IRGen::genStmt(Stmt *stmt, std::vector<IRLocalBlock *> *basicBlocks,
         }
         case STMT_RETURN: {
             if (stmt->getExp() == nullptr) {
-                auto *irStmtRet = new IRStmt(STMT_RETURN, OPD_NULL.c_str(), OPD_NULL.c_str(), nullptr);
+                auto *irStmtRet = new IRStmt(STMT_RETURN, OPD_NULL.c_str(), OPD_NULL.c_str());
                 lastBlockStmts->emplace_back(irStmtRet);
             } else {
                 std::string registerRet = genAddExp(stmt->getExp()->getAddExp(), lastBlockStmts, stepName);
-                auto *irStmtRet = new IRStmt(STMT_RETURN, registerRet.c_str(), OPD_NULL.c_str(), nullptr);
+                auto *irStmtRet = new IRStmt(STMT_RETURN, registerRet.c_str(), OPD_NULL.c_str());
                 lastBlockStmts->emplace_back(irStmtRet);
             }
             return lastBlock->getBlockName().c_str();

@@ -58,7 +58,7 @@ public:
         IRLocalBlock::preBlocks->insert(preBlockName);
     }
 
-    DAGRoot *getDagRoot() const {
+    DAGRoot *getDagRoot() {
         return dagRoot;
     }
 

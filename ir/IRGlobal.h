@@ -110,26 +110,26 @@ class IRTree {
 private:
     std::vector<IRGlobal *> *irGlobals;
 
-    IRLocalBlock *irLocalBlock;
+    DAGRoot *globalDagRoot;
 
 public:
     /**
      * IRTree ir根节点
      * @param irGlobals 全局变量/函数列表
      */
-    explicit IRTree(std::vector<IRGlobal *> *irGlobals, IRLocalBlock *irLocalBlock) :
-    irGlobals(irGlobals), irLocalBlock(irLocalBlock) {};
+    explicit IRTree(std::vector<IRGlobal *> *irGlobals, DAGRoot *globalDagRoot) :
+    irGlobals(irGlobals), globalDagRoot(globalDagRoot) {};
 
     [[nodiscard]] std::vector<IRGlobal *> *getIrGlobals() const {
         return irGlobals;
     }
 
-    IRLocalBlock *getIrLocalBlock() const {
-        return irLocalBlock;
+    DAGRoot *getGlobalDagRoot() {
+        return globalDagRoot;
     }
 
-    void setIrLocalBlock(IRLocalBlock *irLocalBlock_) {
-        IRTree::irLocalBlock = irLocalBlock_;
+    void setGlobalDagRoot(DAGRoot *globalDagRoot_) {
+        IRTree::globalDagRoot = globalDagRoot_;
     }
 };
 
