@@ -65,6 +65,9 @@ void DAGRoot::FindNode(DAGNode *newNode, const char *newNodeRetName, const char 
   } else {
     // 创建外部变量的node
     DAGNode *externalNode = new DAGNode(count++, DAG_EXTERNAL_DATA, targetRetName);
+
+    dag->addNode(externalNode);
+
     DAGUse *dagUse1 = new DAGUse(DAGValue(externalNode, 0), newNode);
     // 添加到OperandList中
     OperandList.push_back(dagUse1);
@@ -102,40 +105,52 @@ bool DAGRoot::AnalysisOpdName(const char *opdName) {
 void DAGRoot::AddRet(std::string &opd1) {
   DAGNode *retNode = new DAGNode(count++, DAG_RET, "void");
   nodes.push_back(retNode);
+  dag->addNode(retNode);
   FindNode(retNode, retNode->getRetName().c_str(), opd1.c_str());
 }
 
 void DAGRoot::AddBr(std::string &opd1) {
   DAGNode *brNode = new DAGNode(count++, DAG_BR, "void");
   nodes.push_back(brNode);
+  dag->addNode(brNode);
+
   FindNode(brNode, brNode->getRetName().c_str(), opd1.c_str());
 }
 
 void DAGRoot::AddAlloca(std::string &opd1) {
   // 添加块内变量
   existVarList.push_back(opd1);
-  nodes.push_back(new DAGNode(count++, DAG_ALLOCA_i32, opd1));
+  DAGNode *allocaNode =  new DAGNode(count++, DAG_ALLOCA_i32, opd1);
+  nodes.push_back(allocaNode);
+  dag->addNode(allocaNode);
 }
 
 void DAGRoot::AddCon_Alloca(std::string &opd1) {
 
   existVarList.push_back(opd1);
-  nodes.push_back(new DAGNode(count++, DAG_Con_ALLOCA_i32, opd1));
+  DAGNode *conAllocaNode =new DAGNode(count++, DAG_Con_ALLOCA_i32, opd1);
+  nodes.push_back(conAllocaNode);
+  dag->addNode(conAllocaNode);
 }
 
 void DAGRoot::AddGlobal(std::string &opd1) {
   existVarList.push_back(opd1);
-  nodes.push_back(new DAGNode(count++, DAG_GLOBAL_i32, opd1));
+  DAGNode *globalNode = new DAGNode(count++, DAG_GLOBAL_i32, opd1);
+  nodes.push_back(globalNode);
+  dag->addNode(globalNode);
 }
 
 void DAGRoot::AddCon_Global(std::string &opd1) {
   existVarList.push_back(opd1);
-  nodes.push_back(new DAGNode(count++, DAG_Con_GLOBAL_i32, opd1));
+  DAGNode *conGlobalNode = new DAGNode(count++, DAG_Con_GLOBAL_i32, opd1);
+  nodes.push_back(conGlobalNode);
+  dag->addNode(conGlobalNode);
 }
 
 void DAGRoot::AddStore(std::string &opd1, std::string &opd2) {
   DAGNode *storeNode = new DAGNode(count++, DAG_STORE, opd1);
   nodes.push_back(storeNode);
+  dag->addNode(storeNode);
   FindNode(storeNode, storeNode->getRetName().c_str(), opd1.c_str());
   FindNode(storeNode, storeNode->getRetName().c_str(), opd2.c_str());
 }
@@ -143,6 +158,7 @@ void DAGRoot::AddStore(std::string &opd1, std::string &opd2) {
 void DAGRoot::AddStore(std::string &opd1, int opd2) {
   DAGNode *storeNode = new DAGNode(count++, DAG_STORE, opd1);
   nodes.push_back(storeNode);
+  dag->addNode(storeNode);
   FindNode(storeNode, storeNode->getRetName().c_str(), opd1.c_str());
 
   // 创建立即数的node
@@ -151,11 +167,14 @@ void DAGRoot::AddStore(std::string &opd1, int opd2) {
   std::vector<DAGUse *> OperandList = storeNode->getOperandList();
   OperandList.push_back(dagUse2);
   storeNode->setOperandList(OperandList);
+
+  dag->addNode(immedNode);
 }
 
 void DAGRoot::AddLoad(std::string &opd1, std::string &opd2) {
   DAGNode *loadNode = new DAGNode(count++, DAG_LOAD, opd1);
   nodes.push_back(loadNode);
+  dag->addNode(loadNode);
 
   FindNode(loadNode, loadNode->getRetName().c_str(), opd1.c_str());
   FindNode(loadNode, loadNode->getRetName().c_str(), opd2.c_str());
@@ -164,6 +183,7 @@ void DAGRoot::AddLoad(std::string &opd1, std::string &opd2) {
 void DAGRoot::AddLoad(std::string &opd1, int opd2) {
   DAGNode *loadNode = new DAGNode(count++, DAG_STORE, opd1);
   nodes.push_back(loadNode);
+  dag->addNode(loadNode);
 
   FindNode(loadNode, loadNode->getRetName().c_str(), opd1.c_str());
 
@@ -173,12 +193,15 @@ void DAGRoot::AddLoad(std::string &opd1, int opd2) {
   std::vector<DAGUse *> OperandList = loadNode->getOperandList();
   OperandList.push_back(dagUse2);
   loadNode->setOperandList(OperandList);
+
+  dag->addNode(immedNode);
 }
 
 void DAGRoot::AddAlloca_Array(std::string &opd1, std::vector<std::string> dismensionList) {
   existVarList.push_back(opd1);
   DAGNode *allocaArrayNode = new DAGNode(count++, DAG_ALLOCA_i32_ARRAY, opd1);
   nodes.push_back(allocaArrayNode);
+  dag->addNode(allocaArrayNode);
   for (auto &item:dismensionList) {
     FindNode(allocaArrayNode, allocaArrayNode->getRetName().c_str(), item.c_str());
   }
@@ -188,6 +211,7 @@ void DAGRoot::AddCon_Alloca_Array(std::string &opd1, std::vector<std::string> di
   existVarList.push_back(opd1);
   DAGNode *conAllocaArrayNode = new DAGNode(count++, DAG_Con_ALLOCA_ARRAY_i32, opd1);
   nodes.push_back(conAllocaArrayNode);
+  dag->addNode(conAllocaArrayNode);
   for (auto &item:dismensionList) {
     FindNode(conAllocaArrayNode, conAllocaArrayNode->getRetName().c_str(), item.c_str());
   }
@@ -197,6 +221,8 @@ void DAGRoot::AddGlobal_Array(std::string &opd1, std::vector<std::string> dismen
   existVarList.push_back(opd1);
   DAGNode *globalArrayNode = new DAGNode(count++, DAG_GLOBAL_i32_ARRAY, opd1);
   nodes.push_back(globalArrayNode);
+  dag->addNode(globalArrayNode);
+
   for (auto &item:dismensionList) {
     FindNode(globalArrayNode, globalArrayNode->getRetName().c_str(), item.c_str());
   }
@@ -206,6 +232,8 @@ void DAGRoot::AddCon_Global_Array(std::string &opd1, std::vector<std::string> di
   existVarList.push_back(opd1);
   DAGNode *conGlobalArrayNode = new DAGNode(count++, DAG_Con_GLOBAL_ARRAY_i32, opd1);
   nodes.push_back(conGlobalArrayNode);
+  dag->addNode(conGlobalArrayNode);
+
   for (auto &item:dismensionList) {
     FindNode(conGlobalArrayNode, conGlobalArrayNode->getRetName().c_str(), item.c_str());
   }
@@ -215,6 +243,7 @@ void DAGRoot::AddCon_Global_Array(std::string &opd1, std::vector<std::string> di
 void DAGRoot::AddBO(std::string &opd1, std::string &opd2, std::string &opd3, int opType) {
   DAGNode *opNode = new DAGNode(count++, opType, opd1);
   nodes.push_back(opNode);
+  dag->addNode(opNode);
   FindNode(opNode, opNode->getRetName().c_str(), opd2.c_str());
   FindNode(opNode, opNode->getRetName().c_str(), opd3.c_str());
 }
@@ -222,12 +251,14 @@ void DAGRoot::AddBO(std::string &opd1, std::string &opd2, std::string &opd3, int
 void DAGRoot::AddUO(std::string &opd1, std::string &opd2, int opType) {
     DAGNode *opNode = new DAGNode(count++, opType, opd1);
     nodes.push_back(opNode);
+    dag->addNode(opNode);
     FindNode(opNode, opNode->getRetName().c_str(), opd2.c_str());
 }
 
 void DAGRoot::AddBr(std::string &opd1, std::string &opd2, std::string &opd3) {
   DAGNode *brNode = new DAGNode(count++, DAG_BR, "void");
   nodes.push_back(brNode);
+  dag->addNode(brNode);
 
   FindNode(brNode, brNode->getRetName().c_str(), opd2.c_str());
   FindNode(brNode, brNode->getRetName().c_str(), opd3.c_str());
@@ -236,6 +267,7 @@ void DAGRoot::AddBr(std::string &opd1, std::string &opd2, std::string &opd3) {
 void DAGRoot::AddGetPtr(std::string &opd1, std::string &opd2, std::string &opd3) {
   DAGNode *getPtrNode = new DAGNode(count++, DAG_GETPTR, opd1);
   nodes.push_back(getPtrNode);
+  dag->addNode(getPtrNode);
 
   FindNode(getPtrNode, getPtrNode->getRetName().c_str(), opd2.c_str());
   FindNode(getPtrNode, getPtrNode->getRetName().c_str(), opd3.c_str());
@@ -244,11 +276,14 @@ void DAGRoot::AddGetPtr(std::string &opd1, std::string &opd2, std::string &opd3)
 void DAGRoot::AddGetPtr(std::string &opd1, int opd2, std::string &opd3) {
   DAGNode *getPtrNode = new DAGNode(count++, DAG_GETPTR, opd1);
   nodes.push_back(getPtrNode);
+  dag->addNode(getPtrNode);
 
   FindNode(getPtrNode, getPtrNode->getRetName().c_str(), opd3.c_str());
 
   // 创建立即数的node
   DAGNode *immedNode = new ImmediateDAGNode(count++, opd2);
+  dag->addNode(immedNode);
+
   DAGUse *dagUse2 = new DAGUse(DAGValue(immedNode, 0), getPtrNode);
   std::vector<DAGUse *> OperandList = getPtrNode->getOperandList();
   OperandList.push_back(dagUse2);
@@ -258,6 +293,7 @@ void DAGRoot::AddGetPtr(std::string &opd1, int opd2, std::string &opd3) {
 void DAGRoot::AddCall(std::string &opd1, std::string &opd2, std::vector<std::string> &paramList) {
   DAGNode *callNode = new DAGNode(count++, DAG_CALL, opd1);
   nodes.push_back(callNode);
+  dag->addNode(callNode);
 
   FindNode(callNode, callNode->getRetName().c_str(), opd2.c_str());
 
@@ -271,9 +307,9 @@ void DAG::generateDOT(){
     std::ofstream fout;
     std::string cont;
 
-    std::string fname  = Name + ".txt";
+    std::string fname  = "../output/" + Name + ".txt";
 
-    fout.open("output/" + fname, std::ios::out | std::ios::app);
+    fout.open( fname, std::ios::out | std::ios::app);
     if(!fout.is_open())
         std::perror("Failed to open file dot file!" );
 
@@ -324,14 +360,18 @@ void DAG::generateDOT(){
         cont += "}\"] \n";
 
 
-        ///  Node Connection  e.g.  node1:n1i0 -> node2: n2i1
+        ///  Node Connection  e.g.   node2: n2i1 -> node1:n1i0
         std::string connStr = "";
         for( int j = 0; j < opNum; j++){
-            connStr += "node" + std::to_string(opList[j]->Val.getNode()->getID()) +
-                       ": n" + std::to_string(opList[j]->Val.getNode()->getID()) + "i0";
-            connStr += " -> ";
+
             connStr += "node" + std::to_string(nd->getID()) +
-                       ": n" + std::to_string(nd->getID()) + std::to_string(j+1) + " \n";
+                       ": n" + std::to_string(nd->getID()) + std::to_string(j+1) ;
+
+            connStr += " -> ";
+
+            connStr += "node" + std::to_string(opList[j]->Val.getNode()->getID()) +
+                       ": n" + std::to_string(opList[j]->Val.getNode()->getID()) + "i0" + " \n";
+
             cont += connStr;
             connStr = "";
         }
@@ -342,7 +382,66 @@ void DAG::generateDOT(){
     fout.close();
 }
 
+void DAG::setTopoList() {
 
+
+    int length = Nodes.size();
+    int inDegree[length];
+    int adjace[length][length] ;
+
+
+    for (int i = 0; i< length; i++)
+        for(int j = 0; j<length; j++)
+            adjace[i][j] = 0;
+
+    std::queue<DAGNode*> queue;
+
+    // get inDegree and adjace
+    for (int i = length; i<length; i++){
+        DAGNode *nd = Nodes[i];
+
+        std::vector<DAGUse*> opList = nd->getOperandList();
+        inDegree[i] = opList.size();
+
+        for( int j = 0; j < opList.size() ; j++){
+            int prev = opList[j]->getNode()->getID(); // prev node
+            adjace[j][prev] = 1;
+        }
+    }
+
+
+    // get ID topological order
+    std::queue<int> q;
+    std::queue<int> seq;
+
+    int temp;
+    while (!q.empty()){
+
+        temp = q.front();
+        seq.push(temp);
+        q.pop();
+
+        for(int i = 1; i<= length; i++){
+            if(adjace[temp][i]){
+                inDegree[i] --;
+                if(inDegree[i]==0)
+                    q.push(i);
+            }
+        }
+    }
+
+    if(seq.size() != length){
+        printf("No topological order!");
+        return;
+    }
+
+    int tmp;
+    for(int i = 0; i< seq.size(); i++){
+        tmp = seq.front();
+        seq.pop();
+        queue.push(Nodes[tmp]);
+    }
+}
 
 
 

@@ -5,54 +5,17 @@
 #include <utility>
 #include <vector>
 #include <set>
+#include <queue>
 #include "../semantic/SymbolTable.h"
 #include "../util/MyConstants.h"
 
-class DAG;
+
 class DAGNode;
 class DAGValue;
 class DAGUse;
 class DAGRoot;
+class DAG;
 
-
-class DAG{
-
-    DAGRoot *Root;
-
-    std::string Name;
-
-    std::set<DAGNode*> Nodes;
-
-
-public:
-
-    DAG(DAGRoot *root, const char *name)
-    : Root(root), Name(name)  {};
-
-    void setRoot(DAGRoot* dagRoot){
-        Root = dagRoot;
-    }
-
-    DAGRoot *getRoot(){
-        return Root;
-    }
-
-    std::string getName(){
-        return Name;
-    }
-
-    void addNode(DAGNode *node){
-        Nodes.insert(node);
-    }
-
-
-
-    // Operations about the overall DAG are defined in this class
-
-    /// generate dot language file for graph
-    void generateDOT();
-
-};
 
 
 class DAGValue {
@@ -221,6 +184,9 @@ private:
   // 已存在变量列表
   std::vector<std::string> existVarList;
 
+  //所在的DAG
+  DAG *dag;
+
 private:
   /// 对node进行深度遍历,返回一个DAGNode，其retName与opd相等
   DAGNode *DepthDAGNode(DAGNode *dagNode, const char *opd) {
@@ -302,5 +268,52 @@ public:
 
 
 };
+
+
+
+class DAG{
+
+    DAGRoot *Root;
+
+    std::string Name;
+
+    std::vector<DAGNode*> Nodes;
+
+    std::queue<DAGNode*> TopoList;
+
+public:
+
+    friend class DAGNode;
+
+    DAG(DAGRoot *root, const char *name)
+            : Root(root), Name(name)  {};
+
+    void setRoot(DAGRoot* dagRoot){
+        Root = dagRoot;
+    }
+
+    DAGRoot *getRoot(){
+        return Root;
+    }
+
+    std::string getName(){
+        return Name;
+    }
+
+    void addNode(DAGNode *node){
+        Nodes.push_back(node);
+    }
+
+
+    // Operations about the overall DAG are defined in this class
+
+    void setTopoList();
+
+    /// generate dot language file for graph
+    void generateDOT();
+
+};
+
+
 
 #endif //COMPILER_IRLOCALDAG_H
