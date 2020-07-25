@@ -7,6 +7,11 @@
 #include "ir/IRGen.h"
 
 
+
+enum color_set1 {
+  RED, BLUE, WHITE, BLACK
+}; // 定义枚举类型color_set1
+
 // Run->Edit Configurations->Program arguments
 // -S -o <OutputFilepath> <InputFilepath> [-O1]
 int main(int argc, char **argv) {

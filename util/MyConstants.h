@@ -80,7 +80,6 @@ static const char CHAR_R_BRACKET = ']';
 static const char CHAR_L_PARENTHESIS = '(';
 static const char CHAR_R_PARENTHESIS = ')';
 
-
 /// some symbols for operation  (token types)
 static const int OP_ASSIGN = -100;
 
@@ -188,4 +187,9 @@ static const std::string REGISTER_LOCAL = "%";
 static const std::string OPD_NULL = "";
 static const int GLOBAL_DEFAULT_VALUE = 0;
 
+// ARM_DAG Type
+enum ARM_DAG
+{
+  IMMEDIATE_DATA
+};
 #endif //COMPILER_MYCONSTANTS_H
