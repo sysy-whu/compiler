@@ -6,7 +6,10 @@
 #include <vector>
 #include "../util/MyConstants.h"
 
+class ArmDAG;
 class ArmDAGNode;
+class ArmDAGValue;
+class ArmDAGRoot;
 
 class ArmDAGValue {
 private:
@@ -98,6 +101,10 @@ class ArmDAGNode {
 private:
     // 唯一标识
     int id;
+
+    // 对应IR DAG中结点id
+    int DAGid;
+
     // 操作类型
     ARM_DAG opType;
 
@@ -112,14 +119,14 @@ private:
     ArmDAGUse *UseList = nullptr;
 
 public:
-    ArmDAGNode(int id, ARM_DAG opType) : id(id), opType(opType) {}
+    ArmDAGNode(int id, int DAGid, ARM_DAG opType) : id(id), DAGid(DAGid), opType(opType) {}
 
-    ArmDAGNode(int id, ARM_DAG opType, std::string &opNum1) : id(id), opType(opType), opNum1(opNum1) {}
+    ArmDAGNode(int id, int DAGid, ARM_DAG opType, std::string &opNum1) : id(id),DAGid(DAGid), opType(opType), opNum1(opNum1) {}
 
-    ArmDAGNode(int id, ARM_DAG opType, std::string &opNum1, std::string &opNum2) : id(id), opType(opType),
+    ArmDAGNode(int id, int DAGid, ARM_DAG opType, std::string &opNum1, std::string &opNum2) : id(id),DAGid(DAGid), opType(opType),
                                                                                    opNum1(opNum1), opNum2(opNum2) {}
-
-    ArmDAGNode(int id, ARM_DAG opType, std::string &opNum1, std::string &opNum2, std::string &opNum3) : id(id),
+    ArmDAGNode(int id, int DAGid, ARM_DAG opType, std::string &opNum1, std::string &opNum2, std::string &opNum3) : id(id),
+                                                                                                        DAGid(DAGid),
                                                                                                         opType(opType),
                                                                                                         opNum1(opNum1),
                                                                                                         opNum2(opNum2),
@@ -194,5 +201,42 @@ public:
     }
 
 };
+
+
+
+class ArmDAG{
+
+    ArmDAGRoot *Root;
+
+    std::string Name;
+
+    std::vector<ArmDAGNode*> Nodes;
+
+public:
+
+    friend class DAGNode;
+
+    ArmDAG(ArmDAGRoot *root, const char *name)
+            : Root(root), Name(name)  {};
+
+    void setRoot(ArmDAGRoot* dagRoot){
+        Root = dagRoot;
+    }
+
+    ArmDAGRoot *getRoot(){
+        return Root;
+    }
+
+    std::string getName(){
+        return Name;
+    }
+
+    void addNode(ArmDAGNode *node){
+        Nodes.push_back(node);
+    }
+
+};
+
+
 
 #endif //COMPILER_ARMDAG_H

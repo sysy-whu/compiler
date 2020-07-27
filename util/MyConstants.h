@@ -190,6 +190,14 @@ static const int GLOBAL_DEFAULT_VALUE = 0;
 // ARM_DAG Type
 enum ARM_DAG
 {
-  IMMEDIATE_DATA
+  IMMEDIATE_DATA,
+
+  MOV,
+
+  ADD,SUB,MUL,DIV,MOD,
+
+  LDR,STR,
+
+  B, BL, BX
 };
 #endif //COMPILER_MYCONSTANTS_H
