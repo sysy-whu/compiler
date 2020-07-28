@@ -32,6 +32,6 @@ int main(int argc, char **argv) {
     // 移步 parse 构造方法
     //    Lex lex;
     //    test(lex);
-
+    std::cout << "quit" << std::endl;
     return 0;
 }

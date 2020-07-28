@@ -1,4 +1,3 @@
-const int no_ini;
 const int b = 2,  a = 1;
 const int aArray[4][2] = {};
 const int bArray[4][2] = {1,2,3,4,5,6,7,8};

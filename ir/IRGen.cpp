@@ -13,6 +13,8 @@ IRGen::IRGen() {
     ast = parse.getAST();
 
     symbolTables = new std::vector<SymbolTable *>();
+    whilePos = new std::vector<std::string>();
+    whileEndPos = new std::vector<std::string>();
 }
 
 void IRGen::startIrGen() {
@@ -66,6 +68,7 @@ void IRGen::startIrGen() {
         }
         irGlobals->emplace_back(irGlobal);
     }  // end ast;
+    irTree = new IRTree(irGlobals, nullptr);
 }
 
 ConstVar *IRGen::genConstVar(ConstDef *constDef, int constType, std::vector<IRStmt *> *irStmts,
@@ -224,7 +227,10 @@ void IRGen::genFunc(FuncDef *funcDef, std::vector<IRLocalBlock *> *basicBlocks) 
     auto *blockEntry = new IRLocalBlock(BLOCK_ENTRY.c_str(), irStmts, preLocs);
     basicBlocks->emplace_back(blockEntry);
     // llvm 在实参和内部变量间隔一个
-    int localStepName = funcDef->getFuncFParams()->getFuncFParams()->size();
+    int localStepName = 0;
+    if(funcDef->getFuncFParams() != nullptr){
+        localStepName = funcDef->getFuncFParams()->getFuncFParams()->size();
+    }
 
     if (funcDef->getFuncFParams() != nullptr) {
         for (int i = 0; i < funcDef->getFuncFParams()->getFuncFParams()->size(); i++) {
@@ -253,8 +259,7 @@ void IRGen::genFunc(FuncDef *funcDef, std::vector<IRLocalBlock *> *basicBlocks) 
 ///===-----------------------------------------------------------------------===///
 
 const char *IRGen::genStmt(Stmt *stmt, std::vector<IRLocalBlock *> *basicBlocks, IRLocalBlock *lastBlock,
-                           std::vector<IRStmt *> *lastBlockStmts, int &stepName,
-                           const char *lastWhile, const char *lastWhileEnd) {
+                           std::vector<IRStmt *> *lastBlockStmts, int &stepName) {
     switch (stmt->getStmtType()) {
         case STMT_EXP: {
             genAddExp(stmt->getExp()->getAddExp(), lastBlockStmts, stepName);
@@ -269,10 +274,10 @@ const char *IRGen::genStmt(Stmt *stmt, std::vector<IRLocalBlock *> *basicBlocks,
         case STMT_BLOCK:
             return genBlock(stmt->getBlock(), basicBlocks, lastBlock, lastBlockStmts, stepName);
         case STMT_IF: {
-            return genStmtAuxIf(stmt, basicBlocks, lastBlock, lastBlockStmts, stepName, lastWhile, lastWhileEnd);
+            return genStmtAuxIf(stmt, basicBlocks, lastBlock, lastBlockStmts, stepName);
         }
         case STMT_WHILE: {
-            return genStmtAuxWhile(stmt, basicBlocks, lastBlock, lastBlockStmts, stepName, lastWhile, lastWhileEnd);
+            return genStmtAuxWhile(stmt, basicBlocks, lastBlock, lastBlockStmts, stepName);
         }
         case STMT_RETURN: {
             if (stmt->getExp() == nullptr) {
@@ -289,12 +294,12 @@ const char *IRGen::genStmt(Stmt *stmt, std::vector<IRLocalBlock *> *basicBlocks,
             return lastBlock->getBlockName().c_str();
         }
         case STMT_CONTINUE: {
-            auto *irBrWhileBlock = new IRStmt(DAG_BR, lastWhile);
+            auto *irBrWhileBlock = new IRStmt(DAG_BR, whilePos->at(whilePos->size() - 1).c_str());
             lastBlockStmts->emplace_back(irBrWhileBlock);
             return lastBlock->getBlockName().c_str();
         }
         case STMT_BREAK: {
-            auto *irBrWhileEndBlock = new IRStmt(DAG_BR, lastWhileEnd);
+            auto *irBrWhileEndBlock = new IRStmt(DAG_BR, whileEndPos->at(whileEndPos->size() - 1).c_str());
             lastBlockStmts->emplace_back(irBrWhileEndBlock);
             return lastBlock->getBlockName().c_str();
         }
@@ -304,8 +309,7 @@ const char *IRGen::genStmt(Stmt *stmt, std::vector<IRLocalBlock *> *basicBlocks,
 }
 
 const char *IRGen::genStmtAuxIf(Stmt *stmt, std::vector<IRLocalBlock *> *basicBlocks, IRLocalBlock *lastBlock,
-                                std::vector<IRStmt *> *lastBlockStmts, int &stepName, const char *lastWhile,
-                                const char *lastWhileEnd) {
+                                std::vector<IRStmt *> *lastBlockStmts, int &stepName) {
     const char *ifCondRet = genCondExp(stmt->getCond(), lastBlockStmts, stepName);
 
     auto *irBodyStmts = new std::vector<IRStmt *>();
@@ -316,7 +320,7 @@ const char *IRGen::genStmtAuxIf(Stmt *stmt, std::vector<IRLocalBlock *> *basicBl
                                        irBodyPreLocs);
     basicBlocks->emplace_back(bodyBlock);
 
-    genStmt(stmt->getStmtBrBody(), basicBlocks, lastBlock, lastBlockStmts, stepName, lastWhile, lastWhileEnd);
+    genStmt(stmt->getStmtBrBody(), basicBlocks, lastBlock, lastBlockStmts, stepName);
 
     if (stmt->getElseBody() != nullptr) {
         auto *irElseStmts = new std::vector<IRStmt *>();
@@ -327,7 +331,7 @@ const char *IRGen::genStmtAuxIf(Stmt *stmt, std::vector<IRLocalBlock *> *basicBl
                                            irElsePreLocs);
         basicBlocks->emplace_back(elseBlock);
 
-        genStmt(stmt->getElseBody(), basicBlocks, lastBlock, lastBlockStmts, stepName, lastWhile, lastWhileEnd);
+        genStmt(stmt->getElseBody(), basicBlocks, lastBlock, lastBlockStmts, stepName);
 
         // lastBlockStmts (原if之前的语句) 添加最后跳转 br
         auto *elseStepArray = new std::vector<std::string>();
@@ -361,14 +365,14 @@ const char *IRGen::genStmtAuxIf(Stmt *stmt, std::vector<IRLocalBlock *> *basicBl
 }
 
 const char *IRGen::genStmtAuxWhile(Stmt *stmt, std::vector<IRLocalBlock *> *basicBlocks, IRLocalBlock *lastBlock,
-                                   std::vector<IRStmt *> *lastBlockStmts, int &stepName, const char *lastWhile,
-                                   const char *lastWhileEnd) {
+                                   std::vector<IRStmt *> *lastBlockStmts, int &stepName) {
     auto *irCondStmts = new std::vector<IRStmt *>();
     auto *irCondPreLocs = new std::set<std::string>();
     irCondPreLocs->insert(lastBlock->getBlockName());
     int condStep = stepName++;
     auto *condBlock = new IRLocalBlock((REGISTER_LOCAL + std::to_string(condStep)).c_str(), irCondStmts, irCondPreLocs);
     basicBlocks->emplace_back(condBlock);
+    whilePos->push_back(condBlock->getBlockName());
 
     const char *ifCondRet = genCondExp(stmt->getCond(), lastBlockStmts, stepName);
 
@@ -378,14 +382,19 @@ const char *IRGen::genStmtAuxWhile(Stmt *stmt, std::vector<IRLocalBlock *> *basi
     int bodyStep = stepName++;
     auto *bodyBlock = new IRLocalBlock((REGISTER_LOCAL + std::to_string(bodyStep)).c_str(), irBodyStmts, irBodyPreLocs);
     basicBlocks->emplace_back(bodyBlock);
+    auto *afterEndStepStr = new std::string ("tmp");
+    whileEndPos->push_back(*afterEndStepStr);
 
-    genStmt(stmt->getStmtBrBody(), basicBlocks, lastBlock, lastBlockStmts, stepName, lastWhile, lastWhileEnd);
+    genStmt(stmt->getStmtBrBody(), basicBlocks, bodyBlock, irBodyStmts, stepName);
 
-    auto *afterEndStepStr = new std::string(REGISTER_LOCAL + std::to_string(++stepName));
+    afterEndStepStr = new std::string(REGISTER_LOCAL + std::to_string(++stepName));
     auto *bodyStepArray = new std::vector<std::string>();
     bodyStepArray->emplace_back(afterEndStepStr->c_str());
     auto *irWhileCondStmt = new IRStmt(DAG_BR, ifCondRet, bodyBlock->getBlockName().c_str(), bodyStepArray);
     irCondStmts->emplace_back(irWhileCondStmt);
+
+    whilePos->pop_back();
+    whileEndPos->pop_back();
     return afterEndStepStr->c_str();
 }
 
@@ -397,8 +406,6 @@ const char *IRGen::genBlock(Block *block, std::vector<IRLocalBlock *> *basicBloc
 
     IRLocalBlock *tmpBlock = lastBlock;
     std::vector<IRStmt *> *tmpIrStmts = lastBlockStmts;
-    auto *lastWhile = new std::string();
-    auto *lastWhileEnd = new std::string();
 
     for (BlockItem *blockItem:*block->getBlockItems()) {
         if (blockItem->getConstDecl() != nullptr) {
@@ -425,8 +432,7 @@ const char *IRGen::genBlock(Block *block, std::vector<IRLocalBlock *> *basicBloc
                 }
             }  // end varDefs
         } else if (blockItem->getStmt() != nullptr) {
-            const char *newBlockName = genStmt(blockItem->getStmt(), basicBlocks, tmpBlock, tmpIrStmts, stepName,
-                                               lastWhile->c_str(), lastWhileEnd->c_str());
+            const char *newBlockName = genStmt(blockItem->getStmt(), basicBlocks, tmpBlock, tmpIrStmts, stepName);
             if (strcmp(newBlockName, tmpBlock->getBlockName().c_str()) != 0) {  // 返回得知当前 basicBlock 有变化
                 auto *newStmts = new std::vector<IRStmt *>();
                 auto *newPreLocs = new std::set<std::string>();
@@ -750,9 +756,11 @@ const char *IRGen::genUnaryExp(UnaryExp *unaryExp, std::vector<IRStmt *> *irStmt
     } else {
         auto *paramArray = new std::vector<std::string>();
 
-        for (Exp *exp: *unaryExp->getFuncRParams()->getExps()) {
-            const char *param = genAddExp(exp->getAddExp(), irStmts, stepName);
-            paramArray->emplace_back(param);
+        if(unaryExp->getFuncRParams() != nullptr){
+            for (Exp *exp: *unaryExp->getFuncRParams()->getExps()) {
+                const char *param = genAddExp(exp->getAddExp(), irStmts, stepName);
+                paramArray->emplace_back(param);
+            }
         }
 
         auto registerFuncRet = new std::string(REGISTER_LOCAL + std::to_string(++stepName));

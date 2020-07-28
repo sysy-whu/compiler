@@ -15,6 +15,8 @@ private:
     std::vector<SymbolTable *> *symbolTables;
     /// 可供返回的中间码
     IRTree *irTree = nullptr;
+    std::vector<std::string> *whilePos;
+    std::vector<std::string> *whileEndPos;
 
     ///===-----------------------------------------------------------------------===///
     /// 基本声明定义
@@ -38,13 +40,13 @@ private:
     ///===-----------------------------------------------------------------------===///
 
     const char *genStmt(Stmt *stmt, std::vector<IRLocalBlock *> *basicBlocks, IRLocalBlock *lastBlock,
-                 std::vector<IRStmt *> *lastBlockStmts, int &stepName, const char *lastWhile, const char *lastWhileEnd);
+                 std::vector<IRStmt *> *lastBlockStmts, int &stepName);
 
     const char *genStmtAuxIf(Stmt *stmt, std::vector<IRLocalBlock *> *basicBlocks, IRLocalBlock *lastBlock,
-                        std::vector<IRStmt *> *lastBlockStmts, int &stepName, const char *lastWhile, const char *lastWhileEnd);
+                        std::vector<IRStmt *> *lastBlockStmts, int &stepName);
 
     const char *genStmtAuxWhile(Stmt *stmt, std::vector<IRLocalBlock *> *basicBlocks, IRLocalBlock *lastBlock,
-                        std::vector<IRStmt *> *lastBlockStmts, int &stepName, const char *lastWhile, const char *lastWhileEnd);
+                        std::vector<IRStmt *> *lastBlockStmts, int &stepName);
 
     const char *genBlock(Block *block, std::vector<IRLocalBlock *> *basicBlocks, IRLocalBlock *lastBlock,
                   std::vector<IRStmt *> *lastBlockStmts, int &stepName);
