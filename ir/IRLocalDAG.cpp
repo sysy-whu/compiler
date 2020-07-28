@@ -319,6 +319,10 @@ void DAGRoot::AddCall(std::string &opd1, std::string &opd2, std::vector<std::str
   }
 }
 
+DAGRoot::DAGRoot() {
+    dag = new DAG(this, "sad");
+}
+
 
 void DAG::generateDOT(){
     std::ofstream fout;
@@ -403,10 +407,13 @@ void DAG::setTopoList() {
 
 
     int length = Nodes.size();
-    int inDegree[length];
-    int adjace[length][length] ;
-
-
+    // 动态分配一维数组
+    int *inDegree = (int *)malloc(sizeof(int)*length);
+    // 动态分配二维数组
+    int **adjace = (int **)malloc(sizeof(int *)*length);
+    for (int k = 0; k < length; ++k) {
+        adjace[k] = (int *)malloc(sizeof(int)*length);
+    }
     for (int i = 0; i< length; i++)
         for(int j = 0; j<length; j++)
             adjace[i][j] = 0;

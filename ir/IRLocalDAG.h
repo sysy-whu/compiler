@@ -120,7 +120,7 @@ private:
 
 public:
 
-  DAGNode(int id, int opType, const std::string retName) : id(id), opType(opType), retName(retName) {}
+  DAGNode(int id, int opType, const std::string &retName) : id(id), opType(opType), retName(retName) {}
 
   /// 这个方法只允许在DAGUse中使用
   void addUse(DAGUse &U) { U.addToList(&UseList); }
@@ -214,7 +214,7 @@ private:
   bool AnalysisOpdName(const char *opdName);
 
 public:
-  DAGRoot() = default;
+  DAGRoot();
 
   void AddRet();
 
