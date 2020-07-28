@@ -34,7 +34,7 @@ private:
     /// 运算
     ArmDAGNode *genAddNode(DAGNode *nd);
     ArmDAGNode *genSubNode(DAGNode *nd);
-    ArmDAGNode *genMulNode(DAGNode *nd;
+    ArmDAGNode *genMulNode(DAGNode *nd);
     ArmDAGNode *genDivNode(DAGNode *nd);
     ArmDAGNode *genModNode(DAGNode *nd);
 

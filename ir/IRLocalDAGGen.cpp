@@ -66,7 +66,7 @@ void IRLocalDAGGen::genStmts(std::vector<IRStmt *> *irStmts, DAGRoot *dagRoot) {
                 break;
             case DAG_STORE:{
                 if(opd2[1] != REGISTER_LOCAL[0] && opd2[1] != REGISTER_GLOBAL[0]){
-                    dagRoot->AddStore(opd1, strto)
+//                    dagRoot->AddStore(opd1, strto);
                 }
             }
         }
