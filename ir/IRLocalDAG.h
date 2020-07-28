@@ -17,7 +17,6 @@ class DAGRoot;
 class DAG;
 
 
-
 class DAGValue {
 private:
   DAGNode *Node = nullptr; // The node defining the value we are using.
@@ -216,8 +215,8 @@ private:
 
 public:
   DAGRoot() = default;
-  // DAGRoot(std::vector<DAGNode *> *nodes) : nodes(nodes){};
 
+  void AddRet();
 
   void AddRet(std::string &opd1);
 
@@ -262,6 +261,8 @@ public:
   void AddGetPtr(std::string &opd1, std::string &opd2, std::string &opd3);
 
   void AddGetPtr(std::string &opd1, int opd2, std::string &opd3);
+
+  void AddGetPtr(std::string &opd1, std::string &opd2, std::vector<std::string> &opd3);
 
   void AddCall(std::string &opd1, std::string &opd2, std::vector<std::string> &paramList);
 

@@ -25,7 +25,7 @@ private:
     void genVar(VarDef *varDef, std::vector<IRStmt *> *irStmts, const char *levelLoc, int allocaType, int &stepName);
 
     void genVarArray(VarDef *varDef, std::vector<IRStmt *> *irStmts, const char *levelLoc, int allocaType,
-            int &stepName);
+                     int &stepName);
 
     ConstVar *genConstVar(ConstDef *constDef, int constType, std::vector<IRStmt *> *irStmts,
                           const std::string &locType, int allocaType);
@@ -40,16 +40,16 @@ private:
     ///===-----------------------------------------------------------------------===///
 
     const char *genStmt(Stmt *stmt, std::vector<IRLocalBlock *> *basicBlocks, IRLocalBlock *lastBlock,
-                 std::vector<IRStmt *> *lastBlockStmts, int &stepName);
+                        std::vector<IRStmt *> *lastBlockStmts, int &stepName);
 
     const char *genStmtAuxIf(Stmt *stmt, std::vector<IRLocalBlock *> *basicBlocks, IRLocalBlock *lastBlock,
-                        std::vector<IRStmt *> *lastBlockStmts, int &stepName);
+                             std::vector<IRStmt *> *lastBlockStmts, int &stepName);
 
     const char *genStmtAuxWhile(Stmt *stmt, std::vector<IRLocalBlock *> *basicBlocks, IRLocalBlock *lastBlock,
-                        std::vector<IRStmt *> *lastBlockStmts, int &stepName);
+                                std::vector<IRStmt *> *lastBlockStmts, int &stepName);
 
     const char *genBlock(Block *block, std::vector<IRLocalBlock *> *basicBlocks, IRLocalBlock *lastBlock,
-                  std::vector<IRStmt *> *lastBlockStmts, int &stepName);
+                         std::vector<IRStmt *> *lastBlockStmts, int &stepName);
 
     ///===-----------------------------------------------------------------------===///
     /// 表达式 计算 不生成代码
@@ -75,7 +75,7 @@ private:
     ///===-----------------------------------------------------------------------===///
 
     std::vector<Exp *> *genVarArrayInitVals(InitVal *initVal, std::vector<int> *subs,
-                                          std::vector<IRStmt *> *irStmts, const char *levelLoc, int &stepName);
+                                            std::vector<IRStmt *> *irStmts, const char *levelLoc, int &stepName);
 
     const char *genCondExp(Cond *cond, std::vector<IRStmt *> *irStmts, int &stepName);
 
@@ -101,6 +101,8 @@ public:
     IRGen();
 
     void startIrGen();
+
+    [[nodiscard]] IRTree *getIrTree() { return irTree; };
 };
 
 

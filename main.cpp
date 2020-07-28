@@ -5,7 +5,7 @@
 #include "parser/Parse.h"
 #include "semantic/Semantic.h"
 #include "ir/IRGen.h"
-
+#include "ir/IRLocalDAGGen.h"
 
 
 enum color_set1 {
@@ -24,6 +24,9 @@ int main(int argc, char **argv) {
 
     IRGen irGenIR;
     irGenIR.startIrGen();
+
+    auto *irLocalDagGen = new IRLocalDAGGen(irGenIR.getIrTree());
+    irLocalDagGen->startGen();
 
     // 移步 semantic 构造方法
     //    Parse parse;
