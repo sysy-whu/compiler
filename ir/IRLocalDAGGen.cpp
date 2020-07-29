@@ -50,25 +50,25 @@ void IRLocalDAGGen::genStmts(std::vector<IRStmt *> *irStmts, DAGRoot *dagRoot) {
                 break;
             }
             case DAG_ALLOCA_i32:
-                dagRoot->AddAlloca(opd1);
+                dagRoot->AddAlloca(opd1, irStmt->getLevel());
                 break;
             case DAG_GLOBAL_i32:
                 dagRoot->AddGlobal(opd1);
                 break;
             case DAG_ALLOCA_i32_ARRAY:
-                dagRoot->AddAlloca_Array(opd1, *opd3);
+                dagRoot->AddAlloca_Array(opd1, *opd3, irStmt->getLevel());
                 break;
             case DAG_GLOBAL_i32_ARRAY:
                 dagRoot->AddGlobal_Array(opd1, *opd3);
                 break;
             case DAG_Con_ALLOCA_i32:
-                dagRoot->AddCon_Alloca(opd1);
+                dagRoot->AddCon_Alloca(opd1, irStmt->getLevel());
                 break;
             case DAG_Con_GLOBAL_i32:
                 dagRoot->AddGlobal(opd1);
                 break;
             case DAG_Con_ALLOCA_ARRAY_i32:
-                dagRoot->AddCon_Alloca_Array(opd1, *opd3);
+                dagRoot->AddCon_Alloca_Array(opd1, *opd3, irStmt->getLevel());
                 break;
             case DAG_Con_GLOBAL_ARRAY_i32:
                 dagRoot->AddCon_Global_Array(opd1, *opd3);

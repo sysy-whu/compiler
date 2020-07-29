@@ -1,8 +1,10 @@
 /*  普普通通  */
 
+const int bbbbb[3][2] = {};
 int a = 25;
 int acs = 3;
 const int bs = 5;
+
 
 int aFunc(){
     return (0+1);
