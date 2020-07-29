@@ -10,7 +10,8 @@ Lex::Lex() {
     strcpy(filename, Util::getInputUrl());
 
     std::cout << "source filename:" << filename << std::endl;
-    fopen_s(&fp, filename, "r");
+    fp = fopen(filename, "r");
+//    fopen_s(&fp, filename, "r");
     if (!fp) {
         Error::errorOpenFile(filename);
     }
