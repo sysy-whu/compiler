@@ -123,18 +123,20 @@ void DAGRoot::AddBr(std::string &opd1) {
   FindNode(brNode, brNode->getRetName().c_str(), opd1.c_str());
 }
 
-void DAGRoot::AddAlloca(std::string &opd1) {
+void DAGRoot::AddAlloca(std::string &opd1, int level) {
   // 添加块内变量
   existVarList.push_back(opd1);
   DAGNode *allocaNode =  new DAGNode(count++, DAG_ALLOCA_i32, opd1);
+  allocaNode->setLevel(level);
   nodes.push_back(allocaNode);
   dag->addNode(allocaNode);
 }
 
-void DAGRoot::AddCon_Alloca(std::string &opd1) {
+void DAGRoot::AddCon_Alloca(std::string &opd1, int level) {
 
   existVarList.push_back(opd1);
   DAGNode *conAllocaNode =new DAGNode(count++, DAG_Con_ALLOCA_i32, opd1);
+  conAllocaNode->setLevel(level);
   nodes.push_back(conAllocaNode);
   dag->addNode(conAllocaNode);
 }
@@ -203,9 +205,10 @@ void DAGRoot::AddLoad(std::string &opd1, int opd2) {
   dag->addNode(immedNode);
 }
 
-void DAGRoot::AddAlloca_Array(std::string &opd1, std::vector<std::string> dismensionList) {
+void DAGRoot::AddAlloca_Array(std::string &opd1, std::vector<std::string> dismensionList, int level) {
   existVarList.push_back(opd1);
   DAGNode *allocaArrayNode = new DAGNode(count++, DAG_ALLOCA_i32_ARRAY, opd1);
+  allocaArrayNode->setLevel(level);
   nodes.push_back(allocaArrayNode);
   dag->addNode(allocaArrayNode);
   for (auto &item:dismensionList) {
@@ -213,9 +216,10 @@ void DAGRoot::AddAlloca_Array(std::string &opd1, std::vector<std::string> dismen
   }
 }
 
-void DAGRoot::AddCon_Alloca_Array(std::string &opd1, std::vector<std::string> dismensionList) {
+void DAGRoot::AddCon_Alloca_Array(std::string &opd1, std::vector<std::string> dismensionList, int level) {
   existVarList.push_back(opd1);
   DAGNode *conAllocaArrayNode = new DAGNode(count++, DAG_Con_ALLOCA_ARRAY_i32, opd1);
+  conAllocaArrayNode->setLevel(level);
   nodes.push_back(conAllocaArrayNode);
   dag->addNode(conAllocaArrayNode);
   for (auto &item:dismensionList) {
