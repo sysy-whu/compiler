@@ -34,9 +34,18 @@ private:
     /// 运算
     ArmDAGNode *genAddNode(DAGNode *nd);
     ArmDAGNode *genSubNode(DAGNode *nd);
-    ArmDAGNode *genMulNode(DAGNode *nd;
+    ArmDAGNode *genMulNode(DAGNode *nd);
     ArmDAGNode *genDivNode(DAGNode *nd);
     ArmDAGNode *genModNode(DAGNode *nd);
+
+    ArmDAGNode *genAndNode(DAGNode *nd);
+    ArmDAGNode *genOrNode(DAGNode *nd);
+    ArmDAGNode *genEQNode(DAGNode *nd);
+    ArmDAGNode *genGTNode(DAGNode *nd);
+    ArmDAGNode *genLTNode(DAGNode *nd);
+    ArmDAGNode *genNEQNode(DAGNode *nd);
+    ArmDAGNode *genLTENode(DAGNode *nd);
+    ArmDAGNode *genGTENode(DAGNode *nd);
 
 
     /// 控制语句
@@ -53,6 +62,8 @@ private:
     ArmDAGNode *genGetPtrNode(DAGNode *nd);
 
 };
+
+
 
 
 #endif //COMPILER_ARMDAGBUILDER_H
