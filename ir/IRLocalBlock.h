@@ -10,6 +10,7 @@
 
 #include "IRStmt.h"
 #include "IRLocalDAG.h"
+#include "ArmDag.h"
 
 /**
  * IRLocalBlock 标签块类
@@ -64,6 +65,44 @@ public:
 
     void setDagRoot(DAGRoot *dagRoot_) {
         IRLocalBlock::dagRoot = dagRoot_;
+    }
+};
+
+class ArmBlock {
+private:
+    std::string blockName;
+
+    std::set<std::string> *preBlocks;
+
+    ArmDAGRoot *armDagRoot = nullptr;
+
+public:
+    /**
+     * IRLocalBlock 标签块类 构造方法
+     * @param blockName 块名
+     * @param preBlocks 哪些块会跳转于此
+     */
+    ArmBlock(const char *blockName, std::set<std::string> *preBlocks)
+            : blockName(blockName), preBlocks(preBlocks) {};
+
+    const std::string &getBlockName() const {
+        return blockName;
+    }
+
+    std::set<std::string> *getPreBlocks() const {
+        return preBlocks;
+    }
+
+    void addPreBlock(std::string preBlockName) {
+        ArmBlock::preBlocks->insert(preBlockName);
+    }
+
+    ArmDAGRoot *getArmDagRoot() {
+        return armDagRoot;
+    }
+
+    void setArmDagRoot(ArmDAGRoot *armDagRoot) {
+        ArmBlock::armDagRoot = armDagRoot;
     }
 };
 

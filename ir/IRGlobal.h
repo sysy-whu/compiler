@@ -9,6 +9,7 @@
 
 #include "IRLocalBlock.h"
 #include "IRStmt.h"
+#include "ArmDag.h"
 
 /**
  * 全局变量类IRGlobalVar
@@ -40,6 +41,8 @@ private:
     int retType;
 
     std::vector<IRLocalBlock *> *baseBlocks;
+
+    std::vector<ArmBlock *> *armBlocks;
 
     std::multimap<std::string, std::string> *predLocs;
 
@@ -75,6 +78,15 @@ public:
     void addPredLocs(const char *callerFuncName, const char *callerBlockName) {
         IRGlobalFunc::predLocs->insert(std::make_pair(callerFuncName, callerBlockName));
     }
+
+    std::vector<ArmBlock *> *getArmBlocks() const {
+        return armBlocks;
+    }
+
+    void setArmBlocks(std::vector<ArmBlock *> *armBlocks) {
+        IRGlobalFunc::armBlocks = armBlocks;
+    }
+
 };
 
 /**
