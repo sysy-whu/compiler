@@ -62,8 +62,11 @@ void IRGen::startIrGen() {
             auto *baseBlocks = new std::vector<IRLocalBlock *>();
             genFunc(decl->getFuncDef(), baseBlocks);
             // create irGlobalFunc from baseBlocks
+            auto *armBlocks = new std::vector<ArmBlock *>();
+
+            auto *predLocs = new std::multimap<std::string, std::string>();
             auto *irGlobalFunc = new IRGlobalFunc(decl->getFuncDef()->getIdent().c_str(),
-                                                  decl->getFuncDef()->getFuncType(), baseBlocks);
+                                                  decl->getFuncDef()->getFuncType(), baseBlocks, armBlocks, predLocs);
             irGlobal = new IRGlobal(nullptr, irGlobalFunc);
         }
         irGlobals->emplace_back(irGlobal);
@@ -226,15 +229,18 @@ void IRGen::genFunc(FuncDef *funcDef, std::vector<IRLocalBlock *> *basicBlocks) 
     auto *preLocs = new std::set<std::string>();
     auto *blockEntry = new IRLocalBlock(BLOCK_ENTRY.c_str(), irStmts, preLocs);
     basicBlocks->emplace_back(blockEntry);
+    funcFParamsNow = funcDef->getFuncFParams();
     // llvm 在实参和内部变量间隔一个
     int localStepName = 0;
-    if(funcDef->getFuncFParams() != nullptr){
+    if (funcDef->getFuncFParams() != nullptr) {
         localStepName = funcDef->getFuncFParams()->getFuncFParams()->size();
     }
 
     if (funcDef->getFuncFParams() != nullptr) {
+        int aaaaa = funcDef->getFuncFParams()->getFuncFParams()->size();
         for (int i = 0; i < funcDef->getFuncFParams()->getFuncFParams()->size(); i++) {
-            if (funcDef->getFuncFParams()->getFuncFParams()->at(i)->getExps() == nullptr) {
+            if (funcDef->getFuncFParams()->getFuncFParams()->at(i)->getExps() == nullptr ||
+                funcDef->getFuncFParams()->getFuncFParams()->at(i)->getExps()->empty()) {
                 auto *irAllocaStmt = new IRStmt(DAG_ALLOCA_i32,
                                                 (REGISTER_LOCAL + std::to_string(localStepName)).c_str());
                 irStmts->emplace_back(irAllocaStmt);
@@ -246,12 +252,12 @@ void IRGen::genFunc(FuncDef *funcDef, std::vector<IRLocalBlock *> *basicBlocks) 
             auto *irStoreStmt = new IRStmt(DAG_STORE, (REGISTER_LOCAL + std::to_string(i)).c_str(),
                                            (REGISTER_LOCAL + std::to_string(localStepName)).c_str());
             irStmts->emplace_back(irStoreStmt);
-            i++;
             localStepName++;
         }
     }
 
     genBlock(funcDef->getBlock(), basicBlocks, blockEntry, irStmts, localStepName);
+    funcFParamsNow = nullptr;
 }
 
 ///===-----------------------------------------------------------------------===///
@@ -268,7 +274,9 @@ const char *IRGen::genStmt(Stmt *stmt, std::vector<IRLocalBlock *> *basicBlocks,
         case STMT_LVAL_ASSIGN: {
             const char *rValueRet = genAddExp(stmt->getExp()->getAddExp(), lastBlockStmts, stepName);
             const char *lValueRet = genLVal(stmt->getLVal(), lastBlockStmts, stepName);
+
             auto *irAssignStmt = new IRStmt(DAG_STORE, lValueRet, rValueRet);
+            lastBlockStmts->emplace_back(irAssignStmt);
             return lastBlock->getBlockName().c_str();
         }
         case STMT_BLOCK:
@@ -382,7 +390,7 @@ const char *IRGen::genStmtAuxWhile(Stmt *stmt, std::vector<IRLocalBlock *> *basi
     int bodyStep = stepName++;
     auto *bodyBlock = new IRLocalBlock((REGISTER_LOCAL + std::to_string(bodyStep)).c_str(), irBodyStmts, irBodyPreLocs);
     basicBlocks->emplace_back(bodyBlock);
-    auto *afterEndStepStr = new std::string ("tmp");
+    auto *afterEndStepStr = new std::string("tmp");
     whileEndPos->push_back(*afterEndStepStr);
 
     genStmt(stmt->getStmtBrBody(), basicBlocks, bodyBlock, irBodyStmts, stepName);
@@ -756,7 +764,7 @@ const char *IRGen::genUnaryExp(UnaryExp *unaryExp, std::vector<IRStmt *> *irStmt
     } else {
         auto *paramArray = new std::vector<std::string>();
 
-        if(unaryExp->getFuncRParams() != nullptr){
+        if (unaryExp->getFuncRParams() != nullptr) {
             for (Exp *exp: *unaryExp->getFuncRParams()->getExps()) {
                 const char *param = genAddExp(exp->getAddExp(), irStmts, stepName);
                 paramArray->emplace_back(param);
@@ -764,8 +772,27 @@ const char *IRGen::genUnaryExp(UnaryExp *unaryExp, std::vector<IRStmt *> *irStmt
         }
 
         auto registerFuncRet = new std::string(REGISTER_LOCAL + std::to_string(++stepName));
-        auto *irCallStmt = new IRStmt(DAG_CALL, registerFuncRet->c_str(), unaryExp->getIdent().c_str(), paramArray);
-        irStmts->emplace_back(irCallStmt);
+        int notParam = 1;
+        // 是为参数
+        if (funcFParamsNow != nullptr) {
+            for (int i = 0; i < funcFParamsNow->getFuncFParams()->size(); i++) {
+                if (funcFParamsNow->getFuncFParams()->at(i)->getIdent() == unaryExp->getIdent()) {
+                    int posIndex = i + (int) funcFParamsNow->getFuncFParams()->size();
+                    auto *irCallStmt = new IRStmt(DAG_CALL, registerFuncRet->c_str(),
+                                                  (REGISTER_LOCAL + std::to_string(posIndex)).c_str(), paramArray);
+                    irStmts->emplace_back(irCallStmt);
+                    notParam = 0;
+                    break;
+                }
+            }
+        }
+
+        // 不是参数
+        if (notParam) {
+            auto *irCallStmt = new IRStmt(DAG_CALL, registerFuncRet->c_str(), unaryExp->getIdent().c_str(), paramArray);
+            irStmts->emplace_back(irCallStmt);
+        }
+
         return registerFuncRet->c_str();
     }
 }
@@ -783,10 +810,34 @@ const char *IRGen::genPrimaryExp(PrimaryExp *primaryExp, std::vector<IRStmt *> *
 
 const char *IRGen::genLVal(LVal *lVal, std::vector<IRStmt *> *irStmts, int &stepName) {
     if (lVal->getExps()->empty()) {  // 整型
-        auto registerLoadRet = new std::string(REGISTER_LOCAL + std::to_string(++stepName));
-        auto *irLoadStmt = new IRStmt(DAG_LOAD, registerLoadRet->c_str(), lVal->getIdent().c_str(), nullptr);
-        irStmts->emplace_back(irLoadStmt);
-        return registerLoadRet->c_str();
+        /// 直接返回变量名
+        if (funcFParamsNow != nullptr) {
+            for (int i = 0; i < funcFParamsNow->getFuncFParams()->size(); i++) {
+                if (funcFParamsNow->getFuncFParams()->at(i)->getIdent() == lVal->getIdent()) {
+                    int posIndex = i + (int) funcFParamsNow->getFuncFParams()->size();
+                    auto *retParam = new std::string(REGISTER_LOCAL + std::to_string(posIndex));
+                    return retParam->c_str();
+                }
+            }
+        }
+        return lVal->getIdent().c_str();
+        /// 先取再存
+//        auto registerLoadRet = new std::string(REGISTER_LOCAL + std::to_string(++stepName));
+//        int notParam = 1;
+//        for (int i = 0; i < funcFParamsNow->getFuncFParams()->size(); i++) {
+//            if (funcFParamsNow->getFuncFParams()->at(i)->getIdent() == lVal->getIdent()) {
+//                auto *irLoadStmt = new IRStmt(DAG_LOAD, registerLoadRet->c_str(),
+//                                              (REGISTER_LOCAL + std::to_string(i)).c_str(), nullptr);
+//                irStmts->emplace_back(irLoadStmt);
+//                notParam = 0;
+//                break;
+//            }
+//        }
+//        if (notParam) {
+//            auto *irLoadStmt = new IRStmt(DAG_LOAD, registerLoadRet->c_str(), lVal->getIdent().c_str(), nullptr);
+//            irStmts->emplace_back(irLoadStmt);
+//        }
+//        return registerLoadRet->c_str();
     } else {  // 整型数组
         auto *subArray = new std::vector<std::string>();
         for (Exp *exp:*lVal->getExps()) {
@@ -795,8 +846,27 @@ const char *IRGen::genLVal(LVal *lVal, std::vector<IRStmt *> *irStmts, int &step
         }
 
         auto registerLoadRet = new std::string(REGISTER_LOCAL + std::to_string(++stepName));
-        auto *irGetPtrStmt = new IRStmt(DAG_GETPTR, registerLoadRet->c_str(), lVal->getIdent().c_str(), subArray);
-        irStmts->emplace_back(irGetPtrStmt);
+
+        int notParam = 1;
+        // 是为参数
+        if (funcFParamsNow != nullptr) {
+            for (int i = 0; i < funcFParamsNow->getFuncFParams()->size(); i++) {
+                if (funcFParamsNow->getFuncFParams()->at(i)->getIdent() == lVal->getIdent()) {
+                    int posIndex = i + (int) funcFParamsNow->getFuncFParams()->size();
+                    auto *irGetPtrStmt = new IRStmt(DAG_GETPTR, registerLoadRet->c_str(),
+                                                    (REGISTER_LOCAL + std::to_string(posIndex)).c_str(), subArray);
+                    irStmts->emplace_back(irGetPtrStmt);
+                    notParam = 0;
+                    break;
+                }
+            }
+        }
+
+        // 不是参数
+        if (notParam) {
+            auto *irGetPtrStmt = new IRStmt(DAG_GETPTR, registerLoadRet->c_str(), lVal->getIdent().c_str(), subArray);
+            irStmts->emplace_back(irGetPtrStmt);
+        }
         return registerLoadRet->c_str();
     }
 }
