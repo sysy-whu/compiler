@@ -238,6 +238,7 @@ void IRGen::genFunc(FuncDef *funcDef, std::vector<IRLocalBlock *> *basicBlocks) 
         localStepName = funcDef->getFuncFParams()->getFuncFParams()->size();
     }
 
+    levelNow++;
     if (funcDef->getFuncFParams() != nullptr) {
         int aaaaa = funcDef->getFuncFParams()->getFuncFParams()->size();
         for (int i = 0; i < funcDef->getFuncFParams()->getFuncFParams()->size(); i++) {
@@ -260,6 +261,7 @@ void IRGen::genFunc(FuncDef *funcDef, std::vector<IRLocalBlock *> *basicBlocks) 
 
     genBlock(funcDef->getBlock(), basicBlocks, blockEntry, irStmts, localStepName);
     funcFParamsNow = nullptr;
+    levelNow--;
 }
 
 ///===-----------------------------------------------------------------------===///
