@@ -102,6 +102,12 @@ bool DAGRoot::AnalysisOpdName(const char *opdName) {
   }
 }
 
+void DAGRoot::AddRet() {
+    DAGNode *retNode = new DAGNode(count++, DAG_RET, "void");
+    nodes.push_back(retNode);
+    dag->addNode(retNode);
+}
+
 void DAGRoot::AddRet(std::string &opd1) {
   DAGNode *retNode = new DAGNode(count++, DAG_RET, "void");
   nodes.push_back(retNode);
@@ -290,6 +296,17 @@ void DAGRoot::AddGetPtr(std::string &opd1, int opd2, std::string &opd3) {
   getPtrNode->setOperandList(OperandList);
 }
 
+void DAGRoot::AddGetPtr(std::string &opd1, std::string &opd2, std::vector<std::string> &opd3) {
+    DAGNode *getPtrNode = new DAGNode(count++, DAG_GETPTR, opd1);
+    nodes.push_back(getPtrNode);
+    dag->addNode(getPtrNode);
+
+    FindNode(getPtrNode, getPtrNode->getRetName().c_str(), opd2.c_str());
+    for (auto &item:opd3) {
+        FindNode(getPtrNode, getPtrNode->getRetName().c_str(), item.c_str());
+    }
+}
+
 void DAGRoot::AddCall(std::string &opd1, std::string &opd2, std::vector<std::string> &paramList) {
   DAGNode *callNode = new DAGNode(count++, DAG_CALL, opd1);
   nodes.push_back(callNode);
@@ -300,6 +317,10 @@ void DAGRoot::AddCall(std::string &opd1, std::string &opd2, std::vector<std::str
   for (auto &item:paramList) {
     FindNode(callNode, callNode->getRetName().c_str(), item.c_str());
   }
+}
+
+DAGRoot::DAGRoot() {
+    dag = new DAG(this, "sad");
 }
 
 
@@ -386,10 +407,13 @@ void DAG::setTopoList() {
 
 
     int length = Nodes.size();
-    int inDegree[length];
-    int adjace[length][length] ;
-
-
+    // 动态分配一维数组
+    int *inDegree = (int *)malloc(sizeof(int)*length);
+    // 动态分配二维数组
+    int **adjace = (int **)malloc(sizeof(int *)*length);
+    for (int k = 0; k < length; ++k) {
+        adjace[k] = (int *)malloc(sizeof(int)*length);
+    }
     for (int i = 0; i< length; i++)
         for(int j = 0; j<length; j++)
             adjace[i][j] = 0;

@@ -134,9 +134,9 @@ public:
 
     /// armDagNode为依赖的node
     void addDependUse(ArmDAGNode *armDagNode) {
-        ArmDAGValue armDagValue(armDagNode, 0);
-        ArmDAGUse *armDagUse = new ArmDAGUse(armDagValue, this);
-        dependUseList.emplace_back(armDagUse);
+//        ArmDAGValue armDagValue(armDagNode, 0);
+//        ArmDAGUse *armDagUse = new ArmDAGUse(armDagValue, this);
+//        dependUseList.emplace_back(armDagUse);
     };
     /// 这个方法只允许在ArmDAGUse中使用
     void addUse(ArmDAGUse &U) { U.addToList(&UseList); }

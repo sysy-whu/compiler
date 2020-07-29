@@ -9,6 +9,7 @@
 
 #include "IRLocalBlock.h"
 #include "IRStmt.h"
+#include "ArmDag.h"
 
 /**
  * 全局变量类IRGlobalVar
@@ -33,13 +34,15 @@ public:
 /**
  * 函数类IRGlobalFunc
  */
-class IRGlobalFunc{
+class IRGlobalFunc {
 private:
     std::string funcName;
 
     int retType;
 
     std::vector<IRLocalBlock *> *baseBlocks;
+
+    std::vector<ArmBlock *> *armBlocks;
 
     std::multimap<std::string, std::string> *predLocs;
 
@@ -51,16 +54,16 @@ public:
      * @param baseBlocks 函数内部IR代码块
      * @param predLocs 调用此函数的代码块位置
      */
-    IRGlobalFunc(const char *funcName, int retType, std::vector<IRLocalBlock *> *baseBlocks) :
-            funcName(funcName), retType(retType), baseBlocks(baseBlocks){
-        auto *blockNames = new std::set<std::string>();
+    IRGlobalFunc(const char *funcName, int retType, std::vector<IRLocalBlock *> *baseBlocks,
+                 std::vector<ArmBlock *> *armBlocks, std::multimap<std::string, std::string> *predLocs) :
+            funcName(funcName), retType(retType), baseBlocks(baseBlocks), armBlocks(armBlocks), predLocs(predLocs) {
     };
 
     std::string getFuncName() { return funcName; }
 
-    int getRetType() { return retType; }
+    [[nodiscard]] int getRetType() const { return retType; }
 
-    std::vector<IRLocalBlock *> *getBaseBlocks() const {
+    [[nodiscard]] std::vector<IRLocalBlock *> *getBaseBlocks() const {
         return baseBlocks;
     }
 
@@ -68,13 +71,22 @@ public:
         IRGlobalFunc::baseBlocks = baseBlocks_;
     }
 
-    std::multimap<std::string, std::string> *getPredLocs() const {
+    [[nodiscard]] std::multimap<std::string, std::string> *getPredLocs() const {
         return predLocs;
     }
 
     void addPredLocs(const char *callerFuncName, const char *callerBlockName) {
         IRGlobalFunc::predLocs->insert(std::make_pair(callerFuncName, callerBlockName));
     }
+
+    [[nodiscard]] std::vector<ArmBlock *> *getArmBlocks() const {
+        return armBlocks;
+    }
+
+    void setArmBlocks(std::vector<ArmBlock *> *armBlocks_) {
+        IRGlobalFunc::armBlocks = armBlocks_;
+    }
+
 };
 
 /**
@@ -118,7 +130,7 @@ public:
      * @param irGlobals 全局变量/函数列表
      */
     explicit IRTree(std::vector<IRGlobal *> *irGlobals, DAGRoot *globalDagRoot) :
-    irGlobals(irGlobals), globalDagRoot(globalDagRoot) {};
+            irGlobals(irGlobals), globalDagRoot(globalDagRoot) {};
 
     [[nodiscard]] std::vector<IRGlobal *> *getIrGlobals() const {
         return irGlobals;

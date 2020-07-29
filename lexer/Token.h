@@ -11,7 +11,7 @@ class Token {
 private:
     int type;
     // 不是多个文件就不用
-    char *filename{};
+//    char *filename{};
 
     unsigned int row;
     unsigned int endColumn;
@@ -23,15 +23,15 @@ private:
 public:
     Token(int type, char *filename, unsigned int row, unsigned int startColumn, unsigned int endColumn,
           std::string *IdentifierStr, int NumVal) :
-            type(type), filename(filename), row(row), startColumn(startColumn), endColumn(endColumn),
+            type(type), /*filename(filename),*/ row(row), startColumn(startColumn), endColumn(endColumn),
             IdentifierStr(*IdentifierStr), NumVal(NumVal) {
     };
 
     Token(Token *token) {
-        if ((*token).filename != nullptr) {
-            filename = (char *) malloc((strlen((*token).filename) + 1) * sizeof(char));
-            strcpy_s(filename, strlen((*token).filename) + 1, (*token).filename);
-        }
+//        if ((*token).filename != nullptr) {
+//            filename = (char *) malloc((strlen((*token).filename) + 1) * sizeof(char));
+//            strcpy_s(filename, strlen((*token).filename) + 1, (*token).filename);
+//        }
         IdentifierStr = (*token).IdentifierStr;
         type = (*token).type;
         row = (*token).row;
@@ -44,9 +44,9 @@ public:
         return type;
     }
 
-    [[nodiscard]] char *getFilename() const {
-        return filename;
-    }
+//    [[nodiscard]] char *getFilename() const {
+//        return filename;
+//    }
 
     [[nodiscard]] unsigned int getRow() const {
         return row;

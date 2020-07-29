@@ -637,7 +637,7 @@ public:
         return ident;
     }
 
-    [[nodiscard]] const FuncFParams *getFuncFParams() const {
+    [[nodiscard]] FuncFParams *getFuncFParams() {
         return funcFParams;
     }
 
