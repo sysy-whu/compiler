@@ -34,8 +34,12 @@ private:
     ConstVar *genConstVar(ConstDef *constDef, int constType, std::vector<IRStmt *> *irStmts,
                           const std::string &locType, int allocaType);
 
+    ConstVar *genConstVar(ConstDef *constDef, int constType);
+
     ConstVarArray *genConstVarArray(ConstDef *constDef, int constType, std::vector<IRStmt *> *irStmts,
                                     const std::string &locType, int allocaType, int &stepName);
+
+    ConstVarArray *genConstVarArray(ConstDef *constDef, int constType);
 
     void genFunc(FuncDef *funcDef, std::vector<IRLocalBlock *> *basicBlocks);
 
@@ -61,6 +65,10 @@ private:
 
     std::vector<int> *calConstArrayInitVals(ConstInitVal *constInitVal, std::vector<int> *subs,
                                             const std::string &locType, int allocaType);
+
+    std::vector<int> *calConstArrayInitVals(ConstInitVal *constInitVal, std::vector<int> *subs);
+
+    std::vector<int> *calGlobalVarArrayInitVals(InitVal *initVal, std::vector<int> *subs);
 
     int calConstExp(ConstExp *constExp);
 
