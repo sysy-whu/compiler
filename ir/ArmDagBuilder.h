@@ -5,6 +5,7 @@
 #include "IRLocalDAG.h"
 #include "ArmDag.h"
 #include "IRStmt.h"
+#include "IRGlobal.h"
 
 class ArmDAGBuilder {
 
@@ -54,5 +55,54 @@ private:
 
 };
 
+class ArmDAGGen {
+private:
+    IRTree *irTree;
+
+private:
+    /// 处理全局变量
+    void IRGlobalValGen(IRGlobalVar* irGlobalVar){
+        
+    }
+    /// 处理函数
+    void IRGlobalFuncGen(IRGlobalFunc *irGlobalFunc){
+        // 开始遍历BaseBlocks并处理
+        for(auto& it : *irGlobalFunc->getBaseBlocks()){
+            // 开始处理DagRoot
+            DagRootGen(it->getDagRoot(), irGlobalFunc->getArmBlocks(), irGlobalFunc->getStackStatus());
+        }
+    }
+
+    /**
+     * 处理DagRoot
+     * @param dagRoot：待解析的dagRoot(解析dagRoot生成armDagRoot)
+     * @param armBlocks：将生成的dagRoot放到这里
+     * @param stackStatus：该dagRoot所在函数的栈状态信息
+     */
+    void DagRootGen(DAGRoot *dagRoot, std::vector<ArmBlock *> *armBlocks, StackStatus *stackStatus) {
+        
+    }
+
+public:
+    explicit ArmDAGGen(IRTree *irTree){
+        this->irTree = irTree;
+    };
+
+    /// 启动函数
+    void startGen(){
+        auto iRGlobals =  this->irTree->getIrGlobals();
+        // 开始遍历iRGlobals
+        for(auto &irGlobal : *iRGlobals){
+            if (irGlobal->getIrGlobalVar() != nullptr)
+            {
+               this->IRGlobalValGen(irGlobal->getIrGlobalVar());
+            }
+            if (irGlobal->getIrGlobalFunc() != nullptr)
+            {
+                this->IRGlobalFuncGen(irGlobal->getIrGlobalFunc());
+            } 
+        }
+    };
+};
 
 #endif //COMPILER_ARMDAGBUILDER_H
