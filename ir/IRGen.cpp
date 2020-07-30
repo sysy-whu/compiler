@@ -15,6 +15,7 @@ IRGen::IRGen() {
     symbolTables = new std::vector<SymbolTable *>();
     whilePos = new std::vector<std::string>();
     whileEndPos = new std::vector<std::string>();
+    levelNow = 0;
 }
 
 void IRGen::startIrGen() {
@@ -81,7 +82,7 @@ ConstVar *IRGen::genConstVar(ConstDef *constDef, int constType, std::vector<IRSt
         intRet = calConstExp(constDef->getConstInitVal()->getConstExp());
     }
 
-    auto *irAllocaStmt = new IRStmt(allocaType, (locType + constDef->getIdent()).c_str());
+    auto *irAllocaStmt = new IRStmt(allocaType, (locType + constDef->getIdent()).c_str(), levelNow);
     auto *irStoreStmt = new IRStmt(DAG_STORE, (locType + constDef->getIdent()).c_str(),
                                    std::to_string(intRet).c_str());
     irStmts->emplace_back(irAllocaStmt);
@@ -120,7 +121,8 @@ ConstVarArray *IRGen::genConstVarArray(ConstDef *constDef, int constType, std::v
     }
 
     // ir相关
-    auto *irAllocaStmt = new IRStmt(allocaType, (locType + constDef->getIdent()).c_str(), OPD_NULL.c_str(), subs_str);
+    auto *irAllocaStmt =
+            new IRStmt(allocaType, (locType + constDef->getIdent()).c_str(), OPD_NULL.c_str(), subs_str, levelNow);
     // 初始化赋值，考虑到 int a[4][2] = {} 无嵌套 与 values 已存数值之情况，constArray统一在此计算（ VarArray 则不然）
     // 又:出于地址索引特性，一律按照一维展开方式存数 如: int a[4][2] 的 a[1][1] = 1 在此表示为 a[0][3] = 1
     auto *irAssignStmts = new std::vector<IRStmt *>();
@@ -148,7 +150,7 @@ ConstVarArray *IRGen::genConstVarArray(ConstDef *constDef, int constType, std::v
 void IRGen::genVar(VarDef *varDef, std::vector<IRStmt *> *irStmts, const char *levelLoc, int allocaType,
                    int &stepName) {
     // alloca 相关
-    auto *irAllocaStmt = new IRStmt(allocaType, (levelLoc + varDef->getIdent()).c_str());
+    auto *irAllocaStmt = new IRStmt(allocaType, (levelLoc + varDef->getIdent()).c_str(), levelNow);
     irStmts->emplace_back(irAllocaStmt);
 
     // value 相关
@@ -197,7 +199,7 @@ void IRGen::genVarArray(VarDef *varDef, std::vector<IRStmt *> *irStmts, const ch
 
     // ir相关
     auto *IrAllocaStmt =
-            new IRStmt(allocaType, (levelLoc + varDef->getIdent()).c_str(), OPD_NULL.c_str(), subs_str);
+            new IRStmt(allocaType, (levelLoc + varDef->getIdent()).c_str(), OPD_NULL.c_str(), subs_str, levelNow);
     // 初始化赋值，考虑到 int a[4][2] = {} 无嵌套 与 values 已存数值之情况，constArray统一在此计算（ VarArray 则不然）
     // 又:出于地址索引特性，一律按照一维展开方式存数 如: int a[4][2] 的 a[1][1] = 1 在此表示为 a[0][3] = 1
     auto *irAssignStmts = new std::vector<IRStmt *>();
@@ -236,17 +238,18 @@ void IRGen::genFunc(FuncDef *funcDef, std::vector<IRLocalBlock *> *basicBlocks) 
         localStepName = funcDef->getFuncFParams()->getFuncFParams()->size();
     }
 
+    levelNow++;
     if (funcDef->getFuncFParams() != nullptr) {
         int aaaaa = funcDef->getFuncFParams()->getFuncFParams()->size();
         for (int i = 0; i < funcDef->getFuncFParams()->getFuncFParams()->size(); i++) {
             if (funcDef->getFuncFParams()->getFuncFParams()->at(i)->getExps() == nullptr ||
                 funcDef->getFuncFParams()->getFuncFParams()->at(i)->getExps()->empty()) {
                 auto *irAllocaStmt = new IRStmt(DAG_ALLOCA_i32,
-                                                (REGISTER_LOCAL + std::to_string(localStepName)).c_str());
+                                                (REGISTER_LOCAL + std::to_string(localStepName)).c_str(), levelNow);
                 irStmts->emplace_back(irAllocaStmt);
             } else {
                 auto *irAllocaArrayStmt = new IRStmt(DAG_ALLOCA_i32_ARRAY,
-                                                     (REGISTER_LOCAL + std::to_string(localStepName)).c_str());
+                                                     (REGISTER_LOCAL + std::to_string(localStepName)).c_str(), levelNow);
                 irStmts->emplace_back(irAllocaArrayStmt);
             }
             auto *irStoreStmt = new IRStmt(DAG_STORE, (REGISTER_LOCAL + std::to_string(i)).c_str(),
@@ -258,6 +261,7 @@ void IRGen::genFunc(FuncDef *funcDef, std::vector<IRLocalBlock *> *basicBlocks) 
 
     genBlock(funcDef->getBlock(), basicBlocks, blockEntry, irStmts, localStepName);
     funcFParamsNow = nullptr;
+    levelNow--;
 }
 
 ///===-----------------------------------------------------------------------===///
@@ -411,6 +415,7 @@ const char *IRGen::genBlock(Block *block, std::vector<IRLocalBlock *> *basicBloc
     auto *symbolsLocal = new std::vector<Symbol *>();
     auto *symbolTableLocal = new SymbolTable(SYMBOL_TABLE_GLOBAL, symbolsLocal);
     symbolTables->emplace_back(symbolTableLocal);
+    levelNow++;
 
     IRLocalBlock *tmpBlock = lastBlock;
     std::vector<IRStmt *> *tmpIrStmts = lastBlockStmts;
@@ -450,6 +455,7 @@ const char *IRGen::genBlock(Block *block, std::vector<IRLocalBlock *> *basicBloc
             }
         }
     }
+    levelNow--;
     symbolTables->pop_back();
     return lastBlock->getBlockName().c_str();
 }

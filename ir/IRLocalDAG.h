@@ -113,6 +113,8 @@ private:
   int opType;
   // 指定节点输出名称
   std::string retName;
+  // 变量的level
+  int level;
   // 指定输入的DAGUse
   std::vector<DAGUse *> OperandList;
   // 用到自身的DAGUse的头结点
@@ -149,10 +151,12 @@ public:
       return id;
   }
 
-
-  /**
-   * set函数
-   */
+    int getLevel() const {
+        return level;
+    }
+    /**
+     * set函数
+     */
 public:
   void setOpType(int opType) {
     DAGNode::opType = opType;
@@ -165,7 +169,12 @@ public:
   void setOperandList(std::vector<DAGUse *> operandList) {
     OperandList = operandList;
   }
+
+  void setLevel(int level) {
+     DAGNode::level = level;
+  }
 };
+
 
 class ImmediateDAGNode : public DAGNode {
 private:
@@ -223,9 +232,9 @@ public:
   void AddBr(std::string &opd1);
 
   /// 添加alloca节点
-  void AddAlloca(std::string &opd1);
+  void AddAlloca(std::string &opd1, int level);
 
-  void AddCon_Alloca(std::string &opd1);
+  void AddCon_Alloca(std::string &opd1, int level);
 
 
   void AddGlobal(std::string &opd1);
@@ -242,9 +251,9 @@ public:
 
   void AddLoad(std::string &opd1, int opd2);
 
-  void AddAlloca_Array(std::string &opd1, std::vector<std::string> dismensionList);
+  void AddAlloca_Array(std::string &opd1, std::vector<std::string> dismensionList, int level);
 
-  void AddCon_Alloca_Array(std::string &opd1, std::vector<std::string> dismensionList);
+  void AddCon_Alloca_Array(std::string &opd1, std::vector<std::string> dismensionList, int level);
 
   void AddGlobal_Array(std::string &opd1, std::vector<std::string> dismensionList);
 

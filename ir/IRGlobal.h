@@ -31,6 +31,20 @@ public:
 
 };
 
+// 当前函数的栈状态与变量对应表
+class StackStatus {
+    // 栈状态
+    int currentLoc = 0;
+    // 临时存储进入一个block前的栈状态
+    //      进入前 lastLoc = currentLoc; 退出后 currentLoc = lastLoc
+    int lastLoc = 0;
+    // 变量名称与栈地址的映射
+    std::map<std::string, int> varMap;
+    // 数组变量与维度信息的对应关系
+    std::map<std::string, std::vector<int>> arrDimensionMap;
+};
+
+
 /**
  * 函数类IRGlobalFunc
  */
@@ -45,6 +59,9 @@ private:
     std::vector<ArmBlock *> *armBlocks;
 
     std::multimap<std::string, std::string> *predLocs;
+
+    // 当前函数的栈状态与变量对应表
+    StackStatus stackStatus;
 
 public:
     /**

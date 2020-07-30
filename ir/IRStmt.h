@@ -19,13 +19,20 @@ private:
 
     std::vector<std::string> *opd3;
 
+    int level;
+
 public:
     IRStmt(int opt, const char *opd1) : opt(opt), opd1(opd1) {};
+
+    IRStmt(int opt, const char *opd1, int level) : opt(opt), opd1(opd1), level(level) {};
 
     IRStmt(int opt, const char *opd1, const char *opd2) : opt(opt), opd1(opd1), opd2(opd2) {};
 
     IRStmt(int opt, const char *opd1, const char *opd2, std::vector<std::string> *opd3) :
             opt(opt), opd1(opd1), opd2(opd2), opd3(opd3) {};
+
+    IRStmt(int opt, const char *opd1, const char *opd2, std::vector<std::string> *opd3, int level) :
+            opt(opt), opd1(opd1), opd2(opd2), opd3(opd3), level(level) {};
 
     // 操作符&操作数
     [[nodiscard]] int getOpt() const { return opt; }
@@ -35,6 +42,10 @@ public:
     std::string getOpd2() { return opd2; }
 
     std::vector<std::string> *getOpd3() { return opd3; }
+
+    [[nodiscard]] int getLevel() const {
+        return level;
+    }
 };
 
 #endif //COMPILER_IRSTMT_H
