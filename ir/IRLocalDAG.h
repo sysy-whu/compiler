@@ -276,6 +276,11 @@ public:
   void AddCall(std::string &opd1, std::string &opd2, std::vector<std::string> &paramList);
 
 
+    /// get函数
+public: 
+    DAG* getDag(){
+        return this->dag;
+    }
 
 };
 

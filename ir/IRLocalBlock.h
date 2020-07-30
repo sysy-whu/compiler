@@ -82,8 +82,7 @@ public:
      * @param blockName 块名
      * @param preBlocks 哪些块会跳转于此
      */
-    ArmBlock(const char *blockName, std::set<std::string> *preBlocks)
-            : blockName(blockName), preBlocks(preBlocks) {};
+    ArmBlock(const char *blockName, ArmDAGRoot *armDagRoot) : blockName(blockName), armDagRoot(armDagRoot) {};
 
     const std::string &getBlockName() const {
         return blockName;
