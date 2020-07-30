@@ -56,9 +56,46 @@ class StackStatus {
     //      进入前 lastLoc = currentLoc; 退出后 currentLoc = lastLoc
     int lastLoc = 0;
     // 变量名称与栈地址的映射
-    std::map<std::string, int> varMap;
+    std::map<std::string, int> *varMap;
     // 数组变量与维度信息的对应关系
-    std::map<std::string, std::vector<int>> arrDimensionMap;
+    std::map<std::string, std::vector<int>> *arrDimensionMap;
+public:
+    StackStatus(){
+        varMap = new std::map<std::string, int>();
+        arrDimensionMap = new std::map<std::string, std::vector<int>>();
+    };
+
+    int getCurrentLoc() const {
+        return currentLoc;
+    }
+
+    int getLastLoc() const {
+        return lastLoc;
+    }
+
+    std::map<std::string, int> *getVarMap() const {
+        return varMap;
+    }
+
+    std::map<std::string, std::vector<int>> *getArrDimensionMap() const {
+        return arrDimensionMap;
+    }
+
+    void setCurrentLoc(int currentLoc) {
+        StackStatus::currentLoc = currentLoc;
+    }
+
+    void setLastLoc(int lastLoc) {
+        StackStatus::lastLoc = lastLoc;
+    }
+
+    void setVarMap(std::map<std::string, int> *varMap) {
+        StackStatus::varMap = varMap;
+    }
+
+    void setArrDimensionMap(std::map<std::string, std::vector<int>> *arrDimensionMap) {
+        StackStatus::arrDimensionMap = arrDimensionMap;
+    }
 };
 
 class IRGlobalFuncParam {
@@ -105,7 +142,7 @@ private:
     std::multimap<std::string, std::string> *predLocs;
 
     // 当前函数的栈状态与变量对应表
-    StackStatus stackStatus;
+    StackStatus *stackStatus;
 
 public:
     /**
@@ -117,10 +154,11 @@ public:
      */
     IRGlobalFunc(const char *funcName, int retType, std::vector<IRLocalBlock *> *baseBlocks,
                  std::vector<ArmBlock *> *armBlocks, std::multimap<std::string, std::string> *predLocs,
-                 std::vector<IRGlobalFuncParam *> *irGlobalFuncParams) :
+                 std::vector<IRGlobalFuncParam *> *irGlobalFuncParams, stackStatus(new StackStatus()) :
             funcName(funcName), retType(retType), baseBlocks(baseBlocks), armBlocks(armBlocks), predLocs(predLocs),
             irGlobalFuncParams(irGlobalFuncParams) {
     };
+
 
     std::string getFuncName() { return funcName; }
 
@@ -149,6 +187,11 @@ public:
     void setArmBlocks(std::vector<ArmBlock *> *armBlocks_) {
         IRGlobalFunc::armBlocks = armBlocks_;
     }
+
+    StackStatus *getStackStatus() const {
+        return stackStatus;
+    }
+
 
 };
 

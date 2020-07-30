@@ -6,11 +6,9 @@
 #include "semantic/Semantic.h"
 #include "ir/IRGen.h"
 #include "ir/IRLocalDAGGen.h"
+#include "ir/ArmDagBuilder.h"
 
 
-enum color_set1 {
-  RED, BLUE, WHITE, BLACK
-}; // 定义枚举类型color_set1
 
 // Run->Edit Configurations->Program arguments
 // -S -o <OutputFilepath> <InputFilepath> [-O1]
@@ -28,6 +26,9 @@ int main(int argc, char **argv) {
     auto *irLocalDagGen = new IRLocalDAGGen(irGenIR.getIrTree());
     irLocalDagGen->startGen();
 
+    // 开始生成armDag
+    ArmDAGGen armDagGen(irGenIR.getIrTree());
+    armDagGen.startGen();
     // 移步 semantic 构造方法
     //    Parse parse;
     //    parse.parseAST();
