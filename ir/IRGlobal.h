@@ -154,9 +154,9 @@ public:
      */
     IRGlobalFunc(const char *funcName, int retType, std::vector<IRLocalBlock *> *baseBlocks,
                  std::vector<ArmBlock *> *armBlocks, std::multimap<std::string, std::string> *predLocs,
-                 std::vector<IRGlobalFuncParam *> *irGlobalFuncParams, stackStatus(new StackStatus()) :
+                 std::vector<IRGlobalFuncParam *> *irGlobalFuncParams) :
             funcName(funcName), retType(retType), baseBlocks(baseBlocks), armBlocks(armBlocks), predLocs(predLocs),
-            irGlobalFuncParams(irGlobalFuncParams) {
+            irGlobalFuncParams(irGlobalFuncParams),stackStatus(new StackStatus()){
     };
 
 
