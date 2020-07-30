@@ -1,9 +1,13 @@
 #include "ArmDagBuilder.h"
 #include "ArmDag.h"
+#include "IRGlobal.h"
 
 //主方法  遍历DAG生成ARMDAG
-void ArmDAGBuilder::generateArmDag() {
+void ArmDAGBuilder::generateArmDag(StackStatus *stackStatus) {
+    status = stackStatus;
+
     //TODO
+
     return;
 }
 
@@ -243,13 +247,15 @@ ArmDAGNode *ArmDAGBuilder::genOrNode(DAGNode *nd){
  */
 
 ArmDAGNode *ArmDAGBuilder::genAlloca(DAGNode *nd){
-    ArmDAGNode *node = new ArmDAGNode(count++,  nd->getID(), SUB, (std::string &) "SP", (std::string &)"SP", (std::string &)"4");
+    ArmDAGNode *node = new ArmDAGNode(count++,  nd->getID(), SUB, (std::string &) "$SP", (std::string &)"$SP", (std::string &)"4");
     //TODO: StackStatus记录所在栈中位置
     return node;
 }
 
 ArmDAGNode *ArmDAGBuilder::genConAlloca(DAGNode *nd){
-    //TODO: 记录对应值（ 在stackstatus中？）
+    ArmDAGNode *node = new ArmDAGNode(count++,  nd->getID(), SUB, (std::string &) "$SP", (std::string &)"$SP", (std::string &)"4");
+    //TODO: StackStatus记录所在栈中位置
+    return node;
 }
 
 ArmDAGNode *ArmDAGBuilder::genAllocaArray(DAGNode *nd){
@@ -263,24 +269,28 @@ ArmDAGNode *ArmDAGBuilder::genAllocaArray(DAGNode *nd){
     std::string opd2 = opList[1]->getNode()->getRetName();
     std::string opd3 = opList[2]->getNode()->getRetName();
 
-    ArmDAGNode *node = new ArmDAGNode(count++,  nd->getID(), SUB, (std::string&)"SP",(std::string&)"SP",(std::string&)space);
+    ArmDAGNode *node = new ArmDAGNode(count++,  nd->getID(), SUB, (std::string&)"$SP",(std::string&)"$SP",(std::string&)space);
 
     //TODO: StackStatus 记录变量位置
     return node;
 }
 
 ArmDAGNode *ArmDAGBuilder::genConAllocaArray(DAGNode *nd){
-    //TODO
-}
 
-ArmDAGNode *ArmDAGBuilder::genGlobal(DAGNode *nd){
-    //TODO
-}
+    //TODO: 获取维度之积
+    int space = 0;
 
-ArmDAGNode *ArmDAGBuilder::genConGlobalArray(DAGNode *nd){
-    //TODO
-}
+    std::vector<DAGUse*> opList = nd->getOperandList();
 
+    std::string opd1 = opList[0]->getNode()->getRetName();
+    std::string opd2 = opList[1]->getNode()->getRetName();
+    std::string opd3 = opList[2]->getNode()->getRetName();
+
+    ArmDAGNode *node = new ArmDAGNode(count++,  nd->getID(), SUB, (std::string&)"$SP",(std::string&)"$SP",(std::string&)space);
+
+    //TODO: StackStatus 记录变量位置
+    return node;
+}
 
 /*
  * 存取语句
@@ -310,7 +320,7 @@ ArmDAGNode *ArmDAGBuilder::genStoreNode(DAGNode *nd){
 }
 
 ArmDAGNode *ArmDAGBuilder::genGetPtrNode(DAGNode *nd){
-    //TODO
+    //TODO:
 
 
 
@@ -321,9 +331,6 @@ ArmDAGNode *ArmDAGBuilder::genGetPtrNode(DAGNode *nd){
  */
 
 ArmDAGNode *ArmDAGBuilder::genCallNode(DAGNode *nd){
-
-    //TODO: 此处应有if-else，问题：无return值时，oplist[0]是？
-
     std::string opd2 = nd->getOperandList()[1]->getNode()->getRetName();
 
     ArmDAGNode *node = new ArmDAGNode(count++, nd->getID(),BL, opd2);
@@ -345,13 +352,13 @@ ArmDAGNode *ArmDAGBuilder::genBRNode(DAGNode *nd){
 ArmDAGNode *ArmDAGBuilder::genRetNode(DAGNode *nd){
     if(nd->getOperandList().size()!=0){
         std::string opd1 = nd->getOperandList()[0]->getNode()->getRetName();
-        ArmDAGNode *node = new ArmDAGNode(count++, nd->getID(), MOV, (std::string &)"R0", opd1);
-        ArmDAGNode *node1 = new ArmDAGNode(count++, nd->getID(), BX, (std::string &)"LR");
+        ArmDAGNode *node = new ArmDAGNode(count++, nd->getID(), MOV, (std::string &)"$R0", opd1);
+        ArmDAGNode *node1 = new ArmDAGNode(count++, nd->getID(), BX, (std::string &)"$LR");
         node1->addDependUse(node);
         return node;
     }
     else{
-        ArmDAGNode *node = new ArmDAGNode(count++, nd->getID(), BX, (std::string &)"LR");
+        ArmDAGNode *node = new ArmDAGNode(count++, nd->getID(), BX, (std::string &)"$LR");
         return node;
     }
 }
@@ -364,7 +371,7 @@ ArmDAGNode *ArmDAGBuilder::genBRCondNode(DAGNode *nd){
     std::string opd2 = opList[1]->getNode()->getRetName();
     std::string opd3 = opList[2]->getNode()->getRetName();
 
-    ArmDAGNode *node = new ArmDAGNode(count++,  nd->getID(), CMP, opd1,(std::string&)"#1");
+    ArmDAGNode *node = new ArmDAGNode(count++,  nd->getID(), CMP, opd1,(std::string&)"1");
     ArmDAGNode *node1 = new ArmDAGNode(count++, nd->getID(),BEQ,opd2);
     ArmDAGNode *node2 = new ArmDAGNode(count++, nd->getID(),B,opd3);
 
@@ -374,8 +381,60 @@ ArmDAGNode *ArmDAGBuilder::genBRCondNode(DAGNode *nd){
     return node;
 }
 
-ArmDAG *ArmDAGBuilder::getArmDag() const {
-    return armDag;
+std::vector<std::string> *ArmDAGBuilder::genGlobal(IRGlobalVar *var){
+    auto *armStmt= new std::vector<std::string>();
+    if(var->getGlobalValue()->size() == 0){ //未初始化的全局变量
+        armStmt->push_back("    .comm "+var->getVarName()+", 4\n");
+    }
+    else{ //初始化的全局变量
+        std::string name = var->getVarName();
+        armStmt->emplace_back("    .global "+name+"\n");
+        armStmt->emplace_back("    .data\n");
+        armStmt->emplace_back("    .align 2\n");
+        armStmt->emplace_back("    .type "+name+", %object\n");
+        armStmt->emplace_back("    .size "+name+","+"4\n");
+        armStmt->emplace_back(var->getVarName()+":\n");
+        armStmt->emplace_back("    .word " + (std::string&)var->getGlobalValue()[0]+"\n");
+    }
+
+    return armStmt;
+
+}
+
+std::vector<std::string> *ArmDAGBuilder::genConGlobal(IRGlobalVar *var){
+    auto *armStmt= new std::vector<std::string>();
+
+    const std::string& name = var->getVarName();
+    armStmt->emplace_back("    .global "+name+"\n");
+    armStmt->emplace_back("    .section .rodata\n");
+    armStmt->emplace_back("    .align 2\n");
+    armStmt->emplace_back("    .type "+name+", %object\n");
+    armStmt->emplace_back("    .size "+name+","+"4\n");
+    armStmt->emplace_back(var->getVarName()+":\n");
+    armStmt->emplace_back("    .word " + (std::string&)var->getGlobalValue()[0]+"\n");
+
+    return armStmt;
+}
+
+std::vector<std::string> *ArmDAGBuilder::genGlobalArray(IRGlobalVar *var){
+
+}
+
+std::vector<std::string> *ArmDAGBuilder::genConGlobalArray(IRGlobalVar *var){
+    auto *armStmt= new std::vector<std::string>();
+
+
+    const std::string& name = var->getVarName();
+    armStmt->emplace_back("    .global "+name+"\n");
+    armStmt->emplace_back("    .section .rodata\n");
+    armStmt->emplace_back("    .align 2\n");
+    armStmt->emplace_back("    .type "+name+", %object\n");
+    armStmt->emplace_back("    .size "+name+","+"4\n");
+    armStmt->emplace_back(var->getVarName()+":\n");
+    armStmt->emplace_back("    .word " + (std::string&)var->getGlobalValue()[0]+"\n");
+
+    return armStmt;
+
 }
 
 

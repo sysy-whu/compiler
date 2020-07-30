@@ -15,16 +15,22 @@ public:
         armDag = new ArmDAG(root, dag->getName().data());
     }
 
-    ArmDAG *getArmDag() const;
-
-private:
     DAG *dag;
+
     ArmDAG *armDag;
+
+    StackStatus *status;
 
     int count = 0;
 
+    /// 全局变量处理
+    std::vector<std::string> * genGlobal(IRGlobalVar *var);
+    std::vector<std::string> * genConGlobal(IRGlobalVar *var);
+    std::vector<std::string> * genGlobalArray(IRGlobalVar *var);
+    std::vector<std::string> * genConGlobalArray(IRGlobalVar *var);
+
     /// 生成ArmDAG主方法
-    void generateArmDag();
+    void generateArmDag(StackStatus *stackStatus);
 
     /// 声明语句
     ArmDAGNode *genAlloca(DAGNode *nd);
@@ -34,10 +40,6 @@ private:
     ArmDAGNode *genAllocaArray(DAGNode *nd);
 
     ArmDAGNode *genConAllocaArray(DAGNode *nd);
-
-    ArmDAGNode *genGlobal(DAGNode *nd);
-
-    ArmDAGNode *genConGlobalArray(DAGNode *nd);
 
     /// 运算
     ArmDAGNode *genAddNode(DAGNode *nd);
@@ -110,10 +112,14 @@ private:
         auto armDagBuilder = new ArmDAGBuilder(dagRoot->getDag());
         // ==== todo 处理  ========
 
+        armDagBuilder->generateArmDag(stackStatus);
+
 
         // ===========
-        ArmBlock *armBlock = new ArmBlock(blockName, armDagBuilder->getArmDag()->getRoot());
+        ArmBlock *armBlock = new ArmBlock(blockName, armDagBuilder->armDag->getRoot());
         armBlocks->emplace_back(armBlock);
+
+        delete armDagBuilder;
     }
 
 public:
