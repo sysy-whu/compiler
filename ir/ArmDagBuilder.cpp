@@ -1,7 +1,7 @@
 #include "ArmDagBuilder.h"
 #include "ArmDag.h"
 
-//主方法
+//主方法  遍历DAG生成ARMDAG
 void ArmDAGBuilder::generateArmDag() {
     //TODO
     return;
@@ -13,7 +13,6 @@ void ArmDAGBuilder::generateArmDag() {
 
 ArmDAGNode *ArmDAGBuilder::genAddNode(DAGNode *nd){
     std::vector<DAGUse*> opList = nd->getOperandList();
-    count++;
 
     std::string opd1 = opList[0]->getNode()->getRetName();
     std::string opd2 = opList[1]->getNode()->getRetName();
@@ -25,7 +24,6 @@ ArmDAGNode *ArmDAGBuilder::genAddNode(DAGNode *nd){
 
 ArmDAGNode *ArmDAGBuilder::genSubNode(DAGNode *nd){
     std::vector<DAGUse*> opList = nd->getOperandList();
-    count++;
 
     std::string opd1 = opList[0]->getNode()->getRetName();
     std::string opd2 = opList[1]->getNode()->getRetName();
@@ -37,7 +35,6 @@ ArmDAGNode *ArmDAGBuilder::genSubNode(DAGNode *nd){
 
 ArmDAGNode *ArmDAGBuilder::genMulNode(DAGNode *nd){
     std::vector<DAGUse*> opList = nd->getOperandList();
-    count++;
 
     std::string opd1 = opList[0]->getNode()->getRetName();
     std::string opd2 = opList[1]->getNode()->getRetName();
@@ -49,12 +46,195 @@ ArmDAGNode *ArmDAGBuilder::genMulNode(DAGNode *nd){
 
 
 ArmDAGNode *ArmDAGBuilder::genModNode(DAGNode *nd){
-    //TODO
+    //TODO: 在.s文件开头添加    .global __aeabi_imod
+
+    std::vector<DAGUse*> opList = nd->getOperandList();
+
+    std::string opd1 = opList[0]->getNode()->getRetName();
+    std::string opd2 = opList[1]->getNode()->getRetName();
+    std::string opd3 = opList[2]->getNode()->getRetName();
+
+    ArmDAGNode *node = new ArmDAGNode(count++,  nd->getID(), MOV, (std::string &) "r0",opd2);
+    ArmDAGNode *node1 = new ArmDAGNode(count++, nd->getID(),MOV,(std::string &) "r1",opd3);
+    ArmDAGNode *node2 = new ArmDAGNode(count++, nd->getID(),BL,opd1,(std::string &) "__aeabi_imod");
+    ArmDAGNode *node3 = new ArmDAGNode(count++, nd->getID(),MOV,opd1,(std::string &) "r0");
+
+    node1->addDependUse(node);
+    node2->addDependUse(node1);
+    node3->addDependUse(node2);
+
+    return node;
+
 }
 
 
 ArmDAGNode *ArmDAGBuilder::genDivNode(DAGNode *nd){
-    //TODO
+    //TODO: 在.s文件开头添加    .global __aeabi_idiv
+
+    std::vector<DAGUse*> opList = nd->getOperandList();
+
+    std::string opd1 = opList[0]->getNode()->getRetName();
+    std::string opd2 = opList[1]->getNode()->getRetName();
+    std::string opd3 = opList[2]->getNode()->getRetName();
+
+    ArmDAGNode *node = new ArmDAGNode(count++,  nd->getID(), MOV, (std::string &) "r0",opd2);
+    ArmDAGNode *node1 = new ArmDAGNode(count++, nd->getID(),MOV,(std::string &) "r1",opd3);
+    ArmDAGNode *node2 = new ArmDAGNode(count++, nd->getID(),BL,opd1,(std::string &) "__aeabi_idiv");
+    ArmDAGNode *node3 = new ArmDAGNode(count++, nd->getID(),MOV,opd1,(std::string &) "r0");
+
+    node1->addDependUse(node);
+    node2->addDependUse(node1);
+    node3->addDependUse(node2);
+
+    return node;
+}
+
+
+
+
+ArmDAGNode *ArmDAGBuilder::genEQNode(DAGNode *nd){
+
+    std::vector<DAGUse*> opList = nd->getOperandList();
+
+    std::string opd1 = opList[0]->getNode()->getRetName();
+    std::string opd2 = opList[1]->getNode()->getRetName();
+    std::string opd3 = opList[2]->getNode()->getRetName();
+
+    ArmDAGNode *node = new ArmDAGNode(count++,  nd->getID(), CMP, opd2,opd3);
+    ArmDAGNode *node1 = new ArmDAGNode(count++, nd->getID(),MOVEQ,opd1,(std::string &) "#1");
+    ArmDAGNode *node2 = new ArmDAGNode(count++, nd->getID(),MOVNE,opd1,(std::string &) "#0");
+
+    node1->addDependUse(node);
+    node2->addDependUse(node1);
+
+    return node;
+
+}
+ArmDAGNode *ArmDAGBuilder::genNEQNode(DAGNode *nd){
+
+    std::vector<DAGUse*> opList = nd->getOperandList();
+
+    std::string opd1 = opList[0]->getNode()->getRetName();
+    std::string opd2 = opList[1]->getNode()->getRetName();
+    std::string opd3 = opList[2]->getNode()->getRetName();
+
+    ArmDAGNode *node = new ArmDAGNode(count++,  nd->getID(), CMP, opd2,opd3);
+    ArmDAGNode *node1 = new ArmDAGNode(count++, nd->getID(),MOVNE,opd1,(std::string &) "#1");
+    ArmDAGNode *node2 = new ArmDAGNode(count++, nd->getID(),MOVEQ,opd1,(std::string &) "#0");
+
+    node1->addDependUse(node);
+    node2->addDependUse(node1);
+
+    return node;
+}
+
+ArmDAGNode *ArmDAGBuilder::genGTNode(DAGNode *nd){
+    std::vector<DAGUse*> opList = nd->getOperandList();
+
+    std::string opd1 = opList[0]->getNode()->getRetName();
+    std::string opd2 = opList[1]->getNode()->getRetName();
+    std::string opd3 = opList[2]->getNode()->getRetName();
+
+    ArmDAGNode *node = new ArmDAGNode(count++,  nd->getID(), CMP, opd2,opd3);
+    ArmDAGNode *node1 = new ArmDAGNode(count++, nd->getID(),MOVGT,opd1,(std::string &) "#1");
+    ArmDAGNode *node2 = new ArmDAGNode(count++, nd->getID(),MOVLE,opd1,(std::string &) "#0");
+
+    node1->addDependUse(node);
+    node2->addDependUse(node1);
+
+    return node;
+}
+
+ArmDAGNode *ArmDAGBuilder::genLTNode(DAGNode *nd){
+    std::vector<DAGUse*> opList = nd->getOperandList();
+
+    std::string opd1 = opList[0]->getNode()->getRetName();
+    std::string opd2 = opList[1]->getNode()->getRetName();
+    std::string opd3 = opList[2]->getNode()->getRetName();
+
+    ArmDAGNode *node = new ArmDAGNode(count++,  nd->getID(), CMP, opd2,opd3);
+    ArmDAGNode *node1 = new ArmDAGNode(count++, nd->getID(),MOVLT,opd1,(std::string &) "#1");
+    ArmDAGNode *node2 = new ArmDAGNode(count++, nd->getID(),MOVGE,opd1,(std::string &) "#0");
+
+    node1->addDependUse(node);
+    node2->addDependUse(node1);
+
+    return node;
+}
+
+ArmDAGNode *ArmDAGBuilder::genGTENode(DAGNode *nd){
+    std::vector<DAGUse*> opList = nd->getOperandList();
+
+    std::string opd1 = opList[0]->getNode()->getRetName();
+    std::string opd2 = opList[1]->getNode()->getRetName();
+    std::string opd3 = opList[2]->getNode()->getRetName();
+
+    ArmDAGNode *node = new ArmDAGNode(count++,  nd->getID(), CMP, opd2,opd3);
+    ArmDAGNode *node1 = new ArmDAGNode(count++, nd->getID(),MOVGE,opd1,(std::string &) "#1");
+    ArmDAGNode *node2 = new ArmDAGNode(count++, nd->getID(),MOVLT,opd1,(std::string &) "#0");
+
+    node1->addDependUse(node);
+    node2->addDependUse(node1);
+
+    return node;
+}
+
+ArmDAGNode *ArmDAGBuilder::genLTENode(DAGNode *nd){
+    std::vector<DAGUse*> opList = nd->getOperandList();
+
+    std::string opd1 = opList[0]->getNode()->getRetName();
+    std::string opd2 = opList[1]->getNode()->getRetName();
+    std::string opd3 = opList[2]->getNode()->getRetName();
+
+    ArmDAGNode *node = new ArmDAGNode(count++,  nd->getID(), CMP, opd2,opd3);
+    ArmDAGNode *node1 = new ArmDAGNode(count++, nd->getID(),MOVLE,opd1,(std::string &) "#1");
+    ArmDAGNode *node2 = new ArmDAGNode(count++, nd->getID(),MOVGT,opd1,(std::string &) "#0");
+
+    node1->addDependUse(node);
+    node2->addDependUse(node1);
+
+    return node;
+}
+
+ArmDAGNode *ArmDAGBuilder::genAndNode(DAGNode *nd){
+    std::vector<DAGUse*> opList = nd->getOperandList();
+
+    std::string opd1 = opList[0]->getNode()->getRetName();
+    std::string opd2 = opList[1]->getNode()->getRetName();
+    std::string opd3 = opList[2]->getNode()->getRetName();
+
+    ArmDAGNode *node = new ArmDAGNode(count++, nd->getID(),ADD,opd1,opd2,opd3);
+    ArmDAGNode *node1 = new ArmDAGNode(count++,  nd->getID(), CMP, opd1,(std::string&)"#1");
+    ArmDAGNode *node2 = new ArmDAGNode(count++, nd->getID(),MOVEQ,opd1,(std::string &) "#1");
+    ArmDAGNode *node3 = new ArmDAGNode(count++, nd->getID(),MOVNE,opd1,(std::string &) "#0");
+
+
+    node1->addDependUse(node);
+    node2->addDependUse(node1);
+    node3->addDependUse(node2);
+
+    return node;
+}
+
+ArmDAGNode *ArmDAGBuilder::genOrNode(DAGNode *nd){
+
+    std::vector<DAGUse*> opList = nd->getOperandList();
+
+    std::string opd1 = opList[0]->getNode()->getRetName();
+    std::string opd2 = opList[1]->getNode()->getRetName();
+    std::string opd3 = opList[2]->getNode()->getRetName();
+
+    ArmDAGNode *node = new ArmDAGNode(count++, nd->getID(),ADD,opd1,opd2,opd3);
+    ArmDAGNode *node1 = new ArmDAGNode(count++,  nd->getID(), CMP, opd1,(std::string&)"#1");
+    ArmDAGNode *node2 = new ArmDAGNode(count++, nd->getID(),MOVGE,opd1,(std::string &) "#1");
+    ArmDAGNode *node3 = new ArmDAGNode(count++, nd->getID(),MOVLT,opd1,(std::string &) "#0");
+
+
+    node1->addDependUse(node);
+    node2->addDependUse(node1);
+    node3->addDependUse(node2);
+
+    return node;
 }
 
 
@@ -64,16 +244,29 @@ ArmDAGNode *ArmDAGBuilder::genDivNode(DAGNode *nd){
 
 ArmDAGNode *ArmDAGBuilder::genAlloca(DAGNode *nd){
     ArmDAGNode *node = new ArmDAGNode(count++,  nd->getID(), SUB, (std::string &) "SP", (std::string &)"SP", (std::string &)"4");
-    //TODO: 记录所在栈中位置
+    //TODO: StackStatus记录所在栈中位置
     return node;
 }
 
 ArmDAGNode *ArmDAGBuilder::genConAlloca(DAGNode *nd){
-    //TODO
+    //TODO: 记录对应值（ 在stackstatus中？）
 }
 
 ArmDAGNode *ArmDAGBuilder::genAllocaArray(DAGNode *nd){
-    //TODO
+
+    //TODO: 获取维度之积
+    int space = 0;
+
+    std::vector<DAGUse*> opList = nd->getOperandList();
+
+    std::string opd1 = opList[0]->getNode()->getRetName();
+    std::string opd2 = opList[1]->getNode()->getRetName();
+    std::string opd3 = opList[2]->getNode()->getRetName();
+
+    ArmDAGNode *node = new ArmDAGNode(count++,  nd->getID(), SUB, (std::string&)"SP",(std::string&)"SP",(std::string&)space);
+
+    //TODO: StackStatus 记录变量位置
+    return node;
 }
 
 ArmDAGNode *ArmDAGBuilder::genConAllocaArray(DAGNode *nd){
@@ -118,6 +311,9 @@ ArmDAGNode *ArmDAGBuilder::genStoreNode(DAGNode *nd){
 
 ArmDAGNode *ArmDAGBuilder::genGetPtrNode(DAGNode *nd){
     //TODO
+
+
+
 }
 
 /*
@@ -162,7 +358,20 @@ ArmDAGNode *ArmDAGBuilder::genRetNode(DAGNode *nd){
 
 
 ArmDAGNode *ArmDAGBuilder::genBRCondNode(DAGNode *nd){
-    //TODO
+    std::vector<DAGUse*> opList = nd->getOperandList();
+
+    std::string opd1 = opList[0]->getNode()->getRetName();
+    std::string opd2 = opList[1]->getNode()->getRetName();
+    std::string opd3 = opList[2]->getNode()->getRetName();
+
+    ArmDAGNode *node = new ArmDAGNode(count++,  nd->getID(), CMP, opd1,(std::string&)"#1");
+    ArmDAGNode *node1 = new ArmDAGNode(count++, nd->getID(),BEQ,opd2);
+    ArmDAGNode *node2 = new ArmDAGNode(count++, nd->getID(),B,opd3);
+
+    node1->addDependUse(node);
+    node2->addDependUse(node1);
+
+    return node;
 }
 
 
