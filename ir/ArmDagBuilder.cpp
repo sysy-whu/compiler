@@ -165,4 +165,8 @@ ArmDAGNode *ArmDAGBuilder::genBRCondNode(DAGNode *nd){
     //TODO
 }
 
+ArmDAG *ArmDAGBuilder::getArmDag() const {
+    return armDag;
+}
+
 
