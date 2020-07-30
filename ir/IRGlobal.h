@@ -48,6 +48,13 @@ public:
 
 };
 
+struct VarInfo{
+    /// 变量的栈位置
+    int stackLoc;
+    // 变量的level
+    int level;
+};
+
 // 当前函数的栈状态与变量对应表
 class StackStatus {
     // 栈状态
@@ -56,12 +63,12 @@ class StackStatus {
     //      进入前 lastLoc = currentLoc; 退出后 currentLoc = lastLoc
     int lastLoc = 0;
     // 变量名称与栈地址的映射
-    std::map<std::string, int> *varMap;
+    std::map<std::string, VarInfo> *varMap;
     // 数组变量与维度信息的对应关系
     std::map<std::string, std::vector<int>> *arrDimensionMap;
 public:
     StackStatus(){
-        varMap = new std::map<std::string, int>();
+        varMap = new std::map<std::string, VarInfo>();
         arrDimensionMap = new std::map<std::string, std::vector<int>>();
     };
 
@@ -73,7 +80,7 @@ public:
         return lastLoc;
     }
 
-    std::map<std::string, int> *getVarMap() const {
+    std::map<std::string, VarInfo> *getVarMap() const {
         return varMap;
     }
 
@@ -89,7 +96,7 @@ public:
         StackStatus::lastLoc = lastLoc;
     }
 
-    void setVarMap(std::map<std::string, int> *varMap) {
+    void setVarMap(std::map<std::string, VarInfo> *varMap) {
         StackStatus::varMap = varMap;
     }
 
