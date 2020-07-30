@@ -16,18 +16,35 @@
  */
 class IRGlobalVar {
 private:
-    std::vector<IRStmt *> *irStmt;
+    std::string varName;
+
+    int varType;
+
+    std::vector<int> *globalValue;
 
 public:
     /**
      * 全局变量类IRGlobalVar构造方法
      * @param irStmt 变量语句
      */
-    explicit IRGlobalVar(std::vector<IRStmt *> *irStmt) : irStmt(irStmt) {};
+    explicit IRGlobalVar(const char *varName, int varType, std::vector<int> *globalVar) :
+            varName(varName), varType(varType), globalValue(globalVar) {};
 
-    std::vector<IRStmt *> *getIrStmt() const {
-        return irStmt;
+    [[nodiscard]] const std::string &getVarName() const {
+        return varName;
     }
+
+    [[nodiscard]] int getVarType() const {
+        return varType;
+    }
+
+    [[nodiscard]] std::vector<int> *getGlobalValue() const {
+        return globalValue;
+    }
+
+//    std::vector<IRStmt *> *getIrStmt() const {
+//        return irStmt;
+//    }
 
 };
 
@@ -102,7 +119,7 @@ public:
                  std::vector<ArmBlock *> *armBlocks, std::multimap<std::string, std::string> *predLocs,
                  std::vector<IRGlobalFuncParam *> *irGlobalFuncParams) :
             funcName(funcName), retType(retType), baseBlocks(baseBlocks), armBlocks(armBlocks), predLocs(predLocs),
-            irGlobalFuncParams(irGlobalFuncParams){
+            irGlobalFuncParams(irGlobalFuncParams) {
     };
 
     std::string getFuncName() { return funcName; }

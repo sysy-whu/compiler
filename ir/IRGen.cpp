@@ -28,35 +28,53 @@ void IRGen::startIrGen() {
 
     for (Decl *decl:*(ast->getDecls())) {
         IRGlobal *irGlobal = nullptr;
-        auto *irStmts = new std::vector<IRStmt *>();
+//        auto *irStmts = new std::vector<IRStmt *>();
+        auto *globalValues = new std::vector<int>();
 
         if (decl->getConstDecl() != nullptr) {
             for (ConstDef *constDef: *decl->getConstDecl()->getConstDefs()) {
                 if (constDef->getConstExps()->empty()) {  // 常量变量
-                    ConstVar *constVar = genConstVar(constDef, decl->getConstDecl()->getBType(), irStmts,
-                                                     REGISTER_GLOBAL, DAG_Con_GLOBAL_i32);
+                    ConstVar *constVar = genConstVar(constDef, decl->getConstDecl()->getBType());
                     auto *symbol = new Symbol(nullptr, nullptr, constVar, nullptr, nullptr);
                     symbolsGlobal->emplace_back(symbol);
+
+                    globalValues->emplace_back(calConstExp(constDef->getConstInitVal()->getConstExp()));
+
                 } else {  // 常量数组
                     ConstVarArray *constVarArray =
-                            genConstVarArray(constDef, decl->getConstDecl()->getBType(), irStmts,
-                                             REGISTER_GLOBAL, DAG_Con_GLOBAL_ARRAY_i32, globalStepName);
+                            genConstVarArray(constDef, decl->getConstDecl()->getBType());
                     auto *symbol = new Symbol(nullptr, nullptr, nullptr, constVarArray, nullptr);
                     symbolsGlobal->emplace_back(symbol);
+                    // sub 相关
+                    auto *subs = new std::vector<int>();
+                    for (ConstExp *constExp:*constDef->getConstExps()) {
+                        subs->push_back(calConstExp(constExp));
+                    }
+                    globalValues = calConstArrayInitVals(constDef->getConstInitVal(), subs);
                 }
+
                 // create irGlobalVar from irStmts
-                auto *irGlobalVar = new IRGlobalVar(irStmts);
+                auto *irGlobalVar = new IRGlobalVar(constDef->getIdent().c_str(), decl->getConstDecl()->getBType(),
+                                                    globalValues);
                 irGlobal = new IRGlobal(irGlobalVar, nullptr);
             } //  end constDefs
         } else if (decl->getVarDecl() != nullptr) {
             for (VarDef *varDef: *decl->getVarDecl()->getVarDefs()) {  // 变量
                 if (varDef->getConstExps()->empty()) {
-                    genVar(varDef, irStmts, REGISTER_GLOBAL.c_str(), DAG_GLOBAL_i32, globalStepName);
+                    globalValues->emplace_back(
+                            calAddExp(varDef->getInitVal()->getExp()->getAddExp()));
+
                 } else {  // 数组
-                    genVarArray(varDef, irStmts, REGISTER_GLOBAL.c_str(), DAG_GLOBAL_i32_ARRAY, globalStepName);
+                    // sub 相关
+                    auto *subs = new std::vector<int>();
+                    for (ConstExp *constExp:*varDef->getConstExps()) {
+                        subs->push_back(calConstExp(constExp));
+                    }
+                    globalValues = calGlobalVarArrayInitVals(varDef->getInitVal(), subs);
                 }
                 // create irGlobalVar from irStmts
-                auto *irGlobalVar = new IRGlobalVar(irStmts);
+                auto *irGlobalVar = new IRGlobalVar(varDef->getIdent().c_str(), decl->getVarDecl()->getBType(),
+                                                    globalValues);
                 irGlobal = new IRGlobal(irGlobalVar, nullptr);
             }  // end varDefs
         } else if (decl->getFuncDef() != nullptr) {  // 函数
@@ -67,14 +85,15 @@ void IRGen::startIrGen() {
 
             auto *predLocs = new std::multimap<std::string, std::string>();
 
-            auto *irGlobalFuncParams = new std::vector<IRGlobalFuncParam *> ();
-            if(decl->getFuncDef()->getFuncFParams() != nullptr){
-                for(auto *funcParam:*decl->getFuncDef()->getFuncFParams()->getFuncFParams()){
+            auto *irGlobalFuncParams = new std::vector<IRGlobalFuncParam *>();
+            if (decl->getFuncDef()->getFuncFParams() != nullptr) {
+                for (auto *funcParam:*decl->getFuncDef()->getFuncFParams()->getFuncFParams()) {
 //                auto *arrayParam = new std::vector<int>();
 //                for(auto *exp: *funcParam->getExps()){
 //                    arrayParam->push_back(calAddExp(exp->getAddExp()));
 //                }
-                    auto *iRGlobalFuncParam = new IRGlobalFuncParam(funcParam->getIdent().c_str(), funcParam->getBType()/*, arrayParam*/);
+                    auto *iRGlobalFuncParam = new IRGlobalFuncParam(funcParam->getIdent().c_str(),
+                                                                    funcParam->getBType()/*, arrayParam*/);
                     irGlobalFuncParams->emplace_back(iRGlobalFuncParam);
                 }
             }
@@ -101,6 +120,16 @@ ConstVar *IRGen::genConstVar(ConstDef *constDef, int constType, std::vector<IRSt
                                    std::to_string(intRet).c_str());
     irStmts->emplace_back(irAllocaStmt);
     irStmts->emplace_back(irStoreStmt);
+
+    auto *constVarRet = new ConstVar(constDef->getIdent().c_str(), constType, intRet);
+    return constVarRet;
+}
+
+ConstVar *IRGen::genConstVar(ConstDef *constDef, int constType) {
+    int intRet = GLOBAL_DEFAULT_VALUE;
+    if (constDef->getConstInitVal() != nullptr) {
+        intRet = calConstExp(constDef->getConstInitVal()->getConstExp());
+    }
 
     auto *constVarRet = new ConstVar(constDef->getIdent().c_str(), constType, intRet);
     return constVarRet;
@@ -155,6 +184,49 @@ ConstVarArray *IRGen::genConstVarArray(ConstDef *constDef, int constType, std::v
     }
     irStmts->emplace_back(irAllocaStmt);
     irStmts->insert(irStmts->end(), irAssignStmts->begin(), irAssignStmts->end());
+
+    // symbol table 相关
+    auto *constVarArray = new ConstVarArray(constDef->getIdent().c_str(), constType, values, subs);
+    return constVarArray;
+}
+
+ConstVarArray *IRGen::genConstVarArray(ConstDef *constDef, int constType) {
+    // sub 相关
+    auto *subs = new std::vector<int>();
+    for (ConstExp *constExp:*constDef->getConstExps()) {
+        subs->push_back(calConstExp(constExp));
+    }
+    // ir sub 相关
+    auto subs_ = new std::vector<std::string>();  // 后续赋值索引用
+    int len = 1;
+    for (int i:*subs) {
+        subs_->push_back(std::to_string(GLOBAL_DEFAULT_VALUE));
+        len *= i;
+    }
+    auto *subs_str = new std::vector<std::string>();
+    for (int sub : *subs) {
+        subs_str->emplace_back(std::to_string(sub));
+    }
+    // value 相关
+    auto *values = new std::vector<int>();
+    if (constDef->getConstInitVal() != nullptr) {
+        values = calConstArrayInitVals(constDef->getConstInitVal(), subs);
+    } else {
+        for (int i = 0; i < len; i++) {
+            values->push_back(GLOBAL_DEFAULT_VALUE);
+        }
+    }
+
+    // ir相关
+    // 初始化赋值，考虑到 int a[4][2] = {} 无嵌套 与 values 已存数值之情况，constArray统一在此计算（ VarArray 则不然）
+    // 又:出于地址索引特性，一律按照一维展开方式存数 如: int a[4][2] 的 a[1][1] = 1 在此表示为 a[0][3] = 1
+    auto *irAssignStmts = new std::vector<IRStmt *>();
+    for (int i = 0; i < len; i++) {
+        subs_->pop_back();
+        subs_->push_back(std::to_string(i));
+        auto subAux = new std::vector<std::string>();
+        subAux->assign(subs_->begin(), subs_->end());
+    }
 
     // symbol table 相关
     auto *constVarArray = new ConstVarArray(constDef->getIdent().c_str(), constType, values, subs);
@@ -262,8 +334,11 @@ void IRGen::genFunc(FuncDef *funcDef, std::vector<IRLocalBlock *> *basicBlocks) 
                                                 (REGISTER_LOCAL + std::to_string(localStepName)).c_str(), levelNow);
                 irStmts->emplace_back(irAllocaStmt);
             } else {
+                // array
+                auto *funcArrayParam = new std::vector<std::string>();
                 auto *irAllocaArrayStmt = new IRStmt(DAG_ALLOCA_i32_ARRAY,
-                                                     (REGISTER_LOCAL + std::to_string(localStepName)).c_str(), levelNow);
+                                                     (REGISTER_LOCAL + std::to_string(localStepName)).c_str(),
+                                                     OPD_NULL.c_str(), funcArrayParam, levelNow);
                 irStmts->emplace_back(irAllocaArrayStmt);
             }
             auto *irStoreStmt = new IRStmt(DAG_STORE, (REGISTER_LOCAL + std::to_string(i)).c_str(),
@@ -504,6 +579,82 @@ std::vector<int> *IRGen::calConstArrayInitVals(ConstInitVal *constInitVal, std::
                     subs->erase(subs->begin());
                     std::vector<int> *subs_values_inner = calConstArrayInitVals(initValInner, subs, locType,
                                                                                 allocaType);
+                    subs->insert(subs->begin(), tmp);
+                    valuesRet->insert(valuesRet->end(), subs_values_inner->begin(), subs_values_inner->end());  // 拼接
+                }
+            }
+        }
+    }
+    if (valuesRet->size() < len) {  // 长度不足补零
+        for (int i = 0; i < len - valuesRet->size(); i++) {
+            valuesRet->push_back(0);
+        }
+    }
+    return valuesRet;
+}
+
+std::vector<int> *IRGen::calConstArrayInitVals(ConstInitVal *constInitVal, std::vector<int> *subs) {
+    auto *valuesRet = new std::vector<int>();
+    int len = 1;  // 维度展开一维的长度
+    for (int i : *subs) {
+        len *= i;
+    }
+    if (constInitVal->getConstInitVals()->empty()) {  // {}
+        for (int i = 0; i < len; i++) {
+            valuesRet->push_back(0);
+        }
+    } else {
+        for (ConstInitVal *initValInner: *constInitVal->getConstInitVals()) {
+            if (initValInner->getConstExp() != nullptr) {  // 实值
+                int valueInner = calConstExp(initValInner->getConstExp());
+                valuesRet->push_back(valueInner);
+            } else {  // 数组嵌套
+                int sub_first_len = 1;  // 子维展开一维的长度
+                for (int i = 1; i < subs->size(); i++) {
+                    sub_first_len *= subs->at(i);
+                }
+                if (valuesRet->size() % sub_first_len == 0) {  // 保证嵌套子维前，已有长度为子维整数倍
+                    int tmp = subs->at(0);  // 当前第一维度值
+                    subs->erase(subs->begin());
+                    std::vector<int> *subs_values_inner = calConstArrayInitVals(initValInner, subs);
+                    subs->insert(subs->begin(), tmp);
+                    valuesRet->insert(valuesRet->end(), subs_values_inner->begin(), subs_values_inner->end());  // 拼接
+                }
+            }
+        }
+    }
+    if (valuesRet->size() < len) {  // 长度不足补零
+        for (int i = 0; i < len - valuesRet->size(); i++) {
+            valuesRet->push_back(0);
+        }
+    }
+    return valuesRet;
+}
+
+std::vector<int> *IRGen::calGlobalVarArrayInitVals(InitVal *initVal, std::vector<int> *subs) {
+    auto *valuesRet = new std::vector<int>();
+    int len = 1;  // 维度展开一维的长度
+    for (int i : *subs) {
+        len *= i;
+    }
+    if (initVal->getInitVals()->empty()) {
+        for (int i = 0; i < len; i++) {
+            valuesRet->push_back(0);
+        }
+    } else {
+        for (InitVal *initValInner: *initVal->getInitVals()) {
+            if (initValInner->getExp() != nullptr) {  // 实值
+                int valueInner = calAddExp(initValInner->getExp()->getAddExp());
+                valuesRet->push_back(valueInner);
+            } else {  // 数组嵌套
+                int sub_first_len = 1;  // 子维展开一维的长度
+                for (int i = 1; i < subs->size(); i++) {
+                    sub_first_len *= subs->at(i);
+                }
+                if (valuesRet->size() % sub_first_len == 0) {  // 保证嵌套子维前，已有长度为子维整数倍
+                    int tmp = subs->at(0);  // 当前第一维度值
+                    subs->erase(subs->begin());
+                    std::vector<int> *subs_values_inner = calGlobalVarArrayInitVals(initValInner, subs);
                     subs->insert(subs->begin(), tmp);
                     valuesRet->insert(valuesRet->end(), subs_values_inner->begin(), subs_values_inner->end());  // 拼接
                 }

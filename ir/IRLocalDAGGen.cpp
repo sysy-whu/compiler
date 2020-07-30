@@ -12,8 +12,8 @@ void IRLocalDAGGen::startGen() {
 
     for (IRGlobal *irGlobal:*irTree->getIrGlobals()) {
         if (irGlobal->getIrGlobalVar() != nullptr) {
-            std::cout << "var %s" << std::endl;
-            genStmts(irGlobal->getIrGlobalVar()->getIrStmt(), irTree->getGlobalDagRoot());
+            std::cout << "var %s" << irGlobal->getIrGlobalVar()->getVarName() << std::endl;
+//            genStmts(irGlobal->getIrGlobalVar()->getIrStmt(), irTree->getGlobalDagRoot());
         } else {
             for (IRLocalBlock *irLocalBlock:*irGlobal->getIrGlobalFunc()->getBaseBlocks()) {
                 auto *dagRootFunc = new DAGRoot();
