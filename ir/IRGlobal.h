@@ -44,6 +44,31 @@ class StackStatus {
     std::map<std::string, std::vector<int>> arrDimensionMap;
 };
 
+class IRGlobalFuncParam {
+private:
+    std::string paramName;
+
+    int paramType;
+
+//    // void arrayFunc(int a[][3]);
+//    std::vector<int> *arrayParam;
+
+public:
+    IRGlobalFuncParam(const char *paramName, int paramType/*, std::vector<int> *arrayParam*/) :
+            paramName(paramName), paramType(paramType)/*, arrayParam(arrayParam)*/ {};
+
+    [[nodiscard]] const std::string &getParamName() const {
+        return paramName;
+    }
+
+    [[nodiscard]] int getParamType() const {
+        return paramType;
+    }
+
+//    [[nodiscard]] std::vector<int> *getArrayParam() const {
+//        return arrayParam;
+//    }
+};
 
 /**
  * 函数类IRGlobalFunc
@@ -53,6 +78,8 @@ private:
     std::string funcName;
 
     int retType;
+
+    std::vector<IRGlobalFuncParam *> *irGlobalFuncParams;
 
     std::vector<IRLocalBlock *> *baseBlocks;
 
@@ -72,8 +99,10 @@ public:
      * @param predLocs 调用此函数的代码块位置
      */
     IRGlobalFunc(const char *funcName, int retType, std::vector<IRLocalBlock *> *baseBlocks,
-                 std::vector<ArmBlock *> *armBlocks, std::multimap<std::string, std::string> *predLocs) :
-            funcName(funcName), retType(retType), baseBlocks(baseBlocks), armBlocks(armBlocks), predLocs(predLocs) {
+                 std::vector<ArmBlock *> *armBlocks, std::multimap<std::string, std::string> *predLocs,
+                 std::vector<IRGlobalFuncParam *> *irGlobalFuncParams) :
+            funcName(funcName), retType(retType), baseBlocks(baseBlocks), armBlocks(armBlocks), predLocs(predLocs),
+            irGlobalFuncParams(irGlobalFuncParams){
     };
 
     std::string getFuncName() { return funcName; }

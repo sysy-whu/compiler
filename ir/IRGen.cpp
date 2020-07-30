@@ -66,8 +66,22 @@ void IRGen::startIrGen() {
             auto *armBlocks = new std::vector<ArmBlock *>();
 
             auto *predLocs = new std::multimap<std::string, std::string>();
+
+            auto *irGlobalFuncParams = new std::vector<IRGlobalFuncParam *> ();
+            if(decl->getFuncDef()->getFuncFParams() != nullptr){
+                for(auto *funcParam:*decl->getFuncDef()->getFuncFParams()->getFuncFParams()){
+//                auto *arrayParam = new std::vector<int>();
+//                for(auto *exp: *funcParam->getExps()){
+//                    arrayParam->push_back(calAddExp(exp->getAddExp()));
+//                }
+                    auto *iRGlobalFuncParam = new IRGlobalFuncParam(funcParam->getIdent().c_str(), funcParam->getBType()/*, arrayParam*/);
+                    irGlobalFuncParams->emplace_back(iRGlobalFuncParam);
+                }
+            }
+
             auto *irGlobalFunc = new IRGlobalFunc(decl->getFuncDef()->getIdent().c_str(),
-                                                  decl->getFuncDef()->getFuncType(), baseBlocks, armBlocks, predLocs);
+                                                  decl->getFuncDef()->getFuncType(), baseBlocks, armBlocks, predLocs,
+                                                  irGlobalFuncParams);
             irGlobal = new IRGlobal(nullptr, irGlobalFunc);
         }
         irGlobals->emplace_back(irGlobal);
