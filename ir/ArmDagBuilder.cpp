@@ -434,7 +434,7 @@ ArmNodes ArmDAGBuilder::genStoreNode(DAGNode *nd){
 
 
     if(level == 0){ // 为全局变量 采用特殊取址方式
-        addr = "[R2]";  //FIXME: 这里用了R2寄存器来保存地址  !!!
+        addr = "[R2]";  //FIXME 这里用了R2寄存器来保存地址  !!!
         std::string lower =  "#:lower16:"+ opd1;    std::string upper =  "#:upper16:"+ opd1;
 
         ArmDAGNode *node = new ArmDAGNode(count++,  nd->getID(), MOVW, (std::string&)"R2", lower);
@@ -451,7 +451,6 @@ ArmNodes ArmDAGBuilder::genStoreNode(DAGNode *nd){
     else{
         addr = "[fp, #-"+(std::string&)loc+"]";
 
-
         ArmDAGNode *node = new ArmDAGNode(count++, nd->getID(), MOV, opd1, opd2);
         ArmDAGNode *node1 = new ArmDAGNode(count++, nd->getID(), STR, opd1,addr);
         node1->addDependUse(node);
@@ -466,8 +465,10 @@ ArmNodes ArmDAGBuilder::genGetPtrNode(DAGNode *nd){
     std::string opd1 = nd->getOperandList()[0]->getNode()->getRetName();
     std::string opd2 = nd->getOperandList()[1]->getNode()->getRetName();
 
+    std::string addr;
+
     int length = nd->getOperandList().size()-2;
-    std::vector<std::string> opd3;
+    std::vector<std::string> opd3; // opd3 保存各维参数
     for(int i = 0; i < length; i++){
         std::string dim = nd->getOperandList()[i+2]->getNode()->getRetName();
         opd3.emplace_back(dim);
@@ -476,8 +477,7 @@ ArmNodes ArmDAGBuilder::genGetPtrNode(DAGNode *nd){
     std::multimap<std::string,ArrayInfo> *dimMap = status->getArrDimensionMap();
     std::multimap<std::string ,VarInfo> *varMap = status->getVarMap();
 
-    std::string addr;
-
+    // 查找位置 loc
     int loc; int currLevel = nd->getLevel(); int level = -1;
     int n = varMap->count(opd2);
     if(n == 1){
@@ -501,33 +501,76 @@ ArmNodes ArmDAGBuilder::genGetPtrNode(DAGNode *nd){
         perror("Compile Error: compile error: genGetPtrNode - array not found!\"\n");
     }
 
+    // 查找维度 dims
+    std::vector<int> dims;    int arrLevel = -1;
+    int n2 = varMap->count(opd2);
+    if(n2 == 1){
+        ArrayInfo info = dimMap->find(opd2)->second;
+        dims = info.dimension;
+    }
+    else if ( n2 > 1 ){
+        auto iter = dimMap->find(opd2);
+        ArrayInfo result = iter->second;
+        for(int i = 0; i < n2; i++){
+            ArrayInfo info = iter->second;
+            if(level == info.level){
+                result = info;
+            }
+            iter++;
+        }
+        dims = result.dimension;
+    }
+    else{ // not found
+        perror("Compile Error: compile error: genGetPtrNode - array not found!\"\n");
+    }
+
+    int dimNum = dims.size();
+    std::vector<int> dimScale; // dimScale[i] 表示 dim[i], dim[i+1], ...dim[dimNum-1] 之积. 最末元素为1
+    for(int i = dimNum; i > 0; i++){
+        int scale = 1;
+        for( int j = i; j>0; j++){
+            scale *= dims[j];
+        }
+       dimScale.emplace_back(scale);
+    }
+    dimScale.emplace_back(1);
     /*
      *  定义: array[dim1][dim2]..[dimn]
      *  调用: array[num1][num2]...[numn]
-     *  偏移 = base_address + num1 * (dim2)*(dim3)... + num2 * (dim3)* ... +numn
-     *
-    * mov %3, %array
-      mul %r, %2, #2
-      add %r, %r, #2
-      sub %3, %3, %r
-    */
+     *  偏移 = base_address - num1 * (dim2)*(dim3)... -num2 * (dim3)* ... - numn
+     */
+
+
     if(level == 0){ // 为全局变量 采用特殊取址方式
 
-        addr = opd1;
+        addr = "addr";
 
         std::string lower =  "#:lower16:"+ opd2;    std::string upper =  "#:upper16:"+ opd2;
 
-        // 保存数组基址
-        ArmDAGNode *node = new ArmDAGNode(count++,  nd->getID(), MOVW, (std::string&)"R2", lower);
-        ArmDAGNode *node1 = new ArmDAGNode(count++,  nd->getID(), MOVT,(std::string&)"R2", upper);
+        // opd1 保存数组基址
+        ArmDAGNode *node = new ArmDAGNode(count++,  nd->getID(), MOVW, opd1, lower);
+        ArmDAGNode *node1 = new ArmDAGNode(count++,  nd->getID(), MOVT,opd1, upper);
 
-        // TODO: 计算相对基址的偏移
 
-        ArmDAGNode *node2 = new ArmDAGNode(count++,  nd->getID(), MOV, opd1, addr);
+        // 计算相对基址的偏移
+        std::vector<ArmDAGNode*> calcuNodes;
+        for(int i = 0; i < opd3.size(); i++){
+            calcuNodes.emplace_back(new ArmDAGNode(count++,  nd->getID(), MUL,(std::string&) "$R2", opd3[i], (std::string&)dimScale[i+1]));
+            calcuNodes.emplace_back(new ArmDAGNode(count++,  nd->getID(), SUB, opd1, opd1, (std::string&)"$R2"));
+        }
 
         node1->addDependUse(node);
+        int tmp = 0; int instNum = calcuNodes.size();// 指令数量
+        ArmDAGNode * prev = node1;
+        while(tmp < instNum){
+            calcuNodes[tmp]->addDependUse(prev);
+            calcuNodes[tmp+1];
+            calcuNodes[tmp+1]->addDependUse(calcuNodes[tmp]);
+            prev = calcuNodes[tmp+1];
+            tmp +=2;
+        }
 
-        return ArmNodes{node,node2};
+        return ArmNodes{node,prev};
     }
     else{
         addr = opd1;
@@ -535,15 +578,26 @@ ArmNodes ArmDAGBuilder::genGetPtrNode(DAGNode *nd){
         // opd1 寄存器 保存数组基址
         ArmDAGNode *node = new ArmDAGNode(count++,  nd->getID(), SUB, opd1,(std::string&)"$FP", (std::string&)loc);
 
-        // TODO: 计算相对基址的偏移
+        // 计算相对基址的偏移
+        std::vector<ArmDAGNode*> calcuNodes;
+        for(int i = 0; i < opd3.size(); i++){
+            calcuNodes.emplace_back(new ArmDAGNode(count++,  nd->getID(), MUL,(std::string&) "$R2", opd3[i], (std::string&)dimScale[i+1]));
+            calcuNodes.emplace_back(new ArmDAGNode(count++,  nd->getID(), SUB, opd1, opd1, (std::string&)"$R2"));
+        }
 
-        //node1->addDependUse(node);
+        int tmp = 0; int instNum = calcuNodes.size();// 指令数量
+        ArmDAGNode * prev = node;
+        while(tmp < instNum){
+            calcuNodes[tmp]->addDependUse(prev);
+            calcuNodes[tmp+1];
+            calcuNodes[tmp+1]->addDependUse(calcuNodes[tmp]);
+            prev = calcuNodes[tmp+1];
+            tmp +=2;
+        }
 
-
-        return ArmNodes{node,node};
+        return ArmNodes{node,prev};
     }
 
-    return nullptr;
 }
 
 /*
@@ -552,6 +606,8 @@ ArmNodes ArmDAGBuilder::genGetPtrNode(DAGNode *nd){
 
 ArmNodes ArmDAGBuilder::genCallNode(DAGNode *nd){
     std::string opd2 = nd->getOperandList()[1]->getNode()->getRetName();
+
+    //TODO: 传参处理
 
     ArmDAGNode *node = new ArmDAGNode(count++, nd->getID(),BL, opd2);
     return ArmNodes{node,node};

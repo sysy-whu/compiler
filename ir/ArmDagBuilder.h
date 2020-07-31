@@ -15,18 +15,17 @@ struct ArmNodes{
 class ArmDAGBuilder {
 public:
 
-    explicit ArmDAGBuilder(DAG *dag0, StackStatus *stackStatus) {
+    explicit ArmDAGBuilder(DAGRoot *root, StackStatus *stackStatus) {
 
-        dag = dag0;
-        this->status = status;
-        ArmDAGRoot *root = new ArmDAGRoot();
+        dagRoot = root;
         this->status = stackStatus;
-        armDag = new ArmDAG(root, dag->getName().data());
+        armRoot = new ArmDAGRoot();
+
     }
 
-    DAG *dag;
+    DAGRoot *dagRoot;
 
-    ArmDAG *armDag;
+    ArmDAGRoot *armRoot;
 
     StackStatus *status;
 
@@ -34,13 +33,13 @@ public:
 
     /// 全局变量处理
 
-    std::vector<std::string> * genGlobal(IRGlobalVar *var);
+    static std::vector<std::string> * genGlobal(IRGlobalVar *var);
 
-    std::vector<std::string> * genConGlobal(IRGlobalVar *var);
+    static std::vector<std::string> * genConGlobal(IRGlobalVar *var);
 
-    std::vector<std::string> * genGlobalArray(IRGlobalVar *var);
+    static std::vector<std::string> * genGlobalArray(IRGlobalVar *var);
 
-    std::vector<std::string> * genConGlobalArray(IRGlobalVar *var);
+    static std::vector<std::string> * genConGlobalArray(IRGlobalVar *var);
 
     /// 生成ArmDAG主方法
     void generateArmDag();
@@ -110,6 +109,37 @@ private:
     /// 处理全局变量
     void IRGlobalValGen(IRGlobalVar *irGlobalVar) {
 
+        if(irGlobalVar->getVarType() == TYPE_INT){ // int
+
+            //记录变量位置,写入维度信息
+            std::multimap<std::string,VarInfo> varMap =  * (globalStatus->getVarMap());
+
+            varMap.emplace(irGlobalVar->getVarName(),VarInfo{globalStatus->getCurrentLoc(),0});
+
+            globalStatus->setCurrentLoc(-1);
+            globalStatus->setVarMap(&varMap);
+        }
+        else if(irGlobalVar->getVarType() == TYPE_INT_STAR){ //int*
+
+            //记录变量位置,写入维度信息
+            std::multimap<std::string,VarInfo> varMap =  * (globalStatus->getVarMap());
+            std::multimap<std::string,ArrayInfo> dimMap = *(globalStatus->getArrDimensionMap());
+
+            //TODO: [维度信息保存到dims]
+            std::vector<int> dims;
+
+            varMap.emplace(irGlobalVar->getVarName(),VarInfo{globalStatus->getCurrentLoc(),0});
+            dimMap.emplace(irGlobalVar->getVarName(),ArrayInfo{dims,0});
+
+            globalStatus->setCurrentLoc( -1);
+            globalStatus->setArrDimensionMap(&dimMap);
+            globalStatus->setVarMap(&varMap);
+
+        }
+        else{
+            perror("Error in ArmDAGGen.IRGloabalVarGen()!\n"
+                   "unexpected vartype. \n");
+        }
     }
 
     /// 处理函数
@@ -141,14 +171,14 @@ private:
      */
     void
     DagRootGen(DAGRoot *dagRoot, const char *blockName, std::vector<ArmBlock *> *armBlocks, StackStatus *stackStatus) {
-        auto armDagBuilder = new ArmDAGBuilder(dagRoot->getDag(), stackStatus);
+        auto armDagBuilder = new ArmDAGBuilder(dagRoot, stackStatus);
         // ==== todo 处理  ========
 
         armDagBuilder->generateArmDag();
 
 
         // ===========
-        ArmBlock *armBlock = new ArmBlock(blockName, armDagBuilder->armDag->getRoot());
+        ArmBlock *armBlock = new ArmBlock(blockName, armDagBuilder->armRoot);
         armBlocks->emplace_back(armBlock);
 
         delete armDagBuilder;
