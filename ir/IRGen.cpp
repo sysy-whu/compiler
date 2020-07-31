@@ -329,28 +329,28 @@ void IRGen::genFunc(FuncDef *funcDef, std::vector<IRLocalBlock *> *basicBlocks) 
     }
 
     levelNow++;
-    if (funcDef->getFuncFParams() != nullptr) {
-        int aaaaa = funcDef->getFuncFParams()->getFuncFParams()->size();
-        for (int i = 0; i < funcDef->getFuncFParams()->getFuncFParams()->size(); i++) {
-            if (funcDef->getFuncFParams()->getFuncFParams()->at(i)->getExps() == nullptr ||
-                funcDef->getFuncFParams()->getFuncFParams()->at(i)->getExps()->empty()) {
-                auto *irAllocaStmt = new IRStmt(DAG_ALLOCA_i32,
-                                                (REGISTER_LOCAL + std::to_string(localStepName)).c_str(), levelNow);
-                irStmts->emplace_back(irAllocaStmt);
-            } else {
-                // array
-                auto *funcArrayParam = new std::vector<std::string>();
-                auto *irAllocaArrayStmt = new IRStmt(DAG_ALLOCA_i32_ARRAY,
-                                                     (REGISTER_LOCAL + std::to_string(localStepName)).c_str(),
-                                                     OPD_NULL.c_str(), funcArrayParam, levelNow);
-                irStmts->emplace_back(irAllocaArrayStmt);
-            }
-            auto *irStoreStmt = new IRStmt(DAG_STORE, (REGISTER_LOCAL + std::to_string(i)).c_str(),
-                                           (REGISTER_LOCAL + std::to_string(localStepName)).c_str());
-            irStmts->emplace_back(irStoreStmt);
-            localStepName++;
-        }
-    }
+//    if (funcDef->getFuncFParams() != nullptr) {
+//        int aaaaa = funcDef->getFuncFParams()->getFuncFParams()->size();
+//        for (int i = 0; i < funcDef->getFuncFParams()->getFuncFParams()->size(); i++) {
+//            if (funcDef->getFuncFParams()->getFuncFParams()->at(i)->getExps() == nullptr ||
+//                funcDef->getFuncFParams()->getFuncFParams()->at(i)->getExps()->empty()) {
+//                auto *irAllocaStmt = new IRStmt(DAG_ALLOCA_i32,
+//                                                (REGISTER_LOCAL + std::to_string(localStepName)).c_str(), levelNow);
+//                irStmts->emplace_back(irAllocaStmt);
+//            } else {
+//                // array
+//                auto *funcArrayParam = new std::vector<std::string>();
+//                auto *irAllocaArrayStmt = new IRStmt(DAG_ALLOCA_i32_ARRAY,
+//                                                     (REGISTER_LOCAL + std::to_string(localStepName)).c_str(),
+//                                                     OPD_NULL.c_str(), funcArrayParam, levelNow);
+//                irStmts->emplace_back(irAllocaArrayStmt);
+//            }
+//            auto *irStoreStmt = new IRStmt(DAG_STORE, (REGISTER_LOCAL + std::to_string(i)).c_str(),
+//                                           (REGISTER_LOCAL + std::to_string(localStepName)).c_str());
+//            irStmts->emplace_back(irStoreStmt);
+//            localStepName++;
+//        }
+//    }
 
     genBlock(funcDef->getBlock(), basicBlocks, blockEntry, irStmts, localStepName);
     funcFParamsNow = nullptr;
