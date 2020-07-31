@@ -113,6 +113,8 @@ private:
   int opType;
   // 指定节点输出名称
   std::string retName;
+  // 立即数的值
+  int immediateValue;
   // 变量的level
   int level;
   // 指定输入的DAGUse
@@ -124,6 +126,9 @@ public:
 
   DAGNode(int id, int opType, const std::string &retName) : id(id), opType(opType), retName(retName) {}
 
+  /// 创建立即数的构造方法
+  DAGNode(int id, int value): id(id), opType(DAG_IMMEDIATE_DATA),
+                    retName("IMMEDIATE_DATA"),immediateValue(value){}
   /// 这个方法只允许在DAGUse中使用
   void addUse(DAGUse &U) { U.addToList(&UseList); }
 
@@ -154,6 +159,10 @@ public:
     int getLevel() const {
         return level;
     }
+
+    int getImmediateValue() const {
+        return immediateValue;
+    }
     /**
      * set函数
      */
@@ -173,16 +182,12 @@ public:
   void setLevel(int level) {
      DAGNode::level = level;
   }
+
+    void setImmediateValue(int immediateValue) {
+        DAGNode::immediateValue = immediateValue;
+    }
 };
 
-
-class ImmediateDAGNode : public DAGNode {
-private:
-  int value;
-public:
-  ImmediateDAGNode(int id, int value) : DAGNode(
-          id, DAG_IMMEDIATE_DATA, "IMMEDIATE_DATA"), value(value) {}
-};
 
 class DAGRoot {
 private:
