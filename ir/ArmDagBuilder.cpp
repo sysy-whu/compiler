@@ -543,7 +543,6 @@ ArmNodes ArmDAGBuilder::genGetPtrNode(DAGNode *nd){
         return ArmNodes{node,node};
     }
 
-
     return nullptr;
 }
 
