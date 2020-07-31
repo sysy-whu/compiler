@@ -254,6 +254,7 @@ void DAGRoot::AddBO(std::string &opd1, std::string &opd2, std::string &opd3, int
   DAGNode *opNode = new DAGNode(count++, opType, opd1);
   nodes.push_back(opNode);
   dag->addNode(opNode);
+  FindNode(opNode, opNode->getRetName().c_str(), opd1.c_str());
   FindNode(opNode, opNode->getRetName().c_str(), opd2.c_str());
   FindNode(opNode, opNode->getRetName().c_str(), opd3.c_str());
 }
@@ -262,6 +263,7 @@ void DAGRoot::AddUO(std::string &opd1, std::string &opd2, int opType) {
     DAGNode *opNode = new DAGNode(count++, opType, opd1);
     nodes.push_back(opNode);
     dag->addNode(opNode);
+    FindNode(opNode, opNode->getRetName().c_str(), opd1.c_str());
     FindNode(opNode, opNode->getRetName().c_str(), opd2.c_str());
 }
 
@@ -279,6 +281,7 @@ void DAGRoot::AddGetPtr(std::string &opd1, std::string &opd2, std::string &opd3)
   nodes.push_back(getPtrNode);
   dag->addNode(getPtrNode);
 
+  FindNode(getPtrNode, getPtrNode->getRetName().c_str(), opd1.c_str());
   FindNode(getPtrNode, getPtrNode->getRetName().c_str(), opd2.c_str());
   FindNode(getPtrNode, getPtrNode->getRetName().c_str(), opd3.c_str());
 }
@@ -288,6 +291,7 @@ void DAGRoot::AddGetPtr(std::string &opd1, int opd2, std::string &opd3) {
   nodes.push_back(getPtrNode);
   dag->addNode(getPtrNode);
 
+  FindNode(getPtrNode, getPtrNode->getRetName().c_str(), opd1.c_str());
   FindNode(getPtrNode, getPtrNode->getRetName().c_str(), opd3.c_str());
 
   // 创建立即数的node
