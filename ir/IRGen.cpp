@@ -30,6 +30,7 @@ void IRGen::startIrGen() {
         IRGlobal *irGlobal = nullptr;
 //        auto *irStmts = new std::vector<IRStmt *>();
         auto *globalValues = new std::vector<int>();
+        auto *arraySubs = new std::vector<int>();
 
         if (decl->getConstDecl() != nullptr) {
             for (ConstDef *constDef: *decl->getConstDecl()->getConstDefs()) {
@@ -46,16 +47,15 @@ void IRGen::startIrGen() {
                     auto *symbol = new Symbol(nullptr, nullptr, nullptr, constVarArray, nullptr);
                     symbolsGlobal->emplace_back(symbol);
                     // sub 相关
-                    auto *subs = new std::vector<int>();
                     for (ConstExp *constExp:*constDef->getConstExps()) {
-                        subs->push_back(calConstExp(constExp));
+                        arraySubs->push_back(calConstExp(constExp));
                     }
-                    globalValues = calConstArrayInitVals(constDef->getConstInitVal(), subs);
+                    globalValues = calConstArrayInitVals(constDef->getConstInitVal(), arraySubs);
                 }
 
                 // create irGlobalVar from irStmts
                 auto *irGlobalVar = new IRGlobalVar(constDef->getIdent().c_str(), decl->getConstDecl()->getBType(),
-                                                    globalValues);
+                                                    globalValues, arraySubs);
                 irGlobal = new IRGlobal(irGlobalVar, nullptr);
             } //  end constDefs
         } else if (decl->getVarDecl() != nullptr) {
@@ -68,15 +68,14 @@ void IRGen::startIrGen() {
                     }
                 } else {  // 数组
                     // sub 相关
-                    auto *subs = new std::vector<int>();
                     for (ConstExp *constExp:*varDef->getConstExps()) {
-                        subs->push_back(calConstExp(constExp));
+                        arraySubs->push_back(calConstExp(constExp));
                     }
-                    globalValues = calGlobalVarArrayInitVals(varDef->getInitVal(), subs);
+                    globalValues = calGlobalVarArrayInitVals(varDef->getInitVal(), arraySubs);
                 }
                 // create irGlobalVar from irStmts
                 auto *irGlobalVar = new IRGlobalVar(varDef->getIdent().c_str(), decl->getVarDecl()->getBType(),
-                                                    globalValues);
+                                                    globalValues, arraySubs);
                 irGlobal = new IRGlobal(irGlobalVar, nullptr);
             }  // end varDefs
         } else if (decl->getFuncDef() != nullptr) {  // 函数

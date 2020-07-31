@@ -9,7 +9,6 @@
 #include "ir/ArmDagBuilder.h"
 
 
-
 // Run->Edit Configurations->Program arguments
 // -S -o <OutputFilepath> <InputFilepath> [-O1]
 int main(int argc, char **argv) {
