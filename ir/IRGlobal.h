@@ -51,7 +51,15 @@ public:
 struct VarInfo{
     /// 变量的栈位置
     int stackLoc;
-    // 变量的level
+    /// 变量的level
+    int level;
+};
+
+struct ArrayInfo{
+    /// 数组的维度信息
+    std::vector<int> dimension;
+
+    ///数组的level
     int level;
 };
 
@@ -63,13 +71,13 @@ class StackStatus {
     //      进入前 lastLoc = currentLoc; 退出后 currentLoc = lastLoc
     int lastLoc = 0;
     // 变量名称与栈地址的映射
-    std::map<std::string, VarInfo> *varMap;
+    std::multimap<std::string, VarInfo> *varMap;
     // 数组变量与维度信息的对应关系
-    std::map<std::string, std::vector<int>> *arrDimensionMap;
+    std::multimap<std::string, ArrayInfo> *arrDimensionMap;
 public:
     StackStatus(){
-        varMap = new std::map<std::string, VarInfo>();
-        arrDimensionMap = new std::map<std::string, std::vector<int>>();
+        varMap = new std::multimap<std::string, VarInfo>();
+        arrDimensionMap = new std::multimap<std::string, ArrayInfo>();
     };
 
     int getCurrentLoc() const {
@@ -80,11 +88,11 @@ public:
         return lastLoc;
     }
 
-    std::map<std::string, VarInfo> *getVarMap() const {
+    std::multimap<std::string, VarInfo> *getVarMap() const {
         return varMap;
     }
 
-    std::map<std::string, std::vector<int>> *getArrDimensionMap() const {
+    std::multimap<std::string, ArrayInfo> *getArrDimensionMap() const {
         return arrDimensionMap;
     }
 
@@ -96,11 +104,11 @@ public:
         StackStatus::lastLoc = lastLoc;
     }
 
-    void setVarMap(std::map<std::string, VarInfo> *varMap) {
+    void setVarMap(std::multimap<std::string, VarInfo> *varMap) {
         StackStatus::varMap = varMap;
     }
 
-    void setArrDimensionMap(std::map<std::string, std::vector<int>> *arrDimensionMap) {
+    void setArrDimensionMap(std::multimap<std::string, ArrayInfo> *arrDimensionMap) {
         StackStatus::arrDimensionMap = arrDimensionMap;
     }
 };

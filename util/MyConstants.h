@@ -184,6 +184,7 @@ static const int DAG_NOT = OP_UO_NOT;
 static const std::string BLOCK_ENTRY = "entry";
 static const std::string REGISTER_GLOBAL = "@";
 static const std::string REGISTER_LOCAL = "%";
+static const std::string REGISTER_REAL = "$";
 static const std::string OPD_NULL = "";
 static const int GLOBAL_DEFAULT_VALUE = 0;
 
@@ -193,6 +194,7 @@ enum ARM_DAG
   IMMEDIATE_DATA,
 
   MOV, MOVEQ ,MOVNE, MOVLE, MOVGE, MOVGT, MOVLT,
+  MOVW,MOVT,
 
   ADD,SUB,MUL,DIV,MOD,
 
