@@ -61,9 +61,11 @@ void IRGen::startIrGen() {
         } else if (decl->getVarDecl() != nullptr) {
             for (VarDef *varDef: *decl->getVarDecl()->getVarDefs()) {  // 变量
                 if (varDef->getConstExps()->empty()) {
-                    globalValues->emplace_back(
-                            calAddExp(varDef->getInitVal()->getExp()->getAddExp()));
-
+                    if(varDef->getInitVal() != nullptr){
+                        globalValues->emplace_back(calAddExp(varDef->getInitVal()->getExp()->getAddExp()));
+                    }else{
+                        globalValues->emplace_back(GLOBAL_DEFAULT_VALUE);
+                    }
                 } else {  // 数组
                     // sub 相关
                     auto *subs = new std::vector<int>();
@@ -115,8 +117,8 @@ ConstVar *IRGen::genConstVar(ConstDef *constDef, int constType, std::vector<IRSt
         intRet = calConstExp(constDef->getConstInitVal()->getConstExp());
     }
 
-    auto *irAllocaStmt = new IRStmt(allocaType, (locType + constDef->getIdent()).c_str(), levelNow);
-    auto *irStoreStmt = new IRStmt(DAG_STORE, (locType + constDef->getIdent()).c_str(),
+    auto *irAllocaStmt = new IRStmt(allocaType, constDef->getIdent().c_str(), levelNow);
+    auto *irStoreStmt = new IRStmt(DAG_STORE, constDef->getIdent().c_str(),
                                    std::to_string(intRet).c_str());
     irStmts->emplace_back(irAllocaStmt);
     irStmts->emplace_back(irStoreStmt);
@@ -129,6 +131,8 @@ ConstVar *IRGen::genConstVar(ConstDef *constDef, int constType) {
     int intRet = GLOBAL_DEFAULT_VALUE;
     if (constDef->getConstInitVal() != nullptr) {
         intRet = calConstExp(constDef->getConstInitVal()->getConstExp());
+    }else{
+        intRet = 0;
     }
 
     auto *constVarRet = new ConstVar(constDef->getIdent().c_str(), constType, intRet);
@@ -165,7 +169,7 @@ ConstVarArray *IRGen::genConstVarArray(ConstDef *constDef, int constType, std::v
 
     // ir相关
     auto *irAllocaStmt =
-            new IRStmt(allocaType, (locType + constDef->getIdent()).c_str(), OPD_NULL.c_str(), subs_str, levelNow);
+            new IRStmt(allocaType, constDef->getIdent().c_str(), OPD_NULL.c_str(), subs_str, levelNow);
     // 初始化赋值，考虑到 int a[4][2] = {} 无嵌套 与 values 已存数值之情况，constArray统一在此计算（ VarArray 则不然）
     // 又:出于地址索引特性，一律按照一维展开方式存数 如: int a[4][2] 的 a[1][1] = 1 在此表示为 a[0][3] = 1
     auto *irAssignStmts = new std::vector<IRStmt *>();
@@ -175,7 +179,7 @@ ConstVarArray *IRGen::genConstVarArray(ConstDef *constDef, int constType, std::v
         auto subAux = new std::vector<std::string>();
         subAux->assign(subs_->begin(), subs_->end());
         auto *getStmt = new IRStmt(DAG_GETPTR, (locType + std::to_string(stepName)).c_str(),
-                                   (locType + constDef->getIdent()).c_str(), subAux);
+                                   constDef->getIdent().c_str(), subAux);
         auto *storeStmt = new IRStmt(DAG_STORE, (locType + std::to_string(stepName)).c_str(),
                                      std::to_string(values->at(i)).c_str());
         irAssignStmts->emplace_back(getStmt);
@@ -236,19 +240,20 @@ ConstVarArray *IRGen::genConstVarArray(ConstDef *constDef, int constType) {
 void IRGen::genVar(VarDef *varDef, std::vector<IRStmt *> *irStmts, const char *levelLoc, int allocaType,
                    int &stepName) {
     // alloca 相关
-    auto *irAllocaStmt = new IRStmt(allocaType, (levelLoc + varDef->getIdent()).c_str(), levelNow);
+    auto *irAllocaStmt = new IRStmt(allocaType, varDef->getIdent().c_str(), levelNow);
     irStmts->emplace_back(irAllocaStmt);
 
     // value 相关
     if (varDef->getInitVal() != nullptr) {  // 有初始化
         const char *rExpRet = genAddExp(varDef->getInitVal()->getExp()->getAddExp(), irStmts, stepName);
-        auto *irAssignStmt = new IRStmt(DAG_STORE, (levelLoc + varDef->getIdent()).c_str(), rExpRet);
-        irStmts->emplace_back(irAssignStmt);
-    } else if (levelLoc == REGISTER_GLOBAL) {  // 无初始化全局变量
-        auto *irAssignStmt = new IRStmt(DAG_STORE, (levelLoc + varDef->getIdent()).c_str(),
-                                        std::to_string(GLOBAL_DEFAULT_VALUE).c_str());
+        auto *irAssignStmt = new IRStmt(DAG_STORE, varDef->getIdent().c_str(), rExpRet);
         irStmts->emplace_back(irAssignStmt);
     }
+//    else if (levelLoc == REGISTER_GLOBAL) {  // 无初始化全局变量
+//        auto *irAssignStmt = new IRStmt(DAG_STORE, (levelLoc + varDef->getIdent()).c_str(),
+//                                        std::to_string(GLOBAL_DEFAULT_VALUE).c_str());
+//        irStmts->emplace_back(irAssignStmt);
+//    }
 }
 
 void IRGen::genVarArray(VarDef *varDef, std::vector<IRStmt *> *irStmts, const char *levelLoc,
@@ -285,7 +290,7 @@ void IRGen::genVarArray(VarDef *varDef, std::vector<IRStmt *> *irStmts, const ch
 
     // ir相关
     auto *IrAllocaStmt =
-            new IRStmt(allocaType, (levelLoc + varDef->getIdent()).c_str(), OPD_NULL.c_str(), subs_str, levelNow);
+            new IRStmt(allocaType, varDef->getIdent().c_str(), OPD_NULL.c_str(), subs_str, levelNow);
     // 初始化赋值，考虑到 int a[4][2] = {} 无嵌套 与 values 已存数值之情况，constArray统一在此计算（ VarArray 则不然）
     // 又:出于地址索引特性，一律按照一维展开方式存数 如: int a[4][2] 的 a[1][1] = 1 在此表示为 a[0][3] = 1
     auto *irAssignStmts = new std::vector<IRStmt *>();
@@ -295,7 +300,7 @@ void IRGen::genVarArray(VarDef *varDef, std::vector<IRStmt *> *irStmts, const ch
         auto subAux = new std::vector<std::string>();
         subAux->assign(subs_->begin(), subs_->end());
         auto *getPtrStmt = new IRStmt(DAG_GETPTR, (levelLoc + std::to_string(stepName)).c_str(),
-                                      (levelLoc + varDef->getIdent()).c_str(), subAux);
+                                      varDef->getIdent().c_str(), subAux);
         IRStmt *storeStmt = nullptr;
         if (values->at(i)->getAddExp() != nullptr) {
             const char *expRet = genAddExp(values->at(i)->getAddExp(), irStmts, stepName);
