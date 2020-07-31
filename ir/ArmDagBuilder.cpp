@@ -3,10 +3,11 @@
 #include "IRGlobal.h"
 
 //主方法  遍历DAG生成ARMDAG
-void ArmDAGBuilder::generateArmDag(StackStatus *stackStatus) {
-    status = stackStatus;
+void ArmDAGBuilder::generateArmDag() {
 
     //TODO
+
+
 
     return;
 }
@@ -509,7 +510,7 @@ ArmDAGNode *ArmDAGBuilder::genGetPtrNode(DAGNode *nd){
 
     //TODO: 计算偏移量
 
-
+    return nullptr;
 }
 
 /*

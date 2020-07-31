@@ -9,8 +9,9 @@
 
 class ArmDAGBuilder {
 public:
-    explicit ArmDAGBuilder(DAG *dag0) {
+    explicit ArmDAGBuilder(DAG *dag0, StackStatus *status) {
         dag = dag0;
+        this->status = status;
         ArmDAGRoot *root = new ArmDAGRoot();
         armDag = new ArmDAG(root, dag->getName().data());
     }
@@ -24,13 +25,16 @@ public:
     int count = 0;
 
     /// 全局变量处理
-    std::vector<std::string> * genGlobal(IRGlobalVar *var);
-    std::vector<std::string> * genConGlobal(IRGlobalVar *var);
-    std::vector<std::string> * genGlobalArray(IRGlobalVar *var);
-    std::vector<std::string> * genConGlobalArray(IRGlobalVar *var);
+    std::vector<std::string> *genGlobal(IRGlobalVar *var);
+
+    std::vector<std::string> *genConGlobal(IRGlobalVar *var);
+
+    std::vector<std::string> *genGlobalArray(IRGlobalVar *var);
+
+    std::vector<std::string> *genConGlobalArray(IRGlobalVar *var);
 
     /// 生成ArmDAG主方法
-    void generateArmDag(StackStatus *stackStatus);
+    void generateArmDag();
 
     /// 声明语句
     ArmDAGNode *genAlloca(DAGNode *nd);
@@ -53,12 +57,19 @@ public:
     ArmDAGNode *genModNode(DAGNode *nd);
 
     ArmDAGNode *genAndNode(DAGNode *nd);
+
     ArmDAGNode *genOrNode(DAGNode *nd);
+
     ArmDAGNode *genEQNode(DAGNode *nd);
+
     ArmDAGNode *genGTNode(DAGNode *nd);
+
     ArmDAGNode *genLTNode(DAGNode *nd);
+
     ArmDAGNode *genNEQNode(DAGNode *nd);
+
     ArmDAGNode *genLTENode(DAGNode *nd);
+
     ArmDAGNode *genGTENode(DAGNode *nd);
 
 
@@ -84,7 +95,7 @@ public:
 class ArmDAGGen {
 private:
     IRTree *irTree;
-
+    StackStatus *globalStatus;
 private:
     /// 处理全局变量
     void IRGlobalValGen(IRGlobalVar *irGlobalVar) {
@@ -93,6 +104,17 @@ private:
 
     /// 处理函数
     void IRGlobalFuncGen(IRGlobalFunc *irGlobalFunc) {
+        // todo 初始化stackStatus,全局变量的信息放到每个函数的stackStatus
+        StackStatus *stackStatus = irGlobalFunc->getStackStatus();
+        //  深度遍历globalStatus的varMap
+        auto *varMap = new std::multimap<std::string, VarInfo>();
+        *varMap = *globalStatus->getVarMap();
+        stackStatus->setVarMap(varMap);
+        //  深度遍历globalStatus的varMap
+        auto *arrDimensionMap = new std::multimap<std::string, ArrayInfo>();
+        *arrDimensionMap = *globalStatus->getArrDimensionMap();
+        stackStatus->setArrDimensionMap(arrDimensionMap);
+
         // 开始遍历BaseBlocks并处理
         for (auto &it : *irGlobalFunc->getBaseBlocks()) {
             // 开始处理DagRoot
@@ -109,10 +131,10 @@ private:
      */
     void
     DagRootGen(DAGRoot *dagRoot, const char *blockName, std::vector<ArmBlock *> *armBlocks, StackStatus *stackStatus) {
-        auto armDagBuilder = new ArmDAGBuilder(dagRoot->getDag());
+        auto armDagBuilder = new ArmDAGBuilder(dagRoot->getDag(), stackStatus);
         // ==== todo 处理  ========
 
-        armDagBuilder->generateArmDag(stackStatus);
+        armDagBuilder->generateArmDag();
 
 
         // ===========
@@ -125,6 +147,7 @@ private:
 public:
     explicit ArmDAGGen(IRTree *irTree) {
         this->irTree = irTree;
+        globalStatus = new StackStatus();
     };
 
     /// 启动函数
@@ -141,7 +164,6 @@ public:
         }
     };
 };
-
 
 
 #endif //COMPILER_ARMDAGBUILDER_H
