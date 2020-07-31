@@ -207,6 +207,10 @@ public:
         return stackStatus;
     }
 
+    std::vector<IRGlobalFuncParam *> *getIrGlobalFuncParams() const {
+        return irGlobalFuncParams;
+    }
+
 
 };
 

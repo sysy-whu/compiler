@@ -3,8 +3,11 @@
 #include "IRGlobal.h"
 
 //主方法  遍历DAG生成ARMDAG
-void ArmDAGBuilder::generateArmDag() {
+void ArmDAGBuilder::generateArmDag(const char *blockName, std::vector<IRGlobalFuncParam *> *parmsInfo) {
+    if (blockName == "entry") {
+        // todo 添加函数入栈和获取实参的armnode
 
+    }
     //TODO
 
 

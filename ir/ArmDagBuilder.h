@@ -7,9 +7,9 @@
 #include "IRStmt.h"
 #include "IRGlobal.h"
 
-struct ArmNodes{
-    ArmDAGNode* head;
-    ArmDAGNode* tail;
+struct ArmNodes {
+    ArmDAGNode *head;
+    ArmDAGNode *tail;
 };
 
 class ArmDAGBuilder {
@@ -20,7 +20,6 @@ public:
         dagRoot = root;
         this->status = stackStatus;
         armRoot = new ArmDAGRoot();
-
     }
 
     DAGRoot *dagRoot;
@@ -31,18 +30,22 @@ public:
 
     int count = 0;
 
+
+    /// 生成函数入栈和获取实参的armnode
+    ArmNodes genAlloca(std::vector<IRGlobalFuncParam *> *parmsInfo);
+
     /// 全局变量处理
 
-    static std::vector<std::string> * genGlobal(IRGlobalVar *var);
+    static std::vector<std::string> *genGlobal(IRGlobalVar *var);
 
-    static std::vector<std::string> * genConGlobal(IRGlobalVar *var);
+    static std::vector<std::string> *genConGlobal(IRGlobalVar *var);
 
-    static std::vector<std::string> * genGlobalArray(IRGlobalVar *var);
+    static std::vector<std::string> *genGlobalArray(IRGlobalVar *var);
 
-    static std::vector<std::string> * genConGlobalArray(IRGlobalVar *var);
+    static std::vector<std::string> *genConGlobalArray(IRGlobalVar *var);
 
     /// 生成ArmDAG主方法
-    void generateArmDag();
+    void generateArmDag(const char *blockName, std::vector<IRGlobalFuncParam *> *parmsInfo);
 
     /// 声明语句
     ArmNodes genAlloca(DAGNode *nd);
@@ -81,7 +84,6 @@ public:
     ArmNodes genGTENode(DAGNode *nd);
 
 
-
     /// 控制语句
     ArmNodes genBRNode(DAGNode *nd);
 
@@ -109,34 +111,32 @@ private:
     /// 处理全局变量
     void IRGlobalValGen(IRGlobalVar *irGlobalVar) {
 
-        if(irGlobalVar->getVarType() == TYPE_INT){ // int
+        if (irGlobalVar->getVarType() == TYPE_INT) { // int
 
             //记录变量位置,写入维度信息
-            std::multimap<std::string,VarInfo> varMap =  * (globalStatus->getVarMap());
+            std::multimap<std::string, VarInfo> varMap = *(globalStatus->getVarMap());
 
-            varMap.emplace(irGlobalVar->getVarName(),VarInfo{globalStatus->getCurrentLoc(),0});
+            varMap.emplace(irGlobalVar->getVarName(), VarInfo{globalStatus->getCurrentLoc(), 0});
 
             globalStatus->setCurrentLoc(-1);
             globalStatus->setVarMap(&varMap);
-        }
-        else if(irGlobalVar->getVarType() == TYPE_INT_STAR){ //int*
+        } else if (irGlobalVar->getVarType() == TYPE_INT_STAR) { //int*
 
             //记录变量位置,写入维度信息
-            std::multimap<std::string,VarInfo> varMap =  * (globalStatus->getVarMap());
-            std::multimap<std::string,ArrayInfo> dimMap = *(globalStatus->getArrDimensionMap());
+            std::multimap<std::string, VarInfo> varMap = *(globalStatus->getVarMap());
+            std::multimap<std::string, ArrayInfo> dimMap = *(globalStatus->getArrDimensionMap());
 
             //TODO: [维度信息保存到dims]
             std::vector<int> dims;
 
-            varMap.emplace(irGlobalVar->getVarName(),VarInfo{globalStatus->getCurrentLoc(),0});
-            dimMap.emplace(irGlobalVar->getVarName(),ArrayInfo{dims,0});
+            varMap.emplace(irGlobalVar->getVarName(), VarInfo{globalStatus->getCurrentLoc(), 0});
+            dimMap.emplace(irGlobalVar->getVarName(), ArrayInfo{dims, 0});
 
-            globalStatus->setCurrentLoc( -1);
+            globalStatus->setCurrentLoc(-1);
             globalStatus->setArrDimensionMap(&dimMap);
             globalStatus->setVarMap(&varMap);
 
-        }
-        else{
+        } else {
             perror("Error in ArmDAGGen.IRGloabalVarGen()!\n"
                    "unexpected vartype. \n");
         }
@@ -157,9 +157,11 @@ private:
 
         // 开始遍历BaseBlocks并处理
         for (auto &it : *irGlobalFunc->getBaseBlocks()) {
+
+
             // 开始处理DagRoot
             DagRootGen(it->getDagRoot(), it->getBlockName().c_str(), irGlobalFunc->getArmBlocks(),
-                       irGlobalFunc->getStackStatus());
+                       irGlobalFunc->getStackStatus(), irGlobalFunc->getIrGlobalFuncParams());
         }
     }
 
@@ -170,11 +172,12 @@ private:
      * @param stackStatus：该dagRoot所在函数的栈状态信息
      */
     void
-    DagRootGen(DAGRoot *dagRoot, const char *blockName, std::vector<ArmBlock *> *armBlocks, StackStatus *stackStatus) {
+    DagRootGen(DAGRoot *dagRoot, const char *blockName, std::vector<ArmBlock *> *armBlocks, StackStatus *stackStatus,
+               std::vector<IRGlobalFuncParam *> *parmsInfo) {
         auto armDagBuilder = new ArmDAGBuilder(dagRoot, stackStatus);
         // ==== todo 处理  ========
 
-        armDagBuilder->generateArmDag();
+        armDagBuilder->generateArmDag(blockName, parmsInfo);
 
 
         // ===========
