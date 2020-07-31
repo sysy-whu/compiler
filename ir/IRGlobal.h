@@ -73,9 +73,6 @@ struct ArrayInfo{
 class StackStatus {
     // 栈状态
     int currentLoc = 0;
-    // 临时存储进入一个block前的栈状态
-    //      进入前 lastLoc = currentLoc; 退出后 currentLoc = lastLoc
-    int lastLoc = 0;
     // 变量名称与栈地址的映射
     std::multimap<std::string, VarInfo> *varMap;
     // 数组变量与维度信息的对应关系
@@ -90,10 +87,6 @@ public:
         return currentLoc;
     }
 
-    int getLastLoc() const {
-        return lastLoc;
-    }
-
     std::multimap<std::string, VarInfo> *getVarMap() const {
         return varMap;
     }
@@ -104,10 +97,6 @@ public:
 
     void setCurrentLoc(int currentLoc) {
         StackStatus::currentLoc = currentLoc;
-    }
-
-    void setLastLoc(int lastLoc) {
-        StackStatus::lastLoc = lastLoc;
     }
 
     void setVarMap(std::multimap<std::string, VarInfo> *varMap) {

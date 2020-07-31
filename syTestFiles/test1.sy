@@ -1,5 +1,10 @@
 /*  普普通通  */
 
+int func(int a, int b){
+    int c = a + b;
+    return c;
+}
+
 
 int ops1() {
     int a = 0;

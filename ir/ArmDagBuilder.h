@@ -32,7 +32,7 @@ public:
 
 
     /// 生成函数入栈和获取实参的armnode
-    ArmNodes genAlloca(std::vector<IRGlobalFuncParam *> *parmsInfo);
+    ArmNodes genEntryParam(std::vector<IRGlobalFuncParam *> *parmsInfo);
 
     /// 全局变量处理
 
@@ -83,6 +83,16 @@ public:
 
     ArmNodes genGTENode(DAGNode *nd);
 
+    // 单目运算
+
+    ArmNodes genPlus(DAGNode *nd);
+
+    ArmNodes genMinus(DAGNode *nd);
+
+    ArmNodes genExclamation(DAGNode *nd);
+
+
+
 
     /// 控制语句
     ArmNodes genBRNode(DAGNode *nd);
@@ -126,11 +136,11 @@ private:
             std::multimap<std::string, VarInfo> varMap = *(globalStatus->getVarMap());
             std::multimap<std::string, ArrayInfo> dimMap = *(globalStatus->getArrDimensionMap());
 
-            //TODO: [维度信息保存到dims]
-            std::vector<int> dims;
+            //维度信息写入到dims]
+            std::vector<int> dims = * (irGlobalVar->getArraySubs());
 
             varMap.emplace(irGlobalVar->getVarName(), VarInfo{globalStatus->getCurrentLoc(), 0});
-            dimMap.emplace(irGlobalVar->getVarName(), ArrayInfo{dims, 0});
+            dimMap.emplace(irGlobalVar->getVarName(), ArrayInfo{ dims, 0});
 
             globalStatus->setCurrentLoc(-1);
             globalStatus->setArrDimensionMap(&dimMap);
@@ -144,7 +154,6 @@ private:
 
     /// 处理函数
     void IRGlobalFuncGen(IRGlobalFunc *irGlobalFunc) {
-        // todo 初始化stackStatus,全局变量的信息放到每个函数的stackStatus
         StackStatus *stackStatus = irGlobalFunc->getStackStatus();
         //  深度遍历globalStatus的varMap
         auto *varMap = new std::multimap<std::string, VarInfo>();
@@ -157,8 +166,6 @@ private:
 
         // 开始遍历BaseBlocks并处理
         for (auto &it : *irGlobalFunc->getBaseBlocks()) {
-
-
             // 开始处理DagRoot
             DagRootGen(it->getDagRoot(), it->getBlockName().c_str(), irGlobalFunc->getArmBlocks(),
                        irGlobalFunc->getStackStatus(), irGlobalFunc->getIrGlobalFuncParams());
