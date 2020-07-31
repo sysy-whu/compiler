@@ -203,5 +203,7 @@ enum ARM_DAG
   LDR,STR,
 
   B, BL, BX, BEQ
+
+
 };
 #endif //COMPILER_MYCONSTANTS_H
