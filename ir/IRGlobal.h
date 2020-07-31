@@ -20,6 +20,8 @@ private:
 
     int varType;
 
+    std::vector<int> *arraySubs;
+
     std::vector<int> *globalValue;
 
 public:
@@ -27,8 +29,8 @@ public:
      * 全局变量类IRGlobalVar构造方法
      * @param irStmt 变量语句
      */
-    explicit IRGlobalVar(const char *varName, int varType, std::vector<int> *globalVar) :
-            varName(varName), varType(varType), globalValue(globalVar) {};
+    explicit IRGlobalVar(const char *varName, int varType, std::vector<int> *globalVar, std::vector<int> *arraySubs) :
+            varName(varName), varType(varType), globalValue(globalVar), arraySubs(arraySubs) {};
 
     [[nodiscard]] const std::string &getVarName() const {
         return varName;
@@ -40,6 +42,10 @@ public:
 
     [[nodiscard]] std::vector<int> *getGlobalValue() const {
         return globalValue;
+    }
+
+    [[nodiscard]] std::vector<int> *getArraySubs() const {
+        return arraySubs;
     }
 
 //    std::vector<IRStmt *> *getIrStmt() const {

@@ -1,4 +1,5 @@
 /*  普普通通  */
+int aNoAssign;
 
 int z7 = 3+4;
 const int bbb32[3][2] = {};
@@ -8,6 +9,7 @@ int acs = 3;
 const int bs = 5;
 
 int arrayFunc(int a[][4]){
+int aNoAssign;
    return (0+1);
 }
 
