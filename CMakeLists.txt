@@ -22,6 +22,6 @@ file(GLOB SOURCES
         syTestFiles/*.cpp
         )
 
-add_executable(compiler main.cpp ${SOURCE_FILES} ${SOURCES} arm7/semantic/SymbolTable.h arm7/semantic/Semantic.cpp arm7/semantic/Semantic.h arm7/arm/ArmGlobal.h arm7/arm/ArmBlock.h arm7/arm/ArmStmt.h arm7/arm/Arm7Gen.cpp arm7/arm/Arm7Gen.h arm7/arm/ArmRegManager.h arm7/arm/ArmRegManager.cpp)
+add_executable(compiler main.cpp ${SOURCE_FILES} ${SOURCES} arm7/semantic/SymbolTable.h arm7/semantic/Semantic.cpp arm7/semantic/Semantic.h arm7/arm/ArmGlobal.h arm7/arm/ArmStmt.h arm7/arm/Arm7Gen.cpp arm7/arm/Arm7Gen.h arm7/arm/ArmRegManager.h arm7/arm/ArmRegManager.cpp)
 
 

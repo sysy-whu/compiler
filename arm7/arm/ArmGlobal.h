@@ -4,6 +4,8 @@
 #include <vector>
 #include <string>
 
+#include "ArmStmt.h"
+
 /// 全局变量类
 class Arm7GlobalVar;
 
@@ -118,5 +120,29 @@ public:
     }
 };
 
+class Arm7GlobalFunc {
+private:
+    std::string funcName;
+
+    std::vector<ArmBlock *> *armBlocks;
+
+public:
+    /**
+     *
+     * @param funcName 函数名
+     * @param armBlocks 函数代码块
+     */
+    Arm7GlobalFunc(const char *funcName, std::vector<ArmBlock *> *armBlocks) :
+            funcName(funcName), armBlocks(armBlocks) {};
+
+    [[nodiscard]] const std::string &getFuncName() const {
+        return funcName;
+    }
+
+    [[nodiscard]] std::vector<ArmBlock *> *getArmBlocks() const {
+        return armBlocks;
+    }
+
+};
 
 #endif //COMPILER_ARMGLOBAL_H
