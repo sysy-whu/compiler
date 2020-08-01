@@ -22,6 +22,15 @@ public:
         return armStmts;
     }
 
+private:
+    /**
+     * 将reArmStmts添加到armStmts中
+     * @param reArmStmts ：由irStmt生成的armStmt序列
+     */
+    void addArmStmts(std::vector<ArmStmt *> *reArmStmts) {
+        armStmts->insert(armStmts->end(), reArmStmts->begin(), reArmStmts->end());
+    }
+
 public:
 
     explicit ArmBuilder(std::vector<IRStmt *> *stmts, StackStatus *stackStatus) {
@@ -30,15 +39,17 @@ public:
         armStmts = new std::vector<ArmStmt *>();
     }
 
-    void generateArmStmts(const char *string, std::vector<IRGlobalFuncParam *> *funcParms) {
-
-    }
-
+    /**
+     * 生成ArmStmts
+     * @param blockName ：要处理的basicBlock的名称，如果是entry就执行genEntryParam()
+     * @param funcParms : 获取函数的参数信息
+     */
+    void generateArmStmts(const char *blockName, std::vector<IRGlobalFuncParam *> *funcParms);
 
 
     /// 生成函数入栈和获取实参的armstmt
 
-    std::vector<ArmStmt*> genEntryParam(std::vector<IRGlobalFuncParam *> *parmsInfo);
+    std::vector<ArmStmt *> *genEntryParam(std::vector<IRGlobalFuncParam *> *parmsInfo);
 
     /// 全局变量处理
 
@@ -51,66 +62,66 @@ public:
     static std::vector<std::string> genConGlobalArray(IRGlobalVar *var);
 
     /// 声明语句
-    std::vector<ArmStmt*> genAlloca(IRStmt *irStmt);
+    std::vector<ArmStmt *> *genAlloca(IRStmt *irStmt);
 
-    std::vector<ArmStmt*> genConAlloca(IRStmt *irStmt);
+    std::vector<ArmStmt *> *genConAlloca(IRStmt *irStmt);
 
-    std::vector<ArmStmt*> genAllocaArray(IRStmt *irStmt);
+    std::vector<ArmStmt *> *genAllocaArray(IRStmt *irStmt);
 
-    std::vector<ArmStmt*> genConAllocaArray(IRStmt *irStmt);
+    std::vector<ArmStmt *> *genConAllocaArray(IRStmt *irStmt);
 
     /// 运算
-    std::vector<ArmStmt*> genAddNode(IRStmt *irStmt);
+    std::vector<ArmStmt *> *genAddNode(IRStmt *irStmt);
 
-    std::vector<ArmStmt*> genSubNode(IRStmt *irStmt);
+    std::vector<ArmStmt *> *genSubNode(IRStmt *irStmt);
 
-    std::vector<ArmStmt*> genMulNode(IRStmt *irStmt);
+    std::vector<ArmStmt *> *genMulNode(IRStmt *irStmt);
 
-    std::vector<ArmStmt*> genDivNode(IRStmt *irStmt);
+    std::vector<ArmStmt *> *genDivNode(IRStmt *irStmt);
 
-    std::vector<ArmStmt*> genModNode(IRStmt *irStmt);
+    std::vector<ArmStmt *> *genModNode(IRStmt *irStmt);
 
-    std::vector<ArmStmt*> genAndNode(IRStmt *irStmt);
+    std::vector<ArmStmt *> *genAndNode(IRStmt *irStmt);
 
-    std::vector<ArmStmt*> genOrNode(IRStmt *irStmt);
+    std::vector<ArmStmt *> *genOrNode(IRStmt *irStmt);
 
-    std::vector<ArmStmt*> genEQNode(IRStmt *irStmt);
+    std::vector<ArmStmt *> *genEQNode(IRStmt *irStmt);
 
-    std::vector<ArmStmt*> genGTNode(IRStmt *irStmt);
+    std::vector<ArmStmt *> *genGTNode(IRStmt *irStmt);
 
-    std::vector<ArmStmt*> genLTNode(IRStmt *irStmt);
+    std::vector<ArmStmt *> *genLTNode(IRStmt *irStmt);
 
-    std::vector<ArmStmt*> genNEQNode(IRStmt *irStmt);
+    std::vector<ArmStmt *> *genNEQNode(IRStmt *irStmt);
 
-    std::vector<ArmStmt*> genLTENode(IRStmt *irStmt);
+    std::vector<ArmStmt *> *genLTENode(IRStmt *irStmt);
 
-    std::vector<ArmStmt*> genGTENode(IRStmt *irStmt);
+    std::vector<ArmStmt *> *genGTENode(IRStmt *irStmt);
 
     // 单目运算
 
-    std::vector<ArmStmt*> genPlus(IRStmt *irStmt);
+    std::vector<ArmStmt *> *genPlus(IRStmt *irStmt);
 
-    std::vector<ArmStmt*> genMinus(IRStmt *irStmt);
+    std::vector<ArmStmt *> *genMinus(IRStmt *irStmt);
 
-    std::vector<ArmStmt*> genExclamation(IRStmt *irStmt);
+    std::vector<ArmStmt *> *genExclamation(IRStmt *irStmt);
 
 
     /// 控制语句
-    std::vector<ArmStmt*> genBRNode(IRStmt *irStmt);
+    std::vector<ArmStmt *> *genBRNode(IRStmt *irStmt);
 
-    std::vector<ArmStmt*> genBRCondNode(IRStmt *irStmt);
+//    std::vector<ArmStmt *> *genBRCondNode(IRStmt *irStmt);
 
-    std::vector<ArmStmt*> genRetNode(IRStmt *irStmt);
+    std::vector<ArmStmt *> *genRetNode(IRStmt *irStmt);
 
     /// 函数调用
-    std::vector<ArmStmt*> genCallNode(IRStmt *irStmt);
+    std::vector<ArmStmt *> *genCallNode(IRStmt *irStmt);
 
     ///存取语句
-    std::vector<ArmStmt*> genStoreNode(IRStmt *irStmt);
+    std::vector<ArmStmt *> *genStoreNode(IRStmt *irStmt);
 
-    std::vector<ArmStmt*> genLoadNode(IRStmt *irStmt);
+    std::vector<ArmStmt *> *genLoadNode(IRStmt *irStmt);
 
-    std::vector<ArmStmt*> genGetPtrNode(IRStmt *irStmt);
+    std::vector<ArmStmt *> *genGetPtrNode(IRStmt *irStmt);
 
 };
 
@@ -158,6 +169,7 @@ private:
     void IRGlobalFuncGen(IRGlobalFunc *irGlobalFunc) {
         StackStatus *stackStatus = irGlobalFunc->getStackStatus();
 
+        // 将globalStatus放入每个basicBlock中的stackStatus中以备使用
         //  深度拷贝globalStatus的varMap
         auto *varMap = new std::multimap<std::string, VarInfo>();
         *varMap = *globalStatus->getVarMap();
@@ -185,12 +197,9 @@ private:
                     StackStatus *stackStatus,
                     std::vector<IRGlobalFuncParam *> *parmsInfo) {
         auto armBuilder = new ArmBuilder(stmts, stackStatus);
-        // ==== todo 处理  ========
 
         armBuilder->generateArmStmts(blockName, parmsInfo);
 
-
-        // ===========
         ArmBlock *armBlock = new ArmBlock(blockName, armBuilder->getArmStmts());
         armBlocks->emplace_back(armBlock);
 
@@ -198,6 +207,9 @@ private:
     }
 
 public:
+    /**
+     * @param irTree ：分析后的irTree
+     */
     explicit ArmGen(IRTree *irTree) {
         this->irTree = irTree;
         globalStatus = new StackStatus();
@@ -209,6 +221,7 @@ public:
         // 开始遍历iRGlobals
         for (auto &irGlobal : *iRGlobals) {
             if (irGlobal->getIrGlobalVar() != nullptr) {
+                // 如果是getIrGlobalVar就进行解析
                 this->IRGlobalValGen(irGlobal->getIrGlobalVar());
             }
             if (irGlobal->getIrGlobalFunc() != nullptr) {

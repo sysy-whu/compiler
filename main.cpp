@@ -7,6 +7,7 @@
 #include "ir/IRGen.h"
 #include "ir/IRLocalDAGGen.h"
 #include "ir/ArmDagBuilder.h"
+#include "arm/Arm.h"
 
 
 // Run->Edit Configurations->Program arguments
@@ -25,9 +26,9 @@ int main(int argc, char **argv) {
     auto *irLocalDagGen = new IRLocalDAGGen(irGenIR.getIrTree());
     irLocalDagGen->startGen();
 
-    // 开始生成armDag
-    ArmDAGGen armDagGen(irGenIR.getIrTree());
-    armDagGen.startGen();
+    // 开始生成arm
+    ArmGen armGen(irGenIR.getIrTree());
+    armGen.startGen();
     // 移步 semantic 构造方法
     //    Parse parse;
     //    parse.parseAST();
