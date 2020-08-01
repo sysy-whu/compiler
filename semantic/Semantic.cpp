@@ -12,6 +12,7 @@ Semantic::Semantic() {
     levelNow = 0;
     armTree = nullptr;
     funcParamNow = nullptr;
+    symbolTableNow = nullptr;
 }
 
 ///===-----------------------------------------------------------------------===///
@@ -208,6 +209,8 @@ void Semantic::semanticBlock(Block *block, int funcRetType, std::vector<Arm7Var 
     auto *symbolsLocal = new std::vector<Symbol *>();
     auto *symbolTableLocal = new SymbolTable(SYMBOL_TABLE_LOCAL, funcNameNow.c_str(), symbolsLocal);
     symbolTables->emplace_back(symbolTableLocal);
+    SymbolTable *symbolTableTmp = symbolTableNow;
+    symbolTableNow = symbolTableLocal;
 
     for (BlockItem *blockItem:*block->getBlockItems()) {
         if (blockItem->getConstDecl() != nullptr || blockItem->getVarDecl() != nullptr) {
@@ -218,6 +221,7 @@ void Semantic::semanticBlock(Block *block, int funcRetType, std::vector<Arm7Var 
     }
     levelNow--;
     /// 这里 symbolTable 不再 pop_back
+    symbolTableNow = symbolTableTmp;
 }
 
 void Semantic::semanticStmt(Stmt *stmt, int funcRetType) {
@@ -695,14 +699,22 @@ int Semantic::semanticPrimaryExp(PrimaryExp *primaryExp) {
 
 int Semantic::semanticLVal(LVal *lVal) {
     if (lVal->getExps()->empty()) {  // 整型
-        /// 函数里找
+        /// 当前 block 找
+        for (Symbol *symbol: *symbolTableNow->getSymbols()) {
+            if (symbol->getArm7Var() != nullptr &&
+                symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
+                symbol->getArm7Var()->getIfArray() == ARRAY_FALSE) {
+                return symbol->getArm7Var()->getVarType();
+            }
+        }
+        /// 函数里外部层次block找
         for (int i = (int) symbolTables->size() - 1; i > 1; i--) {
-            if (symbolTables->at(i)->getFuncName() == funcNameNow ||
-                symbolTables->at(i)->getFuncName() == SYMBOL_TABLE_GLOBAL_STR) {
+            if (symbolTables->at(i)->getFuncName() == funcNameNow) {
                 for (Symbol *symbol:*symbolTables->at(i)->getSymbols()) {
                     if (symbol->getArm7Var() != nullptr &&
                         symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
-                        symbol->getArm7Var()->getIfArray() == ARRAY_FALSE) {
+                        symbol->getArm7Var()->getIfArray() == ARRAY_FALSE &&
+                        symbol->getArm7Var()->getLevel() < levelNow) {
                         return symbol->getArm7Var()->getVarType();
                     }
                 }
@@ -728,14 +740,26 @@ int Semantic::semanticLVal(LVal *lVal) {
         exit(-1);
     } else {  // 整型数组
         checkExps(lVal->getExps(), "array sub not int");
-        /// 函数里找
+        /// 当前 block 找
+        for (Symbol *symbol:*symbolTableNow->getSymbols()) {
+            if (symbol->getArm7Var() != nullptr &&
+                symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
+                symbol->getArm7Var()->getIfArray() == ARRAY_TRUE) {
+                if (lVal->getExps()->size() == symbol->getArm7Var()->getSubs()->size()) {
+                    return symbol->getArm7Var()->getVarType();
+                } else {
+                    return TYPE_STR;
+                }
+            }
+        }
+        /// 函数里外部层次block找
         for (int i = (int) symbolTables->size() - 1; i > 1; i--) {
-            if (symbolTables->at(i)->getFuncName() == funcNameNow ||
-                symbolTables->at(i)->getFuncName() == SYMBOL_TABLE_GLOBAL_STR) {
+            if (symbolTables->at(i)->getFuncName() == funcNameNow) {
                 for (Symbol *symbol:*symbolTables->at(i)->getSymbols()) {
                     if (symbol->getArm7Var() != nullptr &&
                         symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
-                        symbol->getArm7Var()->getIfArray() == ARRAY_TRUE) {
+                        symbol->getArm7Var()->getIfArray() == ARRAY_TRUE &&
+                        symbol->getArm7Var()->getLevel() < levelNow) {
                         if (lVal->getExps()->size() == symbol->getArm7Var()->getSubs()->size()) {
                             return symbol->getArm7Var()->getVarType();
                         } else {

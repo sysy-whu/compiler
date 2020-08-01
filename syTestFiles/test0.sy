@@ -10,6 +10,11 @@ const int bs = 5;
 
 int arrayFunc(int a[][4]){
 int aNoAssign;
+  // if(2>3){
+   //   int bbbbno = 2;
+   //}
+   //int c = bbbbno+1;
+
    return (0+1);
 }
 
