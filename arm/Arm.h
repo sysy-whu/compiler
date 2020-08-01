@@ -53,13 +53,13 @@ public:
 
     /// 全局变量处理
 
-    static std::vector<std::string> genGlobal(IRGlobalVar *var);
+    static std::vector<std::string> *genGlobal(IRGlobalVar *var);
 
-    static std::vector<std::string> genConGlobal(IRGlobalVar *var);
+    static std::vector<std::string> *genConGlobal(IRGlobalVar *var);
 
-    static std::vector<std::string> genGlobalArray(IRGlobalVar *var);
+    static std::vector<std::string> *genGlobalArray(IRGlobalVar *var);
 
-    static std::vector<std::string> genConGlobalArray(IRGlobalVar *var);
+    static std::vector<std::string> *genConGlobalArray(IRGlobalVar *var);
 
     /// 声明语句
     std::vector<ArmStmt *> *genAlloca(IRStmt *irStmt);
@@ -162,6 +162,22 @@ private:
         } else {
             perror("Error in ArmDAGGen.IRGloabalVarGen()!\n"
                    "unexpected vartype. \n");
+        }
+
+        /// 生成GlobalVal的arm代码，然后赋给IRGlobalVar的armList字段以供后续输出
+        switch (irGlobalVar->getVarType()) {
+            case DAG_GLOBAL_i32:
+                irGlobalVar->setArmList(ArmBuilder::genGlobal(irGlobalVar));
+                break;
+            case DAG_Con_GLOBAL_i32:
+                irGlobalVar->setArmList(ArmBuilder::genConGlobal(irGlobalVar));
+                break;
+            case DAG_GLOBAL_i32_ARRAY:
+                irGlobalVar->setArmList(ArmBuilder::genGlobalArray(irGlobalVar));
+                break;
+            case DAG_Con_GLOBAL_ARRAY_i32:
+                irGlobalVar->setArmList(ArmBuilder::genConGlobalArray(irGlobalVar));
+                break;
         }
     }
 

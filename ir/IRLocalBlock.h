@@ -117,6 +117,14 @@ public:
     void setArmStmts(std::vector<ArmStmt *> *armStmts) {
         ArmBlock::armStmts = armStmts;
     }
+
+    std::string genString() {
+        std::string re = blockName + ":\n";
+        for (auto armStmt:*armStmts) {
+            re += armStmt->genString();
+        }
+        return re;
+    }
 };
 
 

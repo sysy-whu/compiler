@@ -4,15 +4,14 @@
 #include "ArmStmt.h"
 
 
-void ArmBuilder::generateArmStmts(const char *blockName, std::vector<IRGlobalFuncParam *> *funcParms) {
-    std::string bn = blockName;
+void ArmBuilder::generateArmStmts(const char *blockName, std::vector<IRGlobalFuncParam *> *funcParms) {;
     // 如果blockName为entry就添加函数入栈和获取实参的armstmt
-    if (bn == "entry") {
+    if (std::string(blockName)== "entry") {
         addArmStmts(genEntryParam(funcParms));
     }
 
     for (auto stmt:*stmts) {
-        // todo 根据stmt的类型选择相应的
+        // 根据stmt的类型选择相应的
         switch (stmt->getOpt()) {
             case DAG_ALLOCA_i32 :
                 addArmStmts(genAlloca(stmt));
@@ -152,7 +151,7 @@ std::vector<ArmStmt *> *ArmBuilder::genEntryParam(std::vector<IRGlobalFuncParam 
 
 /// 全局变量处理
 
-std::vector<std::string> ArmBuilder::genGlobal(IRGlobalVar *var) {
+std::vector<std::string> *ArmBuilder::genGlobal(IRGlobalVar *var) {
     auto *armStmt = new std::vector<std::string>();
     if (var->getGlobalValue()->size() == 0) { //未初始化的全局变量
         armStmt->push_back("    .comm " + var->getVarName() + ", 4\n");
@@ -167,10 +166,10 @@ std::vector<std::string> ArmBuilder::genGlobal(IRGlobalVar *var) {
         armStmt->emplace_back("    .word " + std::to_string(var->getGlobalValue()->at(0)) + "\n");
     }
 
-    return *armStmt;
+    return armStmt;
 }
 
-std::vector<std::string> ArmBuilder::genConGlobal(IRGlobalVar *var) {
+std::vector<std::string> *ArmBuilder::genConGlobal(IRGlobalVar *var) {
     auto *armStmt = new std::vector<std::string>();
 
     const std::string &name = var->getVarName();
@@ -183,10 +182,10 @@ std::vector<std::string> ArmBuilder::genConGlobal(IRGlobalVar *var) {
 
     armStmt->emplace_back("    .word " + std::to_string(var->getGlobalValue()->at(0)) + "\n");
 
-    return *armStmt;
+    return armStmt;
 }
 
-std::vector<std::string> ArmBuilder::genGlobalArray(IRGlobalVar *var) {
+std::vector<std::string> *ArmBuilder::genGlobalArray(IRGlobalVar *var) {
     auto *armStmt = new std::vector<std::string>();
     int length = var->getGlobalValue()->size() * 4;
 
@@ -202,10 +201,10 @@ std::vector<std::string> ArmBuilder::genGlobalArray(IRGlobalVar *var) {
         armStmt->emplace_back("    .word " + std::to_string(var->getGlobalValue()->at(i)) + "\n");
     }
 
-    return *armStmt;
+    return armStmt;
 }
 
-std::vector<std::string> ArmBuilder::genConGlobalArray(IRGlobalVar *var) {
+std::vector<std::string> *ArmBuilder::genConGlobalArray(IRGlobalVar *var) {
     auto *armStmt = new std::vector<std::string>();
     int length = var->getGlobalValue()->size() * 4;
 
@@ -221,7 +220,7 @@ std::vector<std::string> ArmBuilder::genConGlobalArray(IRGlobalVar *var) {
         armStmt->emplace_back("    .word " + std::to_string(var->getGlobalValue()->at(i)) + "\n");
     }
 
-    return *armStmt;
+    return armStmt;
 }
 
 /// 声明语句
@@ -385,7 +384,7 @@ std::vector<ArmStmt *> *ArmBuilder::genMulNode(IRStmt *irStmt) {
 }
 
 std::vector<ArmStmt *> *ArmBuilder::genDivNode(IRStmt *irStmt) {
-    //TODO: 在.s文件开头添加    .global __aeabi_idiv
+    // 在.s文件开头添加    .global __aeabi_idiv
 
     auto *currStmts = new std::vector<ArmStmt *>();
 
@@ -406,7 +405,7 @@ std::vector<ArmStmt *> *ArmBuilder::genDivNode(IRStmt *irStmt) {
 }
 
 std::vector<ArmStmt *> *ArmBuilder::genModNode(IRStmt *irStmt) {
-    //TODO: 在.s文件开头添加    .global __aeabi_imod
+    // 在.s文件开头添加    .global __aeabi_imod
 
     auto *currStmts = new std::vector<ArmStmt *>();
 
@@ -714,7 +713,7 @@ std::vector<ArmStmt *> *ArmBuilder::genCallNode(IRStmt *irStmt) {
         ArmStmt *stmt = new ArmStmt(BL, opd2);
     } else { // 有参数
 
-        //FIXME: 暂未考虑数组相关
+        // 暂未考虑数组相关
         for (int i = 1; i < paramNum; i++) {
             std::string tmp = "{" + opd3[i] + "}";
             ArmStmt *paraStmt = new ArmStmt(PUSH, tmp);
@@ -766,7 +765,7 @@ std::vector<ArmStmt *> *ArmBuilder::genStoreNode(IRStmt *irStmt) {
 
     if (level == 0) { // 为全局变量 采用特殊取址方式
 
-        addr = "[R2]";  //FIXME 这里用了R2寄存器来保存地址  !!!
+        addr = "[R2]";  // 这里用了R2寄存器来保存地址  !!!
         std::string lower = "#:lower16:" + opd1;
         std::string upper = "#:upper16:" + opd1;
 

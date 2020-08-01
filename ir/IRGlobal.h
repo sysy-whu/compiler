@@ -24,6 +24,8 @@ private:
 
     std::vector<int> *globalValue;
 
+    std::vector<std::string> *armList;
+
 public:
     /**
      * 全局变量类IRGlobalVar构造方法
@@ -48,20 +50,30 @@ public:
         return arraySubs;
     }
 
+    void setArmList(std::vector<std::string> *armList) {
+        IRGlobalVar::armList = armList;
+    }
+
 //    std::vector<IRStmt *> *getIrStmt() const {
 //        return irStmt;
 //    }
-
+    std::string genString(){
+        std::string re = "";
+        for(auto it: *armList){
+            re += it;
+        }
+        return re;
+    }
 };
 
-struct VarInfo{
+struct VarInfo {
     /// 变量的栈位置
     int stackLoc;
     /// 变量的level
     int level;
 };
 
-struct ArrayInfo{
+struct ArrayInfo {
     /// 数组的维度信息
     std::vector<int> dimension;
 
@@ -78,7 +90,7 @@ class StackStatus {
     // 数组变量与维度信息的对应关系
     std::multimap<std::string, ArrayInfo> *arrDimensionMap;
 public:
-    StackStatus(){
+    StackStatus() {
         varMap = new std::multimap<std::string, VarInfo>();
         arrDimensionMap = new std::multimap<std::string, ArrayInfo>();
     };
@@ -166,7 +178,7 @@ public:
                  std::vector<ArmBlock *> *armBlocks, std::multimap<std::string, std::string> *predLocs,
                  std::vector<IRGlobalFuncParam *> *irGlobalFuncParams) :
             funcName(funcName), retType(retType), baseBlocks(baseBlocks), armBlocks(armBlocks), predLocs(predLocs),
-            irGlobalFuncParams(irGlobalFuncParams),stackStatus(new StackStatus()){
+            irGlobalFuncParams(irGlobalFuncParams), stackStatus(new StackStatus()) {
     };
 
 
@@ -206,6 +218,13 @@ public:
         return irGlobalFuncParams;
     }
 
+    std::string genString() {
+        std::string re = funcName + ":\n";
+        for (auto armBlock:*armBlocks) {
+            re += armBlock->genString();
+        }
+        return re;
+    }
 
 };
 
@@ -232,6 +251,17 @@ public:
 
     [[nodiscard]] IRGlobalFunc *getIrGlobalFunc() const {
         return irGlobalFunc;
+    }
+
+    std::string genString(){
+        if (irGlobalFunc != nullptr){
+
+            return "";
+        }
+        if (irGlobalFunc != nullptr){
+            return irGlobalFunc->genString();
+        }
+        return "";
     }
 };
 
@@ -262,6 +292,14 @@ public:
 
     void setGlobalDagRoot(DAGRoot *globalDagRoot_) {
         IRTree::globalDagRoot = globalDagRoot_;
+    }
+
+    std::string genString(){
+        std::string re = "";
+        for(auto irGlobal: *irGlobals){
+            re += irGlobal->genString();
+        }
+        return re;
     }
 };
 

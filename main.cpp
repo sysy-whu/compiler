@@ -29,6 +29,7 @@ int main(int argc, char **argv) {
     // 开始生成arm
     ArmGen armGen(irGenIR.getIrTree());
     armGen.startGen();
+    std::string test = irGenIR.getIrTree()->genString();
     // 移步 semantic 构造方法
     //    Parse parse;
     //    parse.parseAST();

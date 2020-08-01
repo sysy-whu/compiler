@@ -15,6 +15,9 @@ private:
     std::string opNum1;
     std::string opNum2;
     std::string opNum3;
+private:
+    // 把opType转换为字符串
+    std::string opType2String();
 public:
     ArmStmt(ARM_TYPE opType, const std::string &opNum1, const std::string &opNum2, const std::string &opNum3);
 
@@ -39,6 +42,8 @@ public:
     void setOpNum2(const std::string &opNum2);
 
     void setOpNum3(const std::string &opNum3);
+    // 把该ArmStmt打印输出
+    std::string genString();
 };
 
 #endif //COMPILER_ARMSTMT_H
