@@ -34,6 +34,84 @@ public:
 
     }
 
+
+
+    /// 生成函数入栈和获取实参的armstmt
+
+    std::vector<ArmStmt*> genEntryParam(std::vector<IRGlobalFuncParam *> *parmsInfo);
+
+    /// 全局变量处理
+
+    static std::vector<std::string> genGlobal(IRGlobalVar *var);
+
+    static std::vector<std::string> genConGlobal(IRGlobalVar *var);
+
+    static std::vector<std::string> genGlobalArray(IRGlobalVar *var);
+
+    static std::vector<std::string> genConGlobalArray(IRGlobalVar *var);
+
+    /// 声明语句
+    std::vector<ArmStmt*> genAlloca(IRStmt *irStmt);
+
+    std::vector<ArmStmt*> genConAlloca(IRStmt *irStmt);
+
+    std::vector<ArmStmt*> genAllocaArray(IRStmt *irStmt);
+
+    std::vector<ArmStmt*> genConAllocaArray(IRStmt *irStmt);
+
+    /// 运算
+    std::vector<ArmStmt*> genAddNode(IRStmt *irStmt);
+
+    std::vector<ArmStmt*> genSubNode(IRStmt *irStmt);
+
+    std::vector<ArmStmt*> genMulNode(IRStmt *irStmt);
+
+    std::vector<ArmStmt*> genDivNode(IRStmt *irStmt);
+
+    std::vector<ArmStmt*> genModNode(IRStmt *irStmt);
+
+    std::vector<ArmStmt*> genAndNode(IRStmt *irStmt);
+
+    std::vector<ArmStmt*> genOrNode(IRStmt *irStmt);
+
+    std::vector<ArmStmt*> genEQNode(IRStmt *irStmt);
+
+    std::vector<ArmStmt*> genGTNode(IRStmt *irStmt);
+
+    std::vector<ArmStmt*> genLTNode(IRStmt *irStmt);
+
+    std::vector<ArmStmt*> genNEQNode(IRStmt *irStmt);
+
+    std::vector<ArmStmt*> genLTENode(IRStmt *irStmt);
+
+    std::vector<ArmStmt*> genGTENode(IRStmt *irStmt);
+
+    // 单目运算
+
+    std::vector<ArmStmt*> genPlus(IRStmt *irStmt);
+
+    std::vector<ArmStmt*> genMinus(IRStmt *irStmt);
+
+    std::vector<ArmStmt*> genExclamation(IRStmt *irStmt);
+
+
+    /// 控制语句
+    std::vector<ArmStmt*> genBRNode(IRStmt *irStmt);
+
+    std::vector<ArmStmt*> genBRCondNode(IRStmt *irStmt);
+
+    std::vector<ArmStmt*> genRetNode(IRStmt *irStmt);
+
+    /// 函数调用
+    std::vector<ArmStmt*> genCallNode(IRStmt *irStmt);
+
+    ///存取语句
+    std::vector<ArmStmt*> genStoreNode(IRStmt *irStmt);
+
+    std::vector<ArmStmt*> genLoadNode(IRStmt *irStmt);
+
+    std::vector<ArmStmt*> genGetPtrNode(IRStmt *irStmt);
+
 };
 
 
