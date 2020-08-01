@@ -11,6 +11,7 @@
 #include "IRStmt.h"
 #include "IRLocalDAG.h"
 #include "ArmDag.h"
+#include "../arm/ArmStmt.h"
 
 /**
  * IRLocalBlock 标签块类
@@ -74,6 +75,8 @@ private:
 
     std::set<std::string> *preBlocks;
 
+    std::vector<ArmStmt *> *armStmts;
+
     ArmDAGRoot *armDagRoot = nullptr;
 
 public:
@@ -83,6 +86,9 @@ public:
      * @param preBlocks 哪些块会跳转于此
      */
     ArmBlock(const char *blockName, ArmDAGRoot *armDagRoot) : blockName(blockName), armDagRoot(armDagRoot) {};
+
+    ArmBlock(const std::string &blockName, std::vector<ArmStmt *> *armStmts) : blockName(blockName),
+                                                                               armStmts(armStmts) {}
 
     const std::string &getBlockName() const {
         return blockName;
@@ -102,6 +108,14 @@ public:
 
     void setArmDagRoot(ArmDAGRoot *armDagRoot) {
         ArmBlock::armDagRoot = armDagRoot;
+    }
+
+    std::vector<ArmStmt *> *getArmStmts() const {
+        return armStmts;
+    }
+
+    void setArmStmts(std::vector<ArmStmt *> *armStmts) {
+        ArmBlock::armStmts = armStmts;
     }
 };
 

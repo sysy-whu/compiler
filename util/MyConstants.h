@@ -1,5 +1,7 @@
 #ifndef COMPILER_MYCONSTANTS_H
 #define COMPILER_MYCONSTANTS_H
+#include <string>
+
 
 /// on/off
 static int ifGenIR = 1;
@@ -207,4 +209,6 @@ enum ARM_DAG
   PUSH, POP
 
 };
+
+typedef ARM_DAG ARM_TYPE;
 #endif //COMPILER_MYCONSTANTS_H

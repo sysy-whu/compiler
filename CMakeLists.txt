@@ -20,6 +20,8 @@ file(GLOB SOURCES
         ir/*.cpp
         syTestFiles/*.h
         syTestFiles/*.cpp
+        arm/*.h
+        arm/*.cpp
         )
 
 add_executable(compiler main.cpp ${SOURCE_FILES} ${SOURCES})

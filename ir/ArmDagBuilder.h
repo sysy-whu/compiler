@@ -13,6 +13,17 @@ struct ArmNodes {
 };
 
 class ArmDAGBuilder {
+    DAGRoot *dagRoot;
+
+    ArmDAGRoot *armRoot;
+
+    StackStatus *status;
+
+    int count = 0;
+public:
+    ArmDAGRoot *getArmRoot() const {
+        return armRoot;
+    }
 public:
 
     explicit ArmDAGBuilder(DAGRoot *root, StackStatus *stackStatus) {
@@ -21,14 +32,6 @@ public:
         this->status = stackStatus;
         armRoot = new ArmDAGRoot();
     }
-
-    DAGRoot *dagRoot;
-
-    ArmDAGRoot *armRoot;
-
-    StackStatus *status;
-
-    int count = 0;
 
 
     /// 生成函数入栈和获取实参的armnode
@@ -188,7 +191,7 @@ private:
 
 
         // ===========
-        ArmBlock *armBlock = new ArmBlock(blockName, armDagBuilder->armRoot);
+        ArmBlock *armBlock = new ArmBlock(blockName, armDagBuilder->getArmRoot());
         armBlocks->emplace_back(armBlock);
 
         delete armDagBuilder;
