@@ -4,6 +4,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "../util/MyConstants.h"
 
 /// 函数类
 class Arm7Func;
@@ -95,7 +96,7 @@ public:
      * @param capacity 需要开辟的空间，此处即乘四按实际字节数算
      */
     Arm7Func(const char *ident, int retType, std::vector<Arm7Var *> *params) :
-            ident(ident), retType(retType), params(params), capacity(0) {};
+            ident(ident), retType(retType), params(params), capacity(4) {};
 
     [[nodiscard]] const std::string &getIdent() const {
         return ident;
@@ -144,8 +145,8 @@ private:
     std::vector<int> *subs;
 
     std::vector<int> *value;
-
-    std::string memoryLoc;
+    /// 如 8 表 [fp, #-8]
+    int memoryLoc;
 
     /// 当前寄存器
     int registerNow;
@@ -165,7 +166,7 @@ public:
     Arm7Var(const char *ident, const char *funcName, int varType, int level, int ifConst, int ifArray,
             std::vector<int> *subs, std::vector<int> *value) :
             ident(ident), funcName(funcName), varType(varType), level(level), ifConst(ifConst), ifArray(ifArray),
-            subs(subs), value(value), registerNow(-1), ifRegisterLock(0), memoryLoc("") {};
+            subs(subs), value(value), registerNow(-1), ifRegisterLock(0), memoryLoc(LVAL_VAR_POS_DEFAULT) {};
 
     [[nodiscard]] const std::string &getIdent() const {
         return ident;
@@ -223,11 +224,11 @@ public:
         Arm7Var::ifRegisterLock = ifRegisterLock_;
     }
 
-    const std::string &getMemoryLoc() const {
+    int getMemoryLoc() const {
         return memoryLoc;
     }
 
-    void setMemoryLoc(const char *memoryLoc_) {
+    void setMemoryLoc(int memoryLoc_) {
         Arm7Var::memoryLoc = memoryLoc_;
     }
 

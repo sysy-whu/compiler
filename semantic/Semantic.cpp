@@ -9,6 +9,7 @@ Semantic::Semantic() {
     std::cout << ast->getDecls()->size() << std::endl;
     symbolTables = new std::vector<SymbolTable *>();
 
+    capacity = 4;
     levelNow = 0;
     armTree = nullptr;
     funcParamNow = nullptr;
@@ -57,15 +58,30 @@ void Semantic::semanticArm7Var(Decl *decl, std::vector<Symbol *> *symbols) {
                 arm7Var = new Arm7Var(constDef->getIdent().c_str(), funcNameNow.c_str(),
                                       decl->getConstDecl()->getBType(), levelNow,
                                       CONST_TRUE, ARRAY_FALSE, nullptr, values);
+                if (funcNameNow == GLOBAL_VAR_NO_FUNC) {
+                    arm7Var->setMemoryLoc(GLOBAL_VAR_POS);
+                } else {
+                    capacity += 4;
+                    arm7Var->setMemoryLoc(capacity);
+                }
             } else {  /// 常量数组
-                auto *subs = new std::vector<int>();
+                auto *subs = new std::vector<int>();  /// 下标
+                int len = 1;  /// 元素总个数
                 for (ConstExp *constExp:*constDef->getConstExps()) {
-                    subs->push_back(calConstExp(constExp));
+                    int sub = calConstExp(constExp);
+                    len *= sub;
+                    subs->push_back(sub);
                 }
                 values = calConstArrayInitVals(constDef->getConstInitVal(), subs);
                 arm7Var = new Arm7Var(constDef->getIdent().c_str(), funcNameNow.c_str(),
                                       decl->getConstDecl()->getBType(), levelNow,
                                       CONST_TRUE, ARRAY_TRUE, subs, values);
+                if (funcNameNow == GLOBAL_VAR_NO_FUNC) {
+                    arm7Var->setMemoryLoc(GLOBAL_VAR_POS);
+                } else {
+                    capacity += len * 4;
+                    arm7Var->setMemoryLoc(capacity);
+                }
             }
             auto *symbol = new Symbol(arm7Var, nullptr);
             symbols->emplace_back(symbol);
@@ -82,22 +98,33 @@ void Semantic::semanticArm7Var(Decl *decl, std::vector<Symbol *> *symbols) {
                 arm7Var = new Arm7Var(varDef->getIdent().c_str(), funcNameNow.c_str(),
                                       decl->getVarDecl()->getBType(), levelNow,
                                       CONST_FALSE, ARRAY_FALSE, nullptr, nullptr);
+                if (funcNameNow == GLOBAL_VAR_NO_FUNC) {
+                    arm7Var->setMemoryLoc(GLOBAL_VAR_POS);
+                } else {
+                    capacity += 4;
+                    arm7Var->setMemoryLoc(capacity);
+                }
             } else {
-                auto *subs = new std::vector<int>(); // 计算下标
+                auto *subs = new std::vector<int>();  /// 下标
+                int len = 1;  /// 元素总个数
                 for (ConstExp *constExp:*varDef->getConstExps()) {
-                    subs->push_back(calConstExp(constExp));
+                    int sub = calConstExp(constExp);
+                    len *= sub;
+                    subs->push_back(sub);
                 }
                 if (funcNameNow == GLOBAL_VAR_NO_FUNC) {
                     auto *values = calVarArrayInitVals(varDef->getInitVal(), subs);
                     arm7Var = new Arm7Var(varDef->getIdent().c_str(), funcNameNow.c_str(),
                                           decl->getVarDecl()->getBType(), levelNow,
                                           CONST_FALSE, ARRAY_TRUE, subs, values);
+                    arm7Var->setMemoryLoc(GLOBAL_VAR_POS);
                 } else {
                     arm7Var = new Arm7Var(varDef->getIdent().c_str(), funcNameNow.c_str(),
                                           decl->getVarDecl()->getBType(), levelNow,
                                           CONST_FALSE, ARRAY_TRUE, subs, nullptr);
+                    capacity += len * 4;
+                    arm7Var->setMemoryLoc(capacity);
                 }
-
             }
             auto *symbol = new Symbol(arm7Var, nullptr);
             symbols->emplace_back(symbol);
@@ -117,15 +144,30 @@ void Semantic::semanticArm7Var(BlockItem *blockItem, std::vector<Symbol *> *symb
                 arm7Var = new Arm7Var(constDef->getIdent().c_str(), funcNameNow.c_str(),
                                       blockItem->getConstDecl()->getBType(), levelNow,
                                       CONST_TRUE, ARRAY_FALSE, nullptr, values);
+                if (funcNameNow == GLOBAL_VAR_NO_FUNC) {
+                    arm7Var->setMemoryLoc(GLOBAL_VAR_POS);
+                } else {
+                    capacity += 4;
+                    arm7Var->setMemoryLoc(capacity);
+                }
             } else {  /// 常量数组
-                auto *subs = new std::vector<int>();
+                auto *subs = new std::vector<int>();  /// 下标
+                int len = 1;  /// 元素总个数
                 for (ConstExp *constExp:*constDef->getConstExps()) {
-                    subs->push_back(calConstExp(constExp));
+                    int sub = calConstExp(constExp);
+                    len *= sub;
+                    subs->push_back(sub);
                 }
                 values = calConstArrayInitVals(constDef->getConstInitVal(), subs);
                 arm7Var = new Arm7Var(constDef->getIdent().c_str(), funcNameNow.c_str(),
                                       blockItem->getConstDecl()->getBType(), levelNow,
                                       CONST_TRUE, ARRAY_TRUE, subs, values);
+                if (funcNameNow == GLOBAL_VAR_NO_FUNC) {
+                    arm7Var->setMemoryLoc(GLOBAL_VAR_POS);
+                } else {
+                    capacity += len * 4;
+                    arm7Var->setMemoryLoc(capacity);
+                }
             }
             auto *symbol = new Symbol(arm7Var, nullptr);
             symbols->emplace_back(symbol);
@@ -135,30 +177,40 @@ void Semantic::semanticArm7Var(BlockItem *blockItem, std::vector<Symbol *> *symb
             Arm7Var *arm7Var;
             if (varDef->getConstExps()->empty()) {
                 if (varDef->getInitVal() != nullptr &&
-                    semanticAddExp(varDef->getInitVal()->getExp()->getAddExp()) !=
-                    blockItem->getVarDecl()->getBType()) {
+                    semanticAddExp(varDef->getInitVal()->getExp()->getAddExp()) != blockItem->getVarDecl()->getBType()) {
                     Error::errorSim("var init wrong when assign");
                     exit(-1);
                 }
                 arm7Var = new Arm7Var(varDef->getIdent().c_str(), funcNameNow.c_str(),
                                       blockItem->getVarDecl()->getBType(), levelNow,
                                       CONST_FALSE, ARRAY_FALSE, nullptr, nullptr);
+                if (funcNameNow == GLOBAL_VAR_NO_FUNC) {
+                    arm7Var->setMemoryLoc(GLOBAL_VAR_POS);
+                } else {
+                    capacity += 4;
+                    arm7Var->setMemoryLoc(capacity);
+                }
             } else {
-                auto *subs = new std::vector<int>(); // 计算下标
+                auto *subs = new std::vector<int>();  /// 下标
+                int len = 1;  /// 元素总个数
                 for (ConstExp *constExp:*varDef->getConstExps()) {
-                    subs->push_back(calConstExp(constExp));
+                    int sub = calConstExp(constExp);
+                    len *= sub;
+                    subs->push_back(sub);
                 }
                 if (funcNameNow == GLOBAL_VAR_NO_FUNC) {
                     auto *values = calVarArrayInitVals(varDef->getInitVal(), subs);
                     arm7Var = new Arm7Var(varDef->getIdent().c_str(), funcNameNow.c_str(),
                                           blockItem->getVarDecl()->getBType(), levelNow,
                                           CONST_FALSE, ARRAY_TRUE, subs, values);
+                    arm7Var->setMemoryLoc(GLOBAL_VAR_POS);
                 } else {
                     arm7Var = new Arm7Var(varDef->getIdent().c_str(), funcNameNow.c_str(),
                                           blockItem->getVarDecl()->getBType(), levelNow,
                                           CONST_FALSE, ARRAY_TRUE, subs, nullptr);
+                    capacity += len * 4;
+                    arm7Var->setMemoryLoc(capacity);
                 }
-
             }
             auto *symbol = new Symbol(arm7Var, nullptr);
             symbols->emplace_back(symbol);
@@ -170,6 +222,8 @@ Arm7Func *Semantic::semanticArm7Func(FuncDef *funcDef) {
     auto *params = new std::vector<Arm7Var *>();
     funcNameNow = funcDef->getIdent();
     levelNow++;
+    capacity = 4;
+
     if (funcDef->getFuncFParams() != nullptr) {
         for (FuncFParam *funcFParam: *funcDef->getFuncFParams()->getFuncFParams()) {
             Arm7Var *arm7Var;
@@ -186,7 +240,12 @@ Arm7Func *Semantic::semanticArm7Func(FuncDef *funcDef) {
                 arm7Var = new Arm7Var(funcFParam->getIdent().c_str(), funcNameNow.c_str(),
                                       funcFParam->getBType(), levelNow,
                                       CONST_FALSE, ARRAY_TRUE, subs, nullptr);
+            }else{
+                Error::errorSim("something wrong in semanticArm7Func funcFParam->getBType()");
+                exit(-1);
             }
+            capacity += 4;  /// 由于所存为引用变量，此处无论参数类型均分配四字节数
+            arm7Var->setMemoryLoc(capacity);
             params->emplace_back(arm7Var);
         }
     }
@@ -704,6 +763,8 @@ int Semantic::semanticLVal(LVal *lVal) {
             if (symbol->getArm7Var() != nullptr &&
                 symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
                 symbol->getArm7Var()->getIfArray() == ARRAY_FALSE) {
+
+                lVal->setIdentMemoryPos(symbol->getArm7Var()->getMemoryLoc());
                 return symbol->getArm7Var()->getVarType();
             }
         }
@@ -715,6 +776,8 @@ int Semantic::semanticLVal(LVal *lVal) {
                         symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
                         symbol->getArm7Var()->getIfArray() == ARRAY_FALSE &&
                         symbol->getArm7Var()->getLevel() < levelNow) {
+
+                        lVal->setIdentMemoryPos(symbol->getArm7Var()->getMemoryLoc());
                         return symbol->getArm7Var()->getVarType();
                     }
                 }
@@ -724,6 +787,8 @@ int Semantic::semanticLVal(LVal *lVal) {
         for (Arm7Var *arm7Var: *funcParamNow) {
             if (arm7Var->getIdent() == lVal->getIdent() &&
                 arm7Var->getIfArray() == ARRAY_FALSE) {
+
+                lVal->setIdentMemoryPos(arm7Var->getMemoryLoc());
                 return arm7Var->getVarType();
             }
         }
@@ -732,6 +797,8 @@ int Semantic::semanticLVal(LVal *lVal) {
             if (symbol->getArm7Var() != nullptr &&
                 symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
                 symbol->getArm7Var()->getIfArray() == ARRAY_FALSE) {
+
+                lVal->setIdentMemoryPos(symbol->getArm7Var()->getMemoryLoc());
                 return symbol->getArm7Var()->getVarType();
             }
         }
@@ -745,6 +812,8 @@ int Semantic::semanticLVal(LVal *lVal) {
             if (symbol->getArm7Var() != nullptr &&
                 symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
                 symbol->getArm7Var()->getIfArray() == ARRAY_TRUE) {
+
+                lVal->setIdentMemoryPos(symbol->getArm7Var()->getMemoryLoc());
                 if (lVal->getExps()->size() == symbol->getArm7Var()->getSubs()->size()) {
                     return symbol->getArm7Var()->getVarType();
                 } else {
@@ -760,6 +829,8 @@ int Semantic::semanticLVal(LVal *lVal) {
                         symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
                         symbol->getArm7Var()->getIfArray() == ARRAY_TRUE &&
                         symbol->getArm7Var()->getLevel() < levelNow) {
+
+                        lVal->setIdentMemoryPos(symbol->getArm7Var()->getMemoryLoc());
                         if (lVal->getExps()->size() == symbol->getArm7Var()->getSubs()->size()) {
                             return symbol->getArm7Var()->getVarType();
                         } else {
@@ -773,6 +844,8 @@ int Semantic::semanticLVal(LVal *lVal) {
         for (Arm7Var *arm7Var: *funcParamNow) {
             if (arm7Var->getIdent() == lVal->getIdent() &&
                 arm7Var->getIfArray() == ARRAY_TRUE) {
+
+                lVal->setIdentMemoryPos(arm7Var->getMemoryLoc());
                 if (lVal->getExps()->size() == arm7Var->getSubs()->size() + 1) {  // 形参不写第一维
                     return arm7Var->getVarType();
                 } else {
@@ -785,6 +858,8 @@ int Semantic::semanticLVal(LVal *lVal) {
             if (symbol->getArm7Var() != nullptr &&
                 symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
                 symbol->getArm7Var()->getIfArray() == ARRAY_TRUE) {
+
+                lVal->setIdentMemoryPos(symbol->getArm7Var()->getMemoryLoc());
                 if (lVal->getExps()->size() == symbol->getArm7Var()->getSubs()->size()) {
                     return symbol->getArm7Var()->getVarType();
                 } else {

@@ -13,14 +13,16 @@ private:
     std::vector<SymbolTable *> *symbolTables;
     /// 汇编语法树
     Arm7Tree *armTree;
-
+    /// 当前代码块 level 层次
     int levelNow;
-
+    /// 当前函数名，用以变量查找
     std::string funcNameNow;
-
+    /// 当前函数形参参数表，用以变量查找
     std::vector<Arm7Var *> *funcParamNow;
-
+    /// 当前符号表，用以检查复杂 level 下的变量查找
     SymbolTable *symbolTableNow;
+    /// 局部变量内存分配用，semanticFunc 结束后，会赋给 Arm7Func
+    int capacity;
 
     ///===-----------------------------------------------------------------------===///
     /// 静态库文件里面的函数

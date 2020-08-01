@@ -155,6 +155,10 @@ static const int ARRAY_FALSE = 0;
 
 static const std::string GLOBAL_VAR_NO_FUNC = "0NoFunc";
 
+static const int GLOBAL_VAR_POS = -1;
+
+static const int LVAL_VAR_POS_DEFAULT = -2;
+
 // ARM_DAG Type
 enum ARM_DAG {
     IMMEDIATE_DATA,

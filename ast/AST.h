@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include "SourceLocation.h"
+#include "../util/MyConstants.h"
 
 /**
  * 声明 Decl -> ConstDecl | VarDecl | FuncDef
@@ -60,6 +61,9 @@ private:
 
     std::vector<Exp *> *exps;
 
+    /// 如 8 表 [fp, #-8]
+    int baseMemoryPos;
+
 public:
     /**
      * 左值表达式 LVal
@@ -68,7 +72,7 @@ public:
      * @param sourLocs _0: identLoc; [_Loc, ]_Loc, ... 数组各维度
      */
     LVal(const char *ident, std::vector<Exp *> *exps, std::list<SourceLocation *> *sourLocs) :
-            ident(ident), exps(exps), Locs(sourLocs) {};
+            ident(ident), exps(exps), Locs(sourLocs) , baseMemoryPos(LVAL_VAR_POS_DEFAULT){};
 
     [[nodiscard]] const std::string &getIdent() const {
         return ident;
@@ -76,6 +80,14 @@ public:
 
     [[nodiscard]] std::vector<Exp *> *getExps() const {
         return exps;
+    }
+
+    [[nodiscard]] int getIdentMemoryPos() const {
+        return baseMemoryPos;
+    }
+
+    void setIdentMemoryPos(int baseMemoryPos_) {
+        LVal::baseMemoryPos = baseMemoryPos_;
     }
 };
 
