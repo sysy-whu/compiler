@@ -2,11 +2,7 @@
 
 #include "util/Util.h"
 #include "util/MyConstants.h"
-#include "parser/Parse.h"
 #include "semantic/Semantic.h"
-#include "ir/IRGen.h"
-#include "ir/IRLocalDAGGen.h"
-#include "ir/ArmDagBuilder.h"
 
 
 // Run->Edit Configurations->Program arguments
@@ -17,17 +13,7 @@ int main(int argc, char **argv) {
         return -1;
     }
     Semantic semantic;
-    semantic.startSemantic();
 
-    IRGen irGenIR;
-    irGenIR.startIrGen();
-
-    auto *irLocalDagGen = new IRLocalDAGGen(irGenIR.getIrTree());
-    irLocalDagGen->startGen();
-
-    // 开始生成armDag
-    ArmDAGGen armDagGen(irGenIR.getIrTree());
-    armDagGen.startGen();
     // 移步 semantic 构造方法
     //    Parse parse;
     //    parse.parseAST();
@@ -35,6 +21,7 @@ int main(int argc, char **argv) {
     // 移步 parse 构造方法
     //    Lex lex;
     //    test(lex);
+    
     std::cout << "quit" << std::endl;
     return 0;
 }

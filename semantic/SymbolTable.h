@@ -1,281 +1,94 @@
-#ifndef COMPILER_SIMBOLTABLE_H
-#define COMPILER_SIMBOLTABLE_H
+#ifndef COMPILER_SYMBOLTABLE_H
+#define COMPILER_SYMBOLTABLE_H
 
 #include <string>
 #include <utility>
 #include <vector>
 
+/// 函数类
+class Arm7Func;
+
+/// 变量类
+class Arm7Var;
+
+/// 符号元素类
 class Symbol;
 
-/**
- * 全局的/某一代码块中的符号表
- */
+/// 符号表类
 class SymbolTable {
 private:
-    /// 符号表类型 global, local, extern...
-    int type;
+    int tableType;
 
     std::vector<Symbol *> *symbols;
 
 public:
     /**
-     *
-     * @param type
-     * @param symbol
+     * 符号表类SymbolTable 构造函数
+     * @param tableType 符号表类型，global,local,extern...
+     * @param symbols 符号表元素
      */
-    SymbolTable(int type, std::vector<Symbol *> *symbols) : type(type), symbols(symbols) {};
+    SymbolTable(int tableType, std::vector<Symbol *> *symbols) : tableType(tableType), symbols(symbols) {};
 
-    [[nodiscard]] int getType() const {
-        return type;
+    [[nodiscard]] int getTableType() const {
+        return tableType;
     }
 
-    [[nodiscard]] const std::vector<Symbol *> *getSymbols() const {
+    [[nodiscard]] std::vector<Symbol *> *getSymbols() const {
         return symbols;
     }
-
-//    void setSymbols(std::vector<Symbol *> *symbol) {
-//        SymbolTable::symbols = symbol;
-//    }
-//
-//    void addSymbol(Symbol *symbol) {
-//        symbols->emplace_back(symbol);
-//    }
-//
-//    void free() {
-//        delete &type;
-//        std::vector<Symbol *>().swap(*symbols);
-//    }
-
 };
 
-/**
- * 变量符号 Var
- */
-class Var {
+class Symbol {
 private:
-    std::string ident;
+    Arm7Var *arm7Var;
 
-    int varType;
-
-//    unsigned int row, column;
+    Arm7Func *arm7Func;
 
 public:
     /**
-     *
-     * @param ident TYPE_STR 时存格式串（相当于写死了）
-     * @param varType
-     * @param value
-     * @param hasInited
-     * @param row
-     * @param column
+     * 符号元素类Symbol 构造函数
+     * @param arm7Var 变量，可为 null
+     * @param arm7Func 函数，可为 null
      */
-    Var(const char *ident, int varType) : ident(ident), varType(varType) {};
-//    Var(const char *ident, int varType, unsigned int row, unsigned int column) :
-//            ident(ident), varType(varType), row(row),
-//            column(column) {};
+    Symbol(Arm7Var *arm7Var, Arm7Func *arm7Func) : arm7Var(arm7Var), arm7Func(arm7Func) {};
 
-    [[nodiscard]] std::string getIdent() const {
-        return ident;
+    [[nodiscard]] Arm7Var *getArm7Var() const {
+        return arm7Var;
     }
 
-    [[nodiscard]] int getVarType() const {
-        return varType;
+    void setArm7Var(Arm7Var *arm7Var_) {
+        Symbol::arm7Var = arm7Var_;
     }
 
-//    [[nodiscard]] unsigned int getRow() const {
-//        return row;
-//    }
-//
-//    [[nodiscard]] unsigned int getColumn() const {
-//        return column;
-//    }
+    [[nodiscard]] Arm7Func *getArm7Func() const {
+        return arm7Func;
+    }
 
+    void setArm7Func(Arm7Func *arm7Func_) {
+        Symbol::arm7Func = arm7Func_;
+    }
 };
 
-/**
- * 常量符号 ConstVar
- */
-class ConstVar {
-private:
-    std::string ident;
-
-    int varType;
-
-    int value;
-
-//    unsigned int row, column;
-
-public:
-    /**
-     *
-     * @param ident
-     * @param varType
-     * @param value
-     * @param row
-     * @param column
-     */
-    ConstVar(const char *ident, int varType, int value) : ident(ident), varType(varType), value(value) {};
-//    ConstVar(const char *ident, int varType, int value, unsigned int row, unsigned int column) :
-//            ident(ident), varType(varType), value(value), row(row), column(column) {};
-
-    [[nodiscard]] std::string getIdent() const {
-        return ident;
-    }
-
-    [[nodiscard]] int getVarType() const {
-        return varType;
-    }
-
-    [[nodiscard]] int getValue() const {
-        return value;
-    }
-
-//    [[nodiscard]] unsigned int getRow() const {
-//        return row;
-//    }
-//
-//    [[nodiscard]] unsigned int getColumn() const {
-//        return column;
-//    }
-
-};
-
-/**
- * 数组变量符号 VarArray
- */
-class VarArray {
-private:
-    std::string ident;
-
-    int varType;
-
-    /// 维度们
-    std::vector<int> *subs;
-
-//    unsigned int row, column;
-public:
-    /**
-     *
-     * @param ident
-     * @param varType
-     * @param value
-     * @param subs
-     * @param hasInited
-     * @param row
-     * @param column
-     */
-    VarArray(const char *ident, int varType, std::vector<int> *subs) : ident(ident), varType(varType), subs(subs) {};
-//    VarArray(const char *ident, int varType, std::vector<int> *subs, unsigned int row, unsigned int column) :
-//            ident(ident), varType(varType), subs(subs), row(row), column(column) {};
-
-    [[nodiscard]] const std::string &getIdent() const {
-        return ident;
-    }
-
-    [[nodiscard]] int getVarType() const {
-        return varType;
-    }
-
-    [[nodiscard]] const std::vector<int> *getSubs() const {
-        return subs;
-    }
-
-//    [[nodiscard]] unsigned int getRow() const {
-//        return row;
-//    }
-//
-//    [[nodiscard]] unsigned int getColumn() const {
-//        return column;
-//    }
-};
-
-/**
- * 数组常量符号 ConstVarArray
- */
-class ConstVarArray {
-private:
-    std::string ident;
-
-    int varType;
-    /// 目前仅int
-    std::vector<int> *value;
-    /// 维度们
-    std::vector<int> *subs;
-
-//    unsigned int row, column;
-public:
-    /**
-     *
-     * @param ident
-     * @param varType
-     * @param value
-     * @param subs 数组参数，null 表一维; 变量不为null
-     * @param row
-     * @param column
-     */
-    ConstVarArray(const char *ident, int varType, std::vector<int> *value, std::vector<int> *subs) :
-            ident(ident), varType(varType), value(value), subs(subs) {};
-//    ConstVarArray(const char *ident, int varType, std::vector<int> *value, std::vector<int> *subs,
-//                  unsigned int row, unsigned int column) :
-//            ident(ident), varType(varType), value(value), subs(subs), row(row), column(column) {};
-
-    [[nodiscard]] const std::string &getIdent() const {
-        return ident;
-    }
-
-    [[nodiscard]] int getVarType() const {
-        return varType;
-    }
-
-    [[nodiscard]] const std::vector<int> *getValue() const {
-        return value;
-    }
-
-    [[nodiscard]] const std::vector<int> *getSubs() const {
-        return subs;
-    }
-
-//    [[nodiscard]] unsigned int getRow() const {
-//        return row;
-//    }
-//
-//    [[nodiscard]] unsigned int getColumn() const {
-//        return column;
-//    }
-};
-
-/**
- * 函数符号 Func
- */
-class Func {
+class Arm7Func {
 private:
     std::string ident;
 
     int retType;
 
-    std::vector<Symbol *> *params;
+    std::vector<Arm7Var *> *params;
 
-//    unsigned int row, column;
+    int capacity;
 
 public:
     /**
-     *
-     * @param ident
-     * @param retType
-     * @param paramsType
-     * @param paramsName
-     * @param row
-     * @param column
+     * 函数符号类Arm7Func 构造函数
+     * @param ident 函数名
+     * @param retType 返回值类型: 0:voidRet; 1:intRet
+     * @param params 形参参数表
+     * @param capacity 需要开辟的空间，此处即乘四按实际字节数算
      */
-    Func(const char *ident, int retType, std::vector<Symbol *> *params) :
-            ident(ident), retType(retType), params(params) {};
-//    Func(const char *ident, int retType, std::vector<Symbol *> *params, unsigned int row,
-//         unsigned int column) :
-//            ident(ident), retType(retType), params(params), row(row), column(column) {};
-
-    [[nodiscard]] std::vector<Symbol *> *getParams() const {
-        return params;
-    }
+    Arm7Func(const char *ident, int retType, std::vector<Arm7Var *> *params) :
+            ident(ident), retType(retType), params(params), capacity(0) {};
 
     [[nodiscard]] const std::string &getIdent() const {
         return ident;
@@ -285,56 +98,130 @@ public:
         return retType;
     }
 
-//    [[nodiscard]] unsigned int getRow() const {
-//        return row;
-//    }
-//
-//    [[nodiscard]] unsigned int getColumn() const {
-//        return column;
-//    }
+    [[nodiscard]] std::vector<Arm7Var *> *getParams() const {
+        return params;
+    }
+
+    void setParams(std::vector<Arm7Var *> *params_) {
+        Arm7Func::params = params_;
+    }
+
+    [[nodiscard]] int getCapacity() const {
+        return capacity;
+    }
+
+    void addCapacityByOne() {
+        Arm7Func::capacity += 4;
+    }
+
+    void addCapacityByNum(int num) {
+        Arm7Func::capacity += 4 * num;
+    }
+
 };
 
-class Symbol {
+class Arm7Var {
 private:
-    Var *varInner;
-    VarArray *varArrayInner;
-    ConstVar *constVarInner;
-    ConstVarArray *constVarArrayInner;
-    Func *funcInner;
+    std::string ident;
+
+    std::string funcName;
+
+    int level;
+
+    int ifConst;
+
+    int ifArray;
+
+    std::vector<int> *subs;
+
+    std::vector<int> *value;
+
+    std::string memoryLoc;
+
+    /// 当前寄存器
+    int registerNow;
+    /// 是否锁定当前寄存器（局部使用量多，长留保留不反复store/load）
+    int ifRegisterLock;
 
 public:
-    Symbol(Var *var, VarArray *varArray, ConstVar *constVar, ConstVarArray *constVarArray, Func *func) :
-            varInner(var), varArrayInner(varArray), constVarInner(constVar), constVarArrayInner(constVarArray),
-            funcInner(func) {};
+    /**
+     * 变量符号类 Arm7Var 构造函数
+     * @param ident 变量名
+     * @param level 变量代码块层次: 全局变量0; 实参参数1; 其余每遇到 { 则自增1; 每遇到 } 则自减1
+     * @param ifConst 0:变量; 1:常量
+     * @param ifArray 0:非数组; 1:数组
+     * @param subs ifArray=1 时有效
+     * @param value ifConst=1 时有效
+     */
+    Arm7Var(const char *ident, const char *funcName, int level, int ifConst, int ifArray, std::vector<int> *subs,
+            std::vector<int> *value) :
+            ident(ident), funcName(funcName), level(level), ifConst(ifConst), ifArray(ifArray), subs(subs),
+            value(value), registerNow(-1), ifRegisterLock(0), memoryLoc("") {};
 
-    [[nodiscard]] Var *getVarInner() const {
-        return varInner;
+    [[nodiscard]] const std::string &getIdent() const {
+        return ident;
     }
 
-    [[nodiscard]] VarArray *getVarArrayInner() const {
-        return varArrayInner;
+    [[nodiscard]] const std::string &getFuncName() const {
+        return funcName;
     }
 
-    [[nodiscard]] ConstVar *getConstVarInner() const {
-        return constVarInner;
+    void setIdent(const char *ident_) {
+        Arm7Var::ident = ident_;
     }
 
-    [[nodiscard]] ConstVarArray *getConstVarArrayInner() const {
-        return constVarArrayInner;
+    [[nodiscard]] int getLevel() const {
+        return level;
     }
 
-    [[nodiscard]] Func *getFuncInner() const {
-        return funcInner;
+    [[nodiscard]] int getIfConst() const {
+        return ifConst;
     }
 
-////     不是很明白如何遍历式释放内存，后需要加上
-//    void free() {
-//        delete varInner;
-//        delete varArrayInner;
-//        delete constVarInner;
-//        delete constVarArrayInner;
-//        delete funcInner;
-//    }
+    [[nodiscard]] int getIfArray() const {
+        return ifArray;
+    }
+
+    [[nodiscard]] std::vector<int> *getSubs() const {
+        return subs;
+    }
+
+    void setSubs(std::vector<int> *subs_) {
+        Arm7Var::subs = subs_;
+    }
+
+    [[nodiscard]] std::vector<int> *getValue() const {
+        return value;
+    }
+
+    void setValue(std::vector<int> *value_) {
+        Arm7Var::value = value_;
+    }
+
+    [[nodiscard]] int getRegisterNow() const {
+        return registerNow;
+    }
+
+    void setRegisterNow(int registerNow_) {
+        Arm7Var::registerNow = registerNow_;
+    }
+
+    [[nodiscard]] int getIfRegisterLock() const {
+        return ifRegisterLock;
+    }
+
+    void setIfRegisterLock(int ifRegisterLock_) {
+        Arm7Var::ifRegisterLock = ifRegisterLock_;
+    }
+
+    const std::string &getMemoryLoc() const {
+        return memoryLoc;
+    }
+
+    void setMemoryLoc(const char *memoryLoc_) {
+        Arm7Var::memoryLoc = memoryLoc_;
+    }
 };
 
-#endif //COMPILER_SIMBOLTABLE_H
+
+#endif //COMPILER_SYMBOLTABLE_H

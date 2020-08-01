@@ -1,7 +1,8 @@
 #include "ArmRegManager.h"
 
+int ArmRegManager::newestNum = 0;
+
 ArmRegManager::ArmRegManager() {
-    ArmRegManager::newestNum = 0;
     ArmRegManager::armRegs = new std::vector<ArmReg *>();
     for(int i=0;i<4;i++){
         auto *armReg = new ArmReg(("R"+std::to_string(i)).c_str(), nullptr, 0);

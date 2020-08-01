@@ -14,10 +14,10 @@ class ArmRegManager {
 private:
     std::vector<ArmReg *> *armRegs;
 
-    static int newestNum;
-
 public:
     ArmRegManager();
+
+    static int newestNum;
 
     ArmReg *getFreeArmReg();
 
