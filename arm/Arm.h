@@ -15,6 +15,8 @@ class ArmBuilder {
     std::vector<ArmStmt *> *armStmts;
 
     StackStatus *status;
+    // BasicBlock名
+    std::string block;
 
     int count = 0;
 public:
@@ -33,9 +35,10 @@ private:
 
 public:
 
-    explicit ArmBuilder(std::vector<IRStmt *> *stmts, StackStatus *stackStatus) {
+    explicit ArmBuilder(std::vector<IRStmt *> *stmts, StackStatus *stackStatus, const char* block) {
         this->stmts = stmts;
         this->status = stackStatus;
+        this->block = std::string(block);
         armStmts = new std::vector<ArmStmt *>();
     }
 
@@ -196,7 +199,7 @@ private:
     void IrStmtsGen(std::vector<IRStmt *> *stmts, const char *blockName, std::vector<ArmBlock *> *armBlocks,
                     StackStatus *stackStatus,
                     std::vector<IRGlobalFuncParam *> *parmsInfo) {
-        auto armBuilder = new ArmBuilder(stmts, stackStatus);
+        auto armBuilder = new ArmBuilder(stmts, stackStatus,blockName);
 
         armBuilder->generateArmStmts(blockName, parmsInfo);
 

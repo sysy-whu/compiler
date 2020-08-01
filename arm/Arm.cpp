@@ -125,7 +125,7 @@ std::vector<ArmStmt *> *ArmBuilder::genEntryParam(std::vector<IRGlobalFuncParam 
             std::multimap<std::string, VarInfo> varMap = *status->getVarMap();
             std::string varName = parmsInfo->at(i)->getParamName();
             int loc = status->getCurrentLoc() + 4;
-            varMap.insert({varName, VarInfo{loc, 1}});
+            varMap.insert({varName, VarInfo{loc, 1, block}});
             status->setCurrentLoc(loc);
             status->setVarMap(&varMap);
         }
@@ -234,7 +234,7 @@ std::vector<ArmStmt *> *ArmBuilder::genAlloca(IRStmt *irStmt) {
 
     //记录变量位置
     std::multimap<std::string, VarInfo> varMap = *(status->getVarMap());
-    varMap.emplace(opd1, VarInfo{status->getCurrentLoc(), irStmt->getLevel()});
+    varMap.emplace(opd1, VarInfo{status->getCurrentLoc(), irStmt->getLevel(),block});
     int loc = status->getCurrentLoc() + 4;
     status->setCurrentLoc(loc);
     status->setVarMap(&varMap);
@@ -253,7 +253,7 @@ std::vector<ArmStmt *> *ArmBuilder::genConAlloca(IRStmt *irStmt) {
 
     //记录变量位置
     std::multimap<std::string, VarInfo> varMap = *(status->getVarMap());
-    varMap.emplace(opd1, VarInfo{status->getCurrentLoc(), irStmt->getLevel()});
+    varMap.emplace(opd1, VarInfo{status->getCurrentLoc(), irStmt->getLevel(),block});
     int loc = status->getCurrentLoc() + 4;
     status->setCurrentLoc(loc);
     status->setVarMap(&varMap);
@@ -292,8 +292,8 @@ std::vector<ArmStmt *> *ArmBuilder::genAllocaArray(IRStmt *irStmt) {
     std::multimap<std::string, VarInfo> varMap = *(status->getVarMap());
     std::multimap<std::string, ArrayInfo> dimMap = *(status->getArrDimensionMap());
 
-    varMap.emplace(opd1, VarInfo{status->getCurrentLoc(), irStmt->getLevel()});
-    dimMap.emplace(opd1, ArrayInfo{dims, irStmt->getLevel()});
+    varMap.emplace(opd1, VarInfo{status->getCurrentLoc(), irStmt->getLevel(),block});
+    dimMap.emplace(opd1, ArrayInfo{dims, irStmt->getLevel(),block});
 
     int loc = status->getCurrentLoc() + space;
     status->setCurrentLoc(loc);
@@ -331,8 +331,8 @@ std::vector<ArmStmt *> *ArmBuilder::genConAllocaArray(IRStmt *irStmt) {
     std::multimap<std::string, VarInfo> varMap = *(status->getVarMap());
     std::multimap<std::string, ArrayInfo> dimMap = *(status->getArrDimensionMap());
 
-    varMap.emplace(opd1, VarInfo{status->getCurrentLoc(), irStmt->getLevel()});
-    dimMap.emplace(opd1, ArrayInfo{dims, irStmt->getLevel()});
+    varMap.emplace(opd1, VarInfo{status->getCurrentLoc(), irStmt->getLevel(),block});
+    dimMap.emplace(opd1, ArrayInfo{dims, irStmt->getLevel(),block});
 
     int loc = status->getCurrentLoc() + space;
     status->setCurrentLoc(loc);
