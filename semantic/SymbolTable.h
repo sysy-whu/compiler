@@ -166,7 +166,7 @@ public:
     Arm7Var(const char *ident, const char *funcName, int varType, int level, int ifConst, int ifArray,
             std::vector<int> *subs, std::vector<int> *value) :
             ident(ident), funcName(funcName), varType(varType), level(level), ifConst(ifConst), ifArray(ifArray),
-            subs(subs), value(value), registerNow(-1), ifRegisterLock(0), memoryLoc(LVAL_VAR_POS_DEFAULT) {};
+            subs(subs), value(value), registerNow(-1), ifRegisterLock(0), memoryLoc(LOCAL_VAR_POS) {};
 
     [[nodiscard]] const std::string &getIdent() const {
         return ident;

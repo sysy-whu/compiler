@@ -154,10 +154,11 @@ static const int ARRAY_FALSE = 0;
 
 
 static const std::string GLOBAL_VAR_NO_FUNC = "0NoFunc";
-
+static const std::string LOCAL_ARRAY = "0LOCAL_ARRAY";
 static const int GLOBAL_VAR_POS = -1;
+static const int LOCAL_VAR_POS = -2;
 
-static const int LVAL_VAR_POS_DEFAULT = -2;
+static const std::string LVAL_VAR_POS_DEFAULT = "#-1";
 
 // ARM_DAG Type
 enum ARM_DAG {

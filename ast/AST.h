@@ -62,7 +62,7 @@ private:
     std::vector<Exp *> *exps;
 
     /// 如 8 表 [fp, #-8]
-    int baseMemoryPos;
+    std::string baseMemoryPos;
 
 public:
     /**
@@ -82,11 +82,11 @@ public:
         return exps;
     }
 
-    [[nodiscard]] int getIdentMemoryPos() const {
+    const std::string &getBaseMemoryPos() const {
         return baseMemoryPos;
     }
 
-    void setIdentMemoryPos(int baseMemoryPos_) {
+    void setBaseMemoryPos(const char *baseMemoryPos_) {
         LVal::baseMemoryPos = baseMemoryPos_;
     }
 };
