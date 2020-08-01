@@ -11,7 +11,6 @@ Semantic::Semantic() {
 
     capacity = 4;
     levelNow = 0;
-    armTree = nullptr;
     funcParamNow = nullptr;
     symbolTableNow = nullptr;
 }

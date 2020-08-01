@@ -11,8 +11,6 @@ private:
     AST *ast;
     /// 符号表（加强版）
     std::vector<SymbolTable *> *symbolTables;
-    /// 汇编语法树
-    Arm7Tree *armTree;
     /// 当前代码块 level 层次
     int levelNow;
     /// 当前函数名，用以变量查找
@@ -108,8 +106,6 @@ public:
     ///===-----------------------------------------------------------------------===///
 
     void startSemantic();
-
-    Arm7Tree *getArm7Tree() { return armTree; }
 
 };
 
