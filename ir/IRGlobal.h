@@ -71,14 +71,17 @@ struct VarInfo {
     int stackLoc;
     /// 变量的level
     int level;
+    /// 变量所在的basicBlock名
+    std::string block;
 };
 
 struct ArrayInfo {
     /// 数组的维度信息
     std::vector<int> dimension;
-
     ///数组的level
     int level;
+    /// 变量所在basicBlock名
+    std::string block;
 };
 
 // 当前函数的栈状态与变量对应表
