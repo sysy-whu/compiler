@@ -436,9 +436,9 @@ std::vector<ArmStmt *> *ArmBuilder::genAndNode(IRStmt *irStmt) {
     std::string opd3 = irStmt->getOpd3()->at(0);
 
     ArmStmt *stmt0 = new ArmStmt(ADD, opd1, opd2, opd3);
-    ArmStmt *stmt1 = new ArmStmt(CMP, opd1, "1");
-    ArmStmt *stmt2 = new ArmStmt(MOVEQ, opd1, "1");
-    ArmStmt *stmt3 = new ArmStmt(MOVNE, opd1, "0");
+    ArmStmt *stmt1 = new ArmStmt(CMP, opd1, "#1");
+    ArmStmt *stmt2 = new ArmStmt(MOVEQ, opd1, "#1");
+    ArmStmt *stmt3 = new ArmStmt(MOVNE, opd1, "#0");
 
     currStmts->emplace_back(stmt0);
     currStmts->emplace_back(stmt1);
@@ -456,9 +456,9 @@ std::vector<ArmStmt *> *ArmBuilder::genOrNode(IRStmt *irStmt) {
     std::string opd3 = irStmt->getOpd3()->at(0);
 
     ArmStmt *stmt0 = new ArmStmt(ADD, opd1, opd2, opd3);
-    ArmStmt *stmt1 = new ArmStmt(CMP, opd1, "1");
-    ArmStmt *stmt2 = new ArmStmt(MOVGE, opd1, "1");
-    ArmStmt *stmt3 = new ArmStmt(MOVLT, opd1, "0");
+    ArmStmt *stmt1 = new ArmStmt(CMP, opd1, "#1");
+    ArmStmt *stmt2 = new ArmStmt(MOVGE, opd1, "#1");
+    ArmStmt *stmt3 = new ArmStmt(MOVLT, opd1, "#0");
 
     currStmts->emplace_back(stmt0);
     currStmts->emplace_back(stmt1);
@@ -476,8 +476,8 @@ std::vector<ArmStmt *> *ArmBuilder::genEQNode(IRStmt *irStmt) {
     std::string opd3 = irStmt->getOpd3()->at(0);
 
     ArmStmt *stmt0 = new ArmStmt(CMP, opd2, opd3);
-    ArmStmt *stmt1 = new ArmStmt(MOVEQ, opd1, "1");
-    ArmStmt *stmt2 = new ArmStmt(MOVNE, opd1, "0");
+    ArmStmt *stmt1 = new ArmStmt(MOVEQ, opd1, "#1");
+    ArmStmt *stmt2 = new ArmStmt(MOVNE, opd1, "#0");
 
     currStmts->emplace_back(stmt0);
     currStmts->emplace_back(stmt1);
@@ -495,8 +495,8 @@ std::vector<ArmStmt *> *ArmBuilder::genGTNode(IRStmt *irStmt) {
 
 
     ArmStmt *stmt0 = new ArmStmt(CMP, opd2, opd3);
-    ArmStmt *stmt1 = new ArmStmt(MOVGT, opd1, "1");
-    ArmStmt *stmt2 = new ArmStmt(MOVLE, opd1, "0");
+    ArmStmt *stmt1 = new ArmStmt(MOVGT, opd1, "#1");
+    ArmStmt *stmt2 = new ArmStmt(MOVLE, opd1, "#0");
 
     currStmts->emplace_back(stmt0);
     currStmts->emplace_back(stmt1);
@@ -515,8 +515,8 @@ std::vector<ArmStmt *> *ArmBuilder::genLTNode(IRStmt *irStmt) {
 
 
     ArmStmt *stmt0 = new ArmStmt(CMP, opd2, opd3);
-    ArmStmt *stmt1 = new ArmStmt(MOVLT, opd1, "1");
-    ArmStmt *stmt2 = new ArmStmt(MOVGE, opd1, "0");
+    ArmStmt *stmt1 = new ArmStmt(MOVLT, opd1, "#1");
+    ArmStmt *stmt2 = new ArmStmt(MOVGE, opd1, "#0");
 
     currStmts->emplace_back(stmt0);
     currStmts->emplace_back(stmt1);
@@ -534,8 +534,8 @@ std::vector<ArmStmt *> *ArmBuilder::genNEQNode(IRStmt *irStmt) {
 
 
     ArmStmt *stmt0 = new ArmStmt(CMP, opd2, opd3);
-    ArmStmt *stmt1 = new ArmStmt(MOVNE, opd1, "1");
-    ArmStmt *stmt2 = new ArmStmt(MOVEQ, opd1, "0");
+    ArmStmt *stmt1 = new ArmStmt(MOVNE, opd1, "#1");
+    ArmStmt *stmt2 = new ArmStmt(MOVEQ, opd1, "#0");
 
     currStmts->emplace_back(stmt0);
     currStmts->emplace_back(stmt1);
@@ -553,8 +553,8 @@ std::vector<ArmStmt *> *ArmBuilder::genLTENode(IRStmt *irStmt) {
 
 
     ArmStmt *stmt0 = new ArmStmt(CMP, opd2, opd3);
-    ArmStmt *stmt1 = new ArmStmt(MOVLE, opd1, "1");
-    ArmStmt *stmt2 = new ArmStmt(MOVGT, opd1, "0");
+    ArmStmt *stmt1 = new ArmStmt(MOVLE, opd1, "#1");
+    ArmStmt *stmt2 = new ArmStmt(MOVGT, opd1, "#0");
 
     currStmts->emplace_back(stmt0);
     currStmts->emplace_back(stmt1);
@@ -571,8 +571,8 @@ std::vector<ArmStmt *> *ArmBuilder::genGTENode(IRStmt *irStmt) {
 
 
     ArmStmt *stmt0 = new ArmStmt(CMP, opd2, opd3);
-    ArmStmt *stmt1 = new ArmStmt(MOVGE, opd1, "1");
-    ArmStmt *stmt2 = new ArmStmt(MOVLT, opd1, "0");
+    ArmStmt *stmt1 = new ArmStmt(MOVGE, opd1, "#1");
+    ArmStmt *stmt2 = new ArmStmt(MOVLT, opd1, "#0");
 
     currStmts->emplace_back(stmt0);
     currStmts->emplace_back(stmt1);
@@ -604,7 +604,7 @@ std::vector<ArmStmt *> *ArmBuilder::genMinus(IRStmt *irStmt) {
     std::string opd2 = irStmt->getOpd2();
 
 
-    ArmStmt *stmt = new ArmStmt(MUL, opd1, opd2, "-1");
+    ArmStmt *stmt = new ArmStmt(MUL, opd1, opd2, "#-1");
 
     currStmts->emplace_back(stmt);
     return currStmts;
@@ -620,9 +620,9 @@ std::vector<ArmStmt *> *ArmBuilder::genExclamation(IRStmt *irStmt) {
     std::string opd3 = irStmt->getOpd3()->at(0);
 
 
-    ArmStmt *stmt0 = new ArmStmt(CMP, opd2, "0");
-    ArmStmt *stmt1 = new ArmStmt(MOVEQ, opd1, "0");
-    ArmStmt *stmt2 = new ArmStmt(MOVNE, opd1, "1");
+    ArmStmt *stmt0 = new ArmStmt(CMP, opd2, "#0");
+    ArmStmt *stmt1 = new ArmStmt(MOVEQ, opd1, "#0");
+    ArmStmt *stmt2 = new ArmStmt(MOVNE, opd1, "#1");
 
     currStmts->emplace_back(stmt0);
     currStmts->emplace_back(stmt1);
@@ -648,7 +648,7 @@ std::vector<ArmStmt *> *ArmBuilder::genBRNode(IRStmt *irStmt) {
         std::string opd3 = irStmt->getOpd3()->at(0);
 
 
-        ArmStmt *stmt0 = new ArmStmt(CMP, opd1, "1");
+        ArmStmt *stmt0 = new ArmStmt(CMP, opd1, "#1");
         ArmStmt *stmt1 = new ArmStmt(BEQ, opd2);
         ArmStmt *stmt2 = new ArmStmt(B, opd3);
 
@@ -689,7 +689,7 @@ std::vector<ArmStmt *> *ArmBuilder::genRetNode(IRStmt *irStmt) {
 
     ArmStmt *stmt0 = new ArmStmt(MOV, "$R0", opd1);
     ArmStmt *stmt1 = new ArmStmt(SUB, "$SP",
-                                 "$FP", "4");
+                                 "$FP", "#4");
     ArmStmt *stmt2 = new ArmStmt(POP, "{fp,pc}");
 
     currStmts->emplace_back(stmt0);
@@ -770,8 +770,8 @@ std::vector<ArmStmt *> *ArmBuilder::genStoreNode(IRStmt *irStmt) {
         std::string lower = "#:lower16:" + opd1;
         std::string upper = "#:upper16:" + opd1;
 
-        ArmStmt *stmt0 = new ArmStmt(MOVW, "R2", lower);
-        ArmStmt *stmt1 = new ArmStmt(MOVT, "R2", upper);
+        ArmStmt *stmt0 = new ArmStmt(MOVW, "$R2", lower);
+        ArmStmt *stmt1 = new ArmStmt(MOVT, "$R2", upper);
         ArmStmt *stmt2 = new ArmStmt(MOV, opd1, opd2);
         ArmStmt *stmt3 = new ArmStmt(LDR, opd1, addr);
 
@@ -782,7 +782,7 @@ std::vector<ArmStmt *> *ArmBuilder::genStoreNode(IRStmt *irStmt) {
 
     } else {
 
-        addr = "[fp, #-" + loc + "]";
+        addr = "[fp, #-" + std::to_string(loc) + "]";
 
         ArmStmt *stmt0 = new ArmStmt(MOV, opd1, opd2);
         ArmStmt *stmt1 = new ArmStmt(STR, opd1, addr);
@@ -843,7 +843,7 @@ std::vector<ArmStmt *> *ArmBuilder::genLoadNode(IRStmt *irStmt) {
         currStmts->emplace_back(stmt2);
 
     } else {
-        addr = "[fp, #-" + loc + "]";
+        addr = "[fp, #-" + std::to_string(loc) + "]";
 
         ArmStmt *stmt0 = new ArmStmt(LDR, opd1, addr);
         currStmts->emplace_back(stmt0);
@@ -889,7 +889,7 @@ std::vector<ArmStmt *> *ArmBuilder::genGetPtrNode(IRStmt *irStmt) {
         }
         loc = result.stackLoc;
     } else { // not found
-        perror("Compile Error: compile error: genGetPtrNode - array not found!\"\n");
+        perror("Compile Error: compile error: genGetPtrNode - array not found!\n");
     }
 
     // 查找维度 dims
@@ -911,7 +911,7 @@ std::vector<ArmStmt *> *ArmBuilder::genGetPtrNode(IRStmt *irStmt) {
         }
         dims = result.dimension;
     } else { // not found
-        perror("Compile Error: compile error: genGetPtrNode - array not found!\"\n");
+        perror("Compile Error: compile error: genGetPtrNode - array not found!\n");
     }
 
     int dimNum = dims.size();
@@ -933,7 +933,7 @@ std::vector<ArmStmt *> *ArmBuilder::genGetPtrNode(IRStmt *irStmt) {
 
     if (level == 0) { // 为全局变量 采用特殊取址方式
 
-        addr = "addr";
+        // 用变量名寻址
         std::string lower = "#:lower16:" + opd2;
         std::string upper = "#:upper16:" + opd2;
 
@@ -947,19 +947,21 @@ std::vector<ArmStmt *> *ArmBuilder::genGetPtrNode(IRStmt *irStmt) {
         // 计算相对基址的偏移
         std::vector<ArmDAGNode *> calcuNodes;
         for (int i = 0; i < opd3.size(); i++) {
-            currStmts->emplace_back(new ArmStmt(MUL, "$R2", opd3[i], dimScale[i + 1]));
+            currStmts->emplace_back(new ArmStmt(MUL, "$R2", opd3[i],
+                                                std::to_string(dimScale[i + 1])));
             currStmts->emplace_back(new ArmStmt(SUB, opd1, opd1, "$R2"));
         }
     } else {
         addr = opd1;
 
         // opd1 寄存器 保存数组基址
-        ArmStmt *stmt = new ArmStmt(SUB, opd1, "$FP", loc);
+        ArmStmt *stmt = new ArmStmt(SUB, opd1, "$FP", std::to_string(loc));
         currStmts->emplace_back(stmt);
 
         // 计算相对基址的偏移
         for (int i = 0; i < opd3.size(); i++) {
-            currStmts->emplace_back(new ArmStmt(MUL, "$R2", opd3[i], dimScale[i + 1]));
+            currStmts->emplace_back(new ArmStmt(MUL, "$R2", opd3[i],
+                                                std::to_string(dimScale[i + 1])));
             currStmts->emplace_back(new ArmStmt(SUB, opd1, opd1, "$R2"));
         }
     }
