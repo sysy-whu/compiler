@@ -126,6 +126,8 @@ private:
 
     std::string funcName;
 
+    int varType;
+
     int level;
 
     int ifConst;
@@ -153,10 +155,11 @@ public:
      * @param subs ifArray=1 时有效
      * @param value ifConst=1 时有效
      */
-    Arm7Var(const char *ident, const char *funcName, int level, int ifConst, int ifArray, std::vector<int> *subs,
+    Arm7Var(const char *ident, const char *funcName, int varType, int level, int ifConst, int ifArray,
+            std::vector<int> *subs,
             std::vector<int> *value) :
-            ident(ident), funcName(funcName), level(level), ifConst(ifConst), ifArray(ifArray), subs(subs),
-            value(value), registerNow(-1), ifRegisterLock(0), memoryLoc("") {};
+            ident(ident), funcName(funcName), varType(varType), level(level), ifConst(ifConst), ifArray(ifArray),
+            subs(subs), value(value), registerNow(-1), ifRegisterLock(0), memoryLoc("") {};
 
     [[nodiscard]] const std::string &getIdent() const {
         return ident;
@@ -220,6 +223,10 @@ public:
 
     void setMemoryLoc(const char *memoryLoc_) {
         Arm7Var::memoryLoc = memoryLoc_;
+    }
+
+    int getVarType() const {
+        return varType;
     }
 };
 

@@ -16,7 +16,7 @@ class Arm7GlobalFunc;
 class ArmGlobal;
 
 /// ARM树
-class ArmTree {
+class Arm7Tree {
 private:
     std::vector<ArmGlobal *> *armGlobals;
 
@@ -25,7 +25,7 @@ public:
      * ARM树类
      * @param armGlobals 全局类型成员
      */
-    explicit ArmTree(std::vector<ArmGlobal *> *armGlobals) : armGlobals(armGlobals) {};
+    explicit Arm7Tree(std::vector<ArmGlobal *> *armGlobals) : armGlobals(armGlobals) {};
 
     [[nodiscard]] std::vector<ArmGlobal *> *getArmGlobals() const {
         return armGlobals;

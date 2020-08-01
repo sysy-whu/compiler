@@ -13,6 +13,7 @@ int main(int argc, char **argv) {
         return -1;
     }
     Semantic semantic;
+    semantic.startSemantic();
 
     // 移步 semantic 构造方法
     //    Parse parse;
@@ -21,7 +22,7 @@ int main(int argc, char **argv) {
     // 移步 parse 构造方法
     //    Lex lex;
     //    test(lex);
-    
+
     std::cout << "quit" << std::endl;
     return 0;
 }
