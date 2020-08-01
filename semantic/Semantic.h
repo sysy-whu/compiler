@@ -14,6 +14,12 @@ private:
     /// 汇编语法树
     Arm7Tree *armTree;
 
+    int levelNow;
+
+    std::string funcNameNow;
+
+    std::vector<Arm7Var *> *funcParamNow;
+
     ///===-----------------------------------------------------------------------===///
     /// 静态库文件里面的函数
     ///===-----------------------------------------------------------------------===///
@@ -22,7 +28,9 @@ private:
     ///===-----------------------------------------------------------------------===///
     /// 分析 ast 得到符号表相关内容
     ///===-----------------------------------------------------------------------===///
-    Arm7Var *semanticArm7Var(VarDef *varDef, int ifConst, int ifArray);
+    void semanticArm7Var(Decl *decl, std::vector<Symbol *> *symbols);
+
+    void semanticArm7Var(BlockItem *blockItem, std::vector<Symbol *> *symbols);
 
     Arm7Func *semanticArm7Func(FuncDef *funcDef);
 
@@ -40,6 +48,8 @@ private:
     ///===-----------------------------------------------------------------------===///
 
     std::vector<int> *calConstArrayInitVals(ConstInitVal *constInitVal, std::vector<int> *subs);
+
+    std::vector<int> *calVarArrayInitVals(InitVal *initVal, std::vector<int> *subs);
 
     int calConstExp(ConstExp *constExp);
 
@@ -86,7 +96,12 @@ private:
     void checkExps(std::vector<Exp *> *exps, const char *errMsg);
 
 public:
+    /// 构造方法
     Semantic();
+
+    ///===-----------------------------------------------------------------------===///
+    /// startSemantic 启动接口
+    ///===-----------------------------------------------------------------------===///
 
     void startSemantic();
 

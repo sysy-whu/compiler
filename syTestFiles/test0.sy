@@ -54,10 +54,12 @@ void ops1() {
 
 
     while(a > b){
+    int innerwhileLt;
         b = b+1;
     }
 
     if (a == b) {
+        int innerwhileEq;
         a=a+1;
     }
     if (a != b) {

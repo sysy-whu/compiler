@@ -19,6 +19,8 @@ class SymbolTable {
 private:
     int tableType;
 
+    std::string funcName;
+
     std::vector<Symbol *> *symbols;
 
 public:
@@ -27,7 +29,8 @@ public:
      * @param tableType 符号表类型，global,local,extern...
      * @param symbols 符号表元素
      */
-    SymbolTable(int tableType, std::vector<Symbol *> *symbols) : tableType(tableType), symbols(symbols) {};
+    SymbolTable(int tableType, const char *funcName, std::vector<Symbol *> *symbols) :
+            tableType(tableType), funcName(funcName), symbols(symbols) {};
 
     [[nodiscard]] int getTableType() const {
         return tableType;
@@ -35,6 +38,10 @@ public:
 
     [[nodiscard]] std::vector<Symbol *> *getSymbols() const {
         return symbols;
+    }
+
+    const std::string &getFuncName() const {
+        return funcName;
     }
 };
 
@@ -156,8 +163,7 @@ public:
      * @param value ifConst=1 时有效
      */
     Arm7Var(const char *ident, const char *funcName, int varType, int level, int ifConst, int ifArray,
-            std::vector<int> *subs,
-            std::vector<int> *value) :
+            std::vector<int> *subs, std::vector<int> *value) :
             ident(ident), funcName(funcName), varType(varType), level(level), ifConst(ifConst), ifArray(ifArray),
             subs(subs), value(value), registerNow(-1), ifRegisterLock(0), memoryLoc("") {};
 
