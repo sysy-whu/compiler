@@ -121,12 +121,12 @@ std::vector<ArmStmt *> *ArmBuilder::genEntryParam(std::vector<IRGlobalFuncParam 
             currStmts->emplace_back(stmt2);
 
             //在stackStatus中记录变量位置 level为1
-            std::multimap<std::string, VarInfo> varMap = *status->getVarMap();
+            std::multimap<std::string, VarInfo> *varMap = status->getVarMap();
             std::string varName = parmsInfo->at(i)->getParamName();
             int loc = status->getCurrentLoc() + 4;
-            varMap.insert({varName, VarInfo{loc, 1, block}});
+            varMap->insert({varName, VarInfo{loc, 1, block}});
             status->setCurrentLoc(loc);
-            status->setVarMap(&varMap);
+            status->setVarMap(varMap);
         }
 
         // PUSH {fp,lr}    ADD fp, sp, #4
@@ -151,7 +151,7 @@ std::vector<ArmStmt *> *ArmBuilder::genEntryParam(std::vector<IRGlobalFuncParam 
 
 /// 全局变量处理
 
-std::vector<std::string> *ArmBuilder::genGlobal(IRGlobalVar *var) {
+std::vector<std::string> *ArmBuilder::genGlobal(IRGlobalVar *var, StackStatus *globalStatus) {
     auto *armStmt = new std::vector<std::string>();
     if (var->getGlobalValue()->size() == 0) { //未初始化的全局变量
         armStmt->push_back("    .comm " + var->getVarName() + ", 4\n");
@@ -166,10 +166,15 @@ std::vector<std::string> *ArmBuilder::genGlobal(IRGlobalVar *var) {
         armStmt->emplace_back("    .word " + std::to_string(var->getGlobalValue()->at(0)) + "\n");
     }
 
+    // 在globalStatus中记录
+    std::multimap<std::string, VarInfo> *varMap = globalStatus->getVarMap();
+    varMap->insert({var->getVarName(), VarInfo{0, 0,""}});
+    globalStatus->setVarMap(varMap);
+
     return armStmt;
 }
 
-std::vector<std::string> *ArmBuilder::genConGlobal(IRGlobalVar *var) {
+std::vector<std::string> *ArmBuilder::genConGlobal(IRGlobalVar *var, StackStatus *globalStatus) {
     auto *armStmt = new std::vector<std::string>();
 
     const std::string &name = var->getVarName();
@@ -182,10 +187,15 @@ std::vector<std::string> *ArmBuilder::genConGlobal(IRGlobalVar *var) {
 
     armStmt->emplace_back("    .word " + std::to_string(var->getGlobalValue()->at(0)) + "\n");
 
+    // 在globalStatus中记录
+    std::multimap<std::string, VarInfo> *varMap = globalStatus->getVarMap();
+    varMap->insert({var->getVarName(), VarInfo{0, 0,""}});
+    globalStatus->setVarMap(varMap);
+
     return armStmt;
 }
 
-std::vector<std::string> *ArmBuilder::genGlobalArray(IRGlobalVar *var) {
+std::vector<std::string> *ArmBuilder::genGlobalArray(IRGlobalVar *var, StackStatus *globalStatus) {
     auto *armStmt = new std::vector<std::string>();
     int length = var->getGlobalValue()->size() * 4;
 
@@ -201,10 +211,20 @@ std::vector<std::string> *ArmBuilder::genGlobalArray(IRGlobalVar *var) {
         armStmt->emplace_back("    .word " + std::to_string(var->getGlobalValue()->at(i)) + "\n");
     }
 
+    // 在globalStatus中记录 变量位置和维度信息
+    std::multimap<std::string, VarInfo> *varMap = globalStatus->getVarMap();
+    varMap->insert({var->getVarName(), VarInfo{0, 0,""}});
+    globalStatus->setVarMap(varMap);
+
+    std::multimap<std::string, ArrayInfo> *dimMap = globalStatus->getArrDimensionMap();
+    std::vector<int> *dims = var->getArraySubs();
+    dimMap->insert({var->getVarName(), ArrayInfo{*dims, 0,""}});
+    globalStatus->setArrDimensionMap(dimMap);
+
     return armStmt;
 }
 
-std::vector<std::string> *ArmBuilder::genConGlobalArray(IRGlobalVar *var) {
+std::vector<std::string> *ArmBuilder::genConGlobalArray(IRGlobalVar *var, StackStatus *globalStatus) {
     auto *armStmt = new std::vector<std::string>();
     int length = var->getGlobalValue()->size() * 4;
 
@@ -220,6 +240,16 @@ std::vector<std::string> *ArmBuilder::genConGlobalArray(IRGlobalVar *var) {
         armStmt->emplace_back("    .word " + std::to_string(var->getGlobalValue()->at(i)) + "\n");
     }
 
+    // 在globalStatus中记录
+    std::multimap<std::string, VarInfo> *varMap = globalStatus->getVarMap();
+    varMap->insert({var->getVarName(), VarInfo{0, 0,""}});
+    globalStatus->setVarMap(varMap);
+
+    std::multimap<std::string, ArrayInfo> *dimMap = globalStatus->getArrDimensionMap();
+    std::vector<int> *dims = var->getArraySubs();
+    dimMap->insert({var->getVarName(), ArrayInfo{*dims, 0,""}});
+    globalStatus->setArrDimensionMap(dimMap);
+
     return armStmt;
 }
 
@@ -232,11 +262,11 @@ std::vector<ArmStmt *> *ArmBuilder::genAlloca(IRStmt *irStmt) {
     ArmStmt *stmt = new ArmStmt(SUB, "$SP", "$SP", "4");
 
     //记录变量位置
-    std::multimap<std::string, VarInfo> varMap = *(status->getVarMap());
-    varMap.emplace(opd1, VarInfo{status->getCurrentLoc(), irStmt->getLevel(),block});
+    std::multimap<std::string, VarInfo> *varMap = status->getVarMap();
+    varMap->emplace(opd1, VarInfo{status->getCurrentLoc(), irStmt->getLevel(),block});
     int loc = status->getCurrentLoc() + 4;
     status->setCurrentLoc(loc);
-    status->setVarMap(&varMap);
+    status->setVarMap(varMap);
 
     currStmts->emplace_back(stmt);
 
@@ -251,11 +281,11 @@ std::vector<ArmStmt *> *ArmBuilder::genConAlloca(IRStmt *irStmt) {
     ArmStmt *stmt = new ArmStmt(SUB, "$SP", "$SP", "4");
 
     //记录变量位置
-    std::multimap<std::string, VarInfo> varMap = *(status->getVarMap());
-    varMap.emplace(opd1, VarInfo{status->getCurrentLoc(), irStmt->getLevel(),block});
+    std::multimap<std::string, VarInfo> *varMap = status->getVarMap();
+    varMap->emplace(opd1, VarInfo{status->getCurrentLoc(), irStmt->getLevel(),block});
     int loc = status->getCurrentLoc() + 4;
     status->setCurrentLoc(loc);
-    status->setVarMap(&varMap);
+    status->setVarMap(varMap);
 
     currStmts->emplace_back(stmt);
 
@@ -288,16 +318,16 @@ std::vector<ArmStmt *> *ArmBuilder::genAllocaArray(IRStmt *irStmt) {
     currStmts->emplace_back(stmt);
 
     //记录变量位置,写入维度信息
-    std::multimap<std::string, VarInfo> varMap = *(status->getVarMap());
-    std::multimap<std::string, ArrayInfo> dimMap = *(status->getArrDimensionMap());
+    std::multimap<std::string, VarInfo> *varMap = status->getVarMap();
+    std::multimap<std::string, ArrayInfo> *dimMap = status->getArrDimensionMap();
 
-    varMap.emplace(opd1, VarInfo{status->getCurrentLoc(), irStmt->getLevel(),block});
-    dimMap.emplace(opd1, ArrayInfo{dims, irStmt->getLevel(),block});
+    varMap->emplace(opd1, VarInfo{status->getCurrentLoc(), irStmt->getLevel(),block});
+    dimMap->emplace(opd1, ArrayInfo{dims, irStmt->getLevel(),block});
 
     int loc = status->getCurrentLoc() + space;
     status->setCurrentLoc(loc);
-    status->setArrDimensionMap(&dimMap);
-    status->setVarMap(&varMap);
+    status->setArrDimensionMap(dimMap);
+    status->setVarMap(varMap);
 
     return currStmts;
 }
@@ -327,16 +357,16 @@ std::vector<ArmStmt *> *ArmBuilder::genConAllocaArray(IRStmt *irStmt) {
     currStmts->emplace_back(stmt);
 
     //记录变量位置,写入维度信息
-    std::multimap<std::string, VarInfo> varMap = *(status->getVarMap());
-    std::multimap<std::string, ArrayInfo> dimMap = *(status->getArrDimensionMap());
+    std::multimap<std::string, VarInfo> *varMap = status->getVarMap();
+    std::multimap<std::string, ArrayInfo> *dimMap = status->getArrDimensionMap();
 
-    varMap.emplace(opd1, VarInfo{status->getCurrentLoc(), irStmt->getLevel(),block});
-    dimMap.emplace(opd1, ArrayInfo{dims, irStmt->getLevel(),block});
+    varMap->emplace(opd1, VarInfo{status->getCurrentLoc(), irStmt->getLevel(),block});
+    dimMap->emplace(opd1, ArrayInfo{dims, irStmt->getLevel(),block});
 
     int loc = status->getCurrentLoc() + space;
     status->setCurrentLoc(loc);
-    status->setArrDimensionMap(&dimMap);
-    status->setVarMap(&varMap);
+    status->setArrDimensionMap(dimMap);
+    status->setVarMap(varMap);
 
     return currStmts;
 }
@@ -743,13 +773,13 @@ std::vector<ArmStmt *> *ArmBuilder::genStoreNode(IRStmt *irStmt) {
     int loc;
     int currLevel = irStmt->getLevel();
     int level = -1;
-    int n = varMap->count(opd2);
+    int n = varMap->count(opd1);
     if (n == 1) {
-        VarInfo info = varMap->find(opd2)->second;
+        VarInfo info = varMap->find(opd1)->second;
         loc = info.stackLoc;
         level = info.level;
     } else if (n > 1) {
-        auto iter = varMap->find(opd2);
+        auto iter = varMap->find(opd1);
         VarInfo result = iter->second;
         for (int i = 0; i < n; i++) {
             VarInfo info = iter->second;
@@ -760,7 +790,7 @@ std::vector<ArmStmt *> *ArmBuilder::genStoreNode(IRStmt *irStmt) {
         }
         loc = result.stackLoc;
     } else { // not found
-        perror("Compile Error: genLoadNode - variable not found!\n");
+        perror("Compile Error: genStoreNode - variable not found!\n");
     }
 
     if (level == 0) { // 为全局变量 采用特殊取址方式

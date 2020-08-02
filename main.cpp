@@ -30,6 +30,7 @@ int main(int argc, char **argv) {
     ArmGen armGen(irGenIR.getIrTree());
     armGen.startGen();
     std::string test = irGenIR.getIrTree()->genString();
+    std::cout <<  test << std::endl;
     // 移步 semantic 构造方法
     //    Parse parse;
     //    parse.parseAST();
