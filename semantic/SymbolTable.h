@@ -5,6 +5,7 @@
 #include <utility>
 #include <vector>
 #include "../util/MyConstants.h"
+#include "../ast/AST.h"
 
 /// 函数类
 class Arm7Func;
@@ -24,6 +25,8 @@ private:
 
     std::vector<Symbol *> *symbols;
 
+
+
 public:
     /**
      * 符号表类SymbolTable 构造函数
@@ -41,9 +44,12 @@ public:
         return symbols;
     }
 
-    const std::string &getFuncName() const {
+    [[nodiscard]] const std::string &getFuncName() const {
         return funcName;
     }
+
+    Arm7Var *getGlobalVar(const char *varName);
+
 };
 
 class Symbol {
@@ -145,6 +151,9 @@ private:
     std::vector<int> *subs;
 
     std::vector<int> *value;
+
+    InitVal *initVal;
+
     /// 如 8 表 [fp, #-8]
     int memoryLoc;
 
@@ -166,7 +175,12 @@ public:
     Arm7Var(const char *ident, const char *funcName, int varType, int level, int ifConst, int ifArray,
             std::vector<int> *subs, std::vector<int> *value) :
             ident(ident), funcName(funcName), varType(varType), level(level), ifConst(ifConst), ifArray(ifArray),
-            subs(subs), value(value), registerNow(-1), ifRegisterLock(0), memoryLoc(LOCAL_VAR_POS) {};
+            subs(subs), value(value), registerNow(-1), ifRegisterLock(0), memoryLoc(LOCAL_VAR_POS), initVal(nullptr) {};
+
+    Arm7Var(const char *ident, const char *funcName, int varType, int level, int ifConst, int ifArray,
+            std::vector<int> *subs, std::vector<int> *value, InitVal *initVal) :
+            ident(ident), funcName(funcName), varType(varType), level(level), ifConst(ifConst), ifArray(ifArray),
+            subs(subs), value(value), registerNow(-1), ifRegisterLock(0), memoryLoc(LOCAL_VAR_POS), initVal(initVal) {};
 
     [[nodiscard]] const std::string &getIdent() const {
         return ident;
@@ -224,7 +238,7 @@ public:
         Arm7Var::ifRegisterLock = ifRegisterLock_;
     }
 
-    int getMemoryLoc() const {
+    [[nodiscard]] int getMemoryLoc() const {
         return memoryLoc;
     }
 
@@ -232,8 +246,12 @@ public:
         Arm7Var::memoryLoc = memoryLoc_;
     }
 
-    int getVarType() const {
+    [[nodiscard]] int getVarType() const {
         return varType;
+    }
+
+    [[nodiscard]] InitVal *getInitVal() const {
+        return initVal;
     }
 };
 

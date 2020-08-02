@@ -160,6 +160,18 @@ static const int LOCAL_VAR_POS = -2;
 
 static const std::string LVAL_VAR_POS_DEFAULT = "#-1";
 
+static const int ARM_STMT_STR = -1;
+static const int ARM_STMT_LDR = -2;
+static const int ARM_STMT_PUSH = -3;
+static const int ARM_STMT_POP = -4;
+
+static const int ARM_STMT_ADD = -5;
+static const int ARM_STMT_SUB = -6;
+static const int ARM_STMT_MUL = -7;
+static const int ARM_STMT_DIV = -8;
+static const int ARM_STMT_MOD = -9;
+
+
 // ARM_DAG Type
 enum ARM_DAG {
     IMMEDIATE_DATA,

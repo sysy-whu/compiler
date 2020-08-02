@@ -20,4 +20,4 @@ file(GLOB SOURCES
         arm/*.cpp
         )
 
-add_executable(compiler main.cpp ${SOURCE_FILES} ${SOURCES} semantic/Semantic.cpp semantic/Semantic.h)
+add_executable(compiler main.cpp ${SOURCE_FILES} ${SOURCES} semantic/Semantic.cpp semantic/Semantic.h semantic/SymbolTable.cpp)

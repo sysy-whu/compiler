@@ -16,17 +16,15 @@ private:
 
     std::string opd3;
 
-    int level;
-
 public:
-    ArmStmt(int opType, const char *opd1, int level) :
-            opType(opType), opd1(opd1), opd2(OPD_NULL), opd3(OPD_NULL), level(level) {};
+    ArmStmt(int opType, const char *opd1) :
+            opType(opType), opd1(opd1), opd2(OPD_NULL), opd3(OPD_NULL){};
 
-    ArmStmt(int opType, const char *opd1, const char *opd2, int level) :
-            opType(opType), opd1(opd1), opd2(opd2), opd3(OPD_NULL), level(level) {};
+    ArmStmt(int opType, const char *opd1, const char *opd2) :
+            opType(opType), opd1(opd1), opd2(opd2), opd3(OPD_NULL){};
 
-    ArmStmt(int opType, const char *opd1, const char *opd2, const char *opd3, int level) :
-            opType(opType), opd1(opd1), opd2(opd2), opd3(opd3), level(level) {};
+    ArmStmt(int opType, const char *opd1, const char *opd2, const char *opd3) :
+            opType(opType), opd1(opd1), opd2(opd2), opd3(opd3){};
 
     [[nodiscard]] int getOpType() const {
         return opType;
@@ -42,10 +40,6 @@ public:
 
     [[nodiscard]] const std::string &getOpd3() const {
         return opd3;
-    }
-
-    [[nodiscard]] int getLevel() const {
-        return level;
     }
 };
 

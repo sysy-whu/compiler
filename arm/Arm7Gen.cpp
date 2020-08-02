@@ -8,35 +8,49 @@ Arm7Gen::Arm7Gen() {
 
     whilePos = new std::vector<std::string>();
     whileEndPos = new std::vector<std::string>();
+    levelNow = 0;
     /// TODO 我不知自什么始
     blockName = 0;
 }
 
 void Arm7Gen::startGen(AST *ast_, std::vector<SymbolTable *> *symbolTables_) {
-    Arm7Gen::ast = ast_;
-    Arm7Gen::symbolTables = symbolTables_;
+    ast = ast_;
+    symbolTables = symbolTables_;
 
     auto *armGlobals = new std::vector<ArmGlobal *>();
 
-    for (Decl *decl:*(ast->getDecls())) {
-        ArmGlobal *armGlobal = nullptr;
-        if (decl->getVarDecl() != nullptr) {
-
-        } else if (decl->getConstDecl() != nullptr) {
-
+    /// 一次性声明所有全局变量
+    for (Symbol *symbol:*symbolTables->at(1)->getSymbols()) {
+        if (symbol->getArm7Var() != nullptr) {
+            auto *arm7GlobalVar =
+                    new Arm7GlobalVar(symbol->getArm7Var()->getIdent().c_str(), symbol->getArm7Var()->getIfConst(),
+                                      symbol->getArm7Var()->getSubs(), symbol->getArm7Var()->getValue());
+            auto *armGlobal = new ArmGlobal(arm7GlobalVar, nullptr);
+            armGlobals->emplace_back(armGlobal);
         }
-
     }
 
+    for (Decl *decl:*(ast->getDecls())) {
+        if (decl->getFuncDef() != nullptr) {
+            auto *armBlocks = new std::vector<ArmBlock *>();
+            genArm7Func(decl->getFuncDef(), armBlocks);
 
-
+            auto *arm7GlobalFunc =
+                    new Arm7GlobalFunc(decl->getFuncDef()->getIdent().c_str(), armBlocks);
+            auto *armGlobal = new ArmGlobal(nullptr, arm7GlobalFunc);
+            armGlobals->emplace_back(armGlobal);
+        }
+    }
+    armTree = new Arm7Tree(armGlobals);
 }
 
 ///===-----------------------------------------------------------------------===///
 /// 基本声明定义
 ///===-----------------------------------------------------------------------===///
 
-void Arm7Gen::genArm7Var(Decl *decl, std::vector<ArmStmt *> *armStmts) {
+void Arm7Gen::genArm7Var(Decl *decl, std::vector<ArmGlobal *> *armGlobals) {
+    ArmGlobal *armGlobal = nullptr;
+
 
 }
 
@@ -46,6 +60,50 @@ void Arm7Gen::genArm7Var(BlockItem *blockItem, std::vector<ArmStmt *> *armStmts)
 
 void Arm7Gen::genArm7Func(FuncDef *funcDef, std::vector<ArmBlock *> *armBlocks) {
     funcNameNow = funcDef->getIdent();
+    levelNow++;
+
+    auto *armStmts = new std::vector<ArmStmt *>();
+    auto *blockEntry = new ArmBlock(BLOCK_ENTRY.c_str(), armStmts);
+    armBlocks->emplace_back(blockEntry);
+
+
+
+
+    for (Symbol *symbol:*symbolTables->at(1)->getSymbols()) {
+        if (symbol->getArm7Func() != nullptr && symbol->getArm7Func()->getIdent() == funcDef->getIdent()) {
+            /// push	{fp, lr}
+            /// add	fp, sp, #4
+            /// sub	sp, sp, #DIGIT_CAPACITY
+            auto *armStmtPush = new ArmStmt(ARM_STMT_PUSH, "{fp, lr}");
+            auto *armStmtAdd = new ArmStmt(ARM_STMT_ADD, "sp", "#4");
+            auto *armStmtSub = new ArmStmt(ARM_STMT_SUB, "sp", "sp",
+                                           ("#" + std::to_string(symbol->getArm7Func()->getCapacity())).c_str());
+            armStmts->emplace_back(armStmtPush);
+            armStmts->emplace_back(armStmtAdd);
+            armStmts->emplace_back(armStmtSub);
+
+            /// 寄存器传递的参数
+            auto *params = symbol->getArm7Func()->getParams();
+            for (int i = 0; i < symbol->getArm7Func()->getParams()->size() && i < 4; i++) {
+                auto *armStmt =
+                        new ArmStmt(ARM_STMT_STR, ("r" + std::to_string(i)).c_str(),
+                                    ("[fp, #" + std::to_string(params->at(i)->getMemoryLoc()) + "]").c_str());
+                armStmts->emplace_back(armStmt);
+            }
+        }
+    }
+
+    genBlock(funcDef->getBlock(), armBlocks, blockEntry, armStmts);
+
+    /// 考虑到如下固定格式结尾无需计算，保留在 output 时输出到文件
+    /// sub	sp, fp, #4
+    /// @ sp needed
+    /// pop	{fp, pc}
+    /// .size	whileFunc, .-whileFunc
+    /// .align	2
+
+    funcNameNow = nullptr;
+    levelNow--;
 }
 
 ///===-----------------------------------------------------------------------===///
@@ -54,6 +112,11 @@ void Arm7Gen::genArm7Func(FuncDef *funcDef, std::vector<ArmBlock *> *armBlocks) 
 
 const char *Arm7Gen::genBlock(Block *block, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
                               std::vector<ArmStmt *> *lastBlockStmts) {
+
+    levelNow++;
+
+
+    levelNow--;
     return nullptr;
 }
 

@@ -33,7 +33,7 @@ private:
     /// 基本声明定义
     ///===-----------------------------------------------------------------------===///
 
-    void genArm7Var(Decl *decl, std::vector<ArmStmt *> *armStmts);
+    void genArm7Var(Decl *decl, std::vector<ArmGlobal *> *armGlobals);
 
     void genArm7Var(BlockItem *blockItem, std::vector<ArmStmt *> *armStmts);
 
