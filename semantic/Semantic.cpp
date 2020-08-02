@@ -130,6 +130,8 @@ void Semantic::semanticArm7Var(BlockItem *blockItem, std::vector<Symbol *> *symb
 
                 capacity += 4;
                 arm7Var->setMemoryLoc(capacity);
+                constDef->setBaseMemoryPos(capacity);
+//                constDef->setBaseMemoryPos(("[fp, #"+std::to_string(capacity)+"]").c_str());
             } else {  /// 常量数组
                 auto *subs = new std::vector<int>();  /// 下标
                 int len = 1;  /// 元素总个数
@@ -145,6 +147,8 @@ void Semantic::semanticArm7Var(BlockItem *blockItem, std::vector<Symbol *> *symb
 
                 capacity += len * 4;
                 arm7Var->setMemoryLoc(capacity);
+                constDef->setBaseMemoryPos(capacity);
+//                constDef->setBaseMemoryPos(("[fp, #"+std::to_string(capacity)+"]").c_str());
             }
             auto *symbol = new Symbol(arm7Var, nullptr);
             symbols->emplace_back(symbol);
@@ -169,6 +173,8 @@ void Semantic::semanticArm7Var(BlockItem *blockItem, std::vector<Symbol *> *symb
 
                 capacity += 4;
                 arm7Var->setMemoryLoc(capacity);
+                varDef->setBaseMemoryPos(capacity);
+//                varDef->setBaseMemoryPos(("[fp, #"+std::to_string(capacity)+"]").c_str());
             } else {
                 auto *subs = new std::vector<int>();  /// 下标
                 int len = 1;  /// 元素总个数
@@ -184,6 +190,8 @@ void Semantic::semanticArm7Var(BlockItem *blockItem, std::vector<Symbol *> *symb
                                       CONST_FALSE, ARRAY_TRUE, subs, nullptr, varDef->getInitVal());
                 capacity += len * 4;
                 arm7Var->setMemoryLoc(capacity);
+                varDef->setBaseMemoryPos(capacity);
+//                varDef->setBaseMemoryPos(("[fp, #"+std::to_string(capacity)+"]").c_str());
             }
             auto *symbol = new Symbol(arm7Var, nullptr);
             symbols->emplace_back(symbol);

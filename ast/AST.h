@@ -72,7 +72,7 @@ public:
      * @param sourLocs _0: identLoc; [_Loc, ]_Loc, ... 数组各维度
      */
     LVal(const char *ident, std::vector<Exp *> *exps, std::list<SourceLocation *> *sourLocs) :
-            ident(ident), exps(exps), Locs(sourLocs) , baseMemoryPos(LVAL_VAR_POS_DEFAULT){};
+            ident(ident), exps(exps), Locs(sourLocs), baseMemoryPos(LVAL_VAR_POS_DEFAULT) {};
 
     [[nodiscard]] const std::string &getIdent() const {
         return ident;
@@ -699,6 +699,11 @@ private:
 
     InitVal *initVal;
 
+//    /// 如 8 表 [fp, #-8]
+//    std::string baseMemoryPos;
+
+    int baseMemoryPos;
+
 public:
     /**
      * 变量定义 VarDef 构造方法
@@ -709,7 +714,8 @@ public:
      */
     VarDef(const char *ident, std::vector<ConstExp *> *constExps, InitVal *initVal,
            std::list<SourceLocation *> *sourLocs) :
-            ident(ident), constExps(constExps), initVal(initVal), Locs(sourLocs) {};
+            ident(ident), constExps(constExps), initVal(initVal), Locs(sourLocs),
+            /*baseMemoryPos(LVAL_VAR_POS_DEFAULT)*/ baseMemoryPos(LOCAL_VAR_POS){};
 
     [[nodiscard]] const std::string &getIdent() const {
         return ident;
@@ -722,6 +728,22 @@ public:
     [[nodiscard]] InitVal *getInitVal() const {
         return initVal;
     }
+
+    int getBaseMemoryPos() const {
+        return baseMemoryPos;
+    }
+
+    void setBaseMemoryPos(int baseMemoryPos_) {
+        VarDef::baseMemoryPos = baseMemoryPos_;
+    }
+
+//    const std::string &getBaseMemoryPos() const {
+//        return baseMemoryPos;
+//    }
+//
+//    void setBaseMemoryPos(const char *baseMemoryPos_) {
+//        VarDef::baseMemoryPos = baseMemoryPos_;
+//    }
 };
 
 /**
@@ -791,6 +813,11 @@ private:
 
     ConstInitVal *constInitVal;
 
+//    /// 如 8 表 [fp, #-8]
+//    std::string baseMemoryPos;
+
+    int baseMemoryPos;
+
 public:
     /**
      * 常数定义 ConstDef 构造方法
@@ -801,7 +828,8 @@ public:
      */
     ConstDef(const char *ident, std::vector<ConstExp *> *constExps, ConstInitVal *constInitVal,
              std::list<SourceLocation *> *sourLocs) :
-            ident(ident), constExps(constExps), constInitVal(constInitVal), Locs(sourLocs) {};
+            ident(ident), constExps(constExps), constInitVal(constInitVal), Locs(sourLocs),
+            /*baseMemoryPos(LVAL_VAR_POS_DEFAULT)*/baseMemoryPos(LOCAL_VAR_POS) {};
 
     [[nodiscard]] const std::string &getIdent() const {
         return ident;
@@ -814,6 +842,22 @@ public:
     [[nodiscard]]  ConstInitVal *getConstInitVal() const {
         return constInitVal;
     }
+
+    int getBaseMemoryPos() const {
+        return baseMemoryPos;
+    }
+
+    void setBaseMemoryPos(int baseMemoryPos_) {
+        ConstDef::baseMemoryPos = baseMemoryPos_;
+    }
+
+//    const std::string &getBaseMemoryPos() const {
+//        return baseMemoryPos;
+//    }
+//
+//    void setBaseMemoryPos(const char *baseMemoryPos_) {
+//        ConstDef::baseMemoryPos = baseMemoryPos_;
+//    }
 };
 
 /**

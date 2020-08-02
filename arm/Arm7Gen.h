@@ -4,6 +4,7 @@
 #include "../semantic/SymbolTable.h"
 #include "../arm/ArmGlobal.h"
 #include "../parser/Parse.h"
+#include "ArmRegManager.h"
 
 class Arm7Gen {
 private:
@@ -28,14 +29,24 @@ private:
     std::vector<std::string> *whileEndPos;
     /// blockName 分配 如4: .L4
     int blockName;
+    /// 寄存器管理
+    ArmRegManager *armRegManager;
 
     ///===-----------------------------------------------------------------------===///
     /// 基本声明定义
     ///===-----------------------------------------------------------------------===///
 
-    void genArm7Var(Decl *decl, std::vector<ArmGlobal *> *armGlobals);
+//    void genArm7Var(Decl *decl, std::vector<ArmGlobal *> *armGlobals);
 
     void genArm7Var(BlockItem *blockItem, std::vector<ArmStmt *> *armStmts);
+
+    void genVar(VarDef *varDef, std::vector<ArmStmt *> *armStmts);
+
+    void genConstVar(ConstDef *constDef,  std::vector<ArmStmt *> *armStmts);
+
+    void genVarArray(VarDef *varDef, std::vector<ArmStmt *> *armStmts);
+
+    void genConstVarArray(ConstDef *constDef,  std::vector<ArmStmt *> *armStmts);
 
     void genArm7Func(FuncDef *funcDef, std::vector<ArmBlock *> *armBlocks);
 
@@ -91,15 +102,15 @@ private:
 
     const char *genRelExp(RelExp *relExp, std::vector<ArmStmt *> *ArmStmts);
 
-    const char *genAddExp(AddExp *addExp, std::vector<ArmStmt *> *ArmStmts);
+    ArmReg *genAddExp(AddExp *addExp, std::vector<ArmStmt *> *ArmStmts);
 
-    const char *genMulExp(MulExp *mulExp, std::vector<ArmStmt *> *ArmStmts);
+    ArmReg *genMulExp(MulExp *mulExp, std::vector<ArmStmt *> *ArmStmts);
 
-    const char *genUnaryExp(UnaryExp *unaryExp, std::vector<ArmStmt *> *ArmStmts);
+    ArmReg *genUnaryExp(UnaryExp *unaryExp, std::vector<ArmStmt *> *ArmStmts);
 
-    const char *genPrimaryExp(PrimaryExp *primaryExp, std::vector<ArmStmt *> *ArmStmts);
+    ArmReg *genPrimaryExp(PrimaryExp *primaryExp, std::vector<ArmStmt *> *ArmStmts);
 
-    const char *genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts);
+    ArmReg *genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts);
 
 
 public:

@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "../semantic/SymbolTable.h"
+#include "ArmStmt.h"
 
 /// 某一寄存器
 class ArmReg;
@@ -19,13 +20,17 @@ public:
 
     static int newestNum;
 
-    ArmReg *getFreeArmReg();
+    ArmReg *getFreeArmReg(std::vector<ArmStmt *> *armStmts);
 
     static int getNewestNum();
 
     static void setNewestNum(int newestNum_);
 
     static void addNewestNum();
+
+    [[nodiscard]] std::vector<ArmReg *> *getArmRegs() const;
+
+    void setArmRegs(std::vector<ArmReg *> *armRegs);
 
 };
 
@@ -36,9 +41,12 @@ private:
     Arm7Var *arm7Var;
 
     int newNum;
+    /// 仅在已有某个寄存器存了二元运算临时结果，需要一个新寄存器时有效。同一时刻有且只有可能一个寄存器 ifLock 为真
+    int ifLock;
 
 public:
-    ArmReg(const char *regName, Arm7Var *arm7Var, int newNum) : regName(regName), arm7Var(arm7Var), newNum(newNum) {};
+    ArmReg(const char *regName, Arm7Var *arm7Var, int newNum) :
+    regName(regName), arm7Var(arm7Var), newNum(newNum), ifLock(ARM_REG_LOCK_FALSE) {};
 
     [[nodiscard]] const std::string &getRegName() const {
         return regName;
@@ -58,6 +66,14 @@ public:
 
     void setNewNum(int newNum_) {
         ArmReg::newNum = newNum_;
+    }
+
+    [[nodiscard]] int getIfLock() const {
+        return ifLock;
+    }
+
+    void setIfLock(int ifLock_) {
+        ArmReg::ifLock = ifLock_;
     }
 };
 

@@ -171,6 +171,18 @@ static const int ARM_STMT_MUL = -7;
 static const int ARM_STMT_DIV = -8;
 static const int ARM_STMT_MOD = -9;
 
+static const int ARM_STMT_MOVE = -10;
+static const int ARM_STMT_MOVEQ = -11;
+static const int ARM_STMT_MOVNE = -12;
+static const int ARM_STMT_MOVLE = -13;
+static const int ARM_STMT_MOVGE = -14;
+static const int ARM_STMT_MOVGT = -15;
+static const int ARM_STMT_MOVLT = -16;
+static const int ARM_STMT_MOVW = -17;
+static const int ARM_STMT_MOVT = -18;
+
+static const int ARM_REG_LOCK_TRUE = 1;
+static const int ARM_REG_LOCK_FALSE = 0;
 
 // ARM_DAG Type
 enum ARM_DAG {
