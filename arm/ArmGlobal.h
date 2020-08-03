@@ -77,7 +77,7 @@ public:
      *
      * @param ident 变量名
      * @param ifConst 0:变量;1:常量
-     * @param subs size=0 表非数组
+     * @param subs null 或 size=0 表非数组
      * @param value 仅全局变量、局部常量有效
      */
     Arm7GlobalVar(const char *ident, int ifConst, std::vector<int> *subs, std::vector<int> *value) :
