@@ -306,13 +306,13 @@ const char *Arm7Gen::genRelExp(RelExp *relExp, std::vector<ArmStmt *> *ArmStmts)
 }
 
 ArmReg *Arm7Gen::genAddExp(AddExp *addExp, std::vector<ArmStmt *> *ArmStmts) {
-    if(addExp->getOpType() == OP_NULL){
+    if (addExp->getOpType() == OP_NULL) {
         return genMulExp(addExp->getMulExp(), ArmStmts);
-    }else{
+    } else {
         /// 加数乘法式中间结果，Arm7Var 成员变量不一定为 null
         ArmReg *mulRet = genMulExp(addExp->getMulExp(), ArmStmts);
         /// 中间结果压栈，不用管是否释放寄存器，null时可被直接用；非null时可被重复利用
-        auto *pushStmt = new ArmStmt(ARM_STMT_PUSH, mulRet->getRegName().c_str());
+        auto *pushStmt = new ArmStmt(ARM_STMT_PUSH, ("{" +mulRet->getRegName()+" }").c_str());
         ArmStmts->emplace_back(pushStmt);
         /// 加数加法式中间结果，Arm7Var 成员变量可为 null-->因此，可能会被误分配为 armRegRet
         ArmReg *addRet = genAddExp(addExp->getAddExp(), ArmStmts);
@@ -323,10 +323,10 @@ ArmReg *Arm7Gen::genAddExp(AddExp *addExp, std::vector<ArmStmt *> *ArmStmts) {
         /// 解锁加数加法式中间结果
         addRet->setIfLock(ARM_REG_LOCK_FALSE);
 
-        auto *popStmt = new ArmStmt(ARM_STMT_POP, armRegRet->getRegName().c_str());
+        auto *popStmt = new ArmStmt(ARM_STMT_POP, ("{" +armRegRet->getRegName()+" }").c_str());
         /// 以 armRegRet 为最终结果，因为 addRet 可能为某变量，其 ArmReg 有对应某个变量地址
-        auto *armAddStmt = new ArmStmt(ARM_STMT_ADD, armRegRet->getRegName().c_str(),
-                armRegRet->getRegName().c_str(), addRet->getRegName().c_str());
+        auto *armAddStmt = new ArmStmt(addExp->getOpType(), armRegRet->getRegName().c_str(),
+                                       armRegRet->getRegName().c_str(), addRet->getRegName().c_str());
         ArmStmts->emplace_back(popStmt);
         ArmStmts->emplace_back(armAddStmt);
 
@@ -335,13 +335,13 @@ ArmReg *Arm7Gen::genAddExp(AddExp *addExp, std::vector<ArmStmt *> *ArmStmts) {
 }
 
 ArmReg *Arm7Gen::genMulExp(MulExp *mulExp, std::vector<ArmStmt *> *ArmStmts) {
-    if(mulExp->getOpType() == OP_NULL){
+    if (mulExp->getOpType() == OP_NULL) {
         return genUnaryExp(mulExp->getUnaryExp(), ArmStmts);
-    }else{
+    } else if(mulExp->getOpType() == OP_BO_MUL){
         /// 乘数一元表达式中间结果，Arm7Var 成员变量不一定为 null
         ArmReg *unaryRet = genUnaryExp(mulExp->getUnaryExp(), ArmStmts);
         /// 中间结果压栈，不用管是否释放寄存器，null时可被直接用；非null时可被重复利用
-        auto *pushStmt = new ArmStmt(ARM_STMT_PUSH, unaryRet->getRegName().c_str());
+        auto *pushStmt = new ArmStmt(ARM_STMT_PUSH, ("{" +unaryRet->getRegName()+" }").c_str());
         ArmStmts->emplace_back(pushStmt);
         /// 乘数乘法式中间结果，Arm7Var 成员变量可为 null-->因此，可能会被误分配为 armRegRet
         ArmReg *mulRet = genMulExp(mulExp->getMulExp(), ArmStmts);
@@ -352,9 +352,9 @@ ArmReg *Arm7Gen::genMulExp(MulExp *mulExp, std::vector<ArmStmt *> *ArmStmts) {
         /// 解锁加数加法式中间结果
         mulRet->setIfLock(ARM_REG_LOCK_FALSE);
 
-        auto *popStmt = new ArmStmt(ARM_STMT_POP, armRegRet->getRegName().c_str());
+        auto *popStmt = new ArmStmt(ARM_STMT_POP, ("{" +armRegRet->getRegName()+" }").c_str());
         /// 以 armRegRet 为最终结果，因为 mulRet 可能为某变量，其 ArmReg 有对应某个变量地址
-        auto *armAddStmt = new ArmStmt(ARM_STMT_MUL, armRegRet->getRegName().c_str(),
+        auto *armAddStmt = new ArmStmt(mulExp->getOpType(), armRegRet->getRegName().c_str(),
                                        armRegRet->getRegName().c_str(), mulRet->getRegName().c_str());
         ArmStmts->emplace_back(popStmt);
         ArmStmts->emplace_back(armAddStmt);
@@ -364,7 +364,21 @@ ArmReg *Arm7Gen::genMulExp(MulExp *mulExp, std::vector<ArmStmt *> *ArmStmts) {
 }
 
 ArmReg *Arm7Gen::genUnaryExp(UnaryExp *unaryExp, std::vector<ArmStmt *> *ArmStmts) {
+    if (unaryExp->getPrimaryExp() != nullptr) {
+        return genPrimaryExp(unaryExp->getPrimaryExp(), ArmStmts);
+    } else if (unaryExp->getOpType() != OP_NULL) {
+        if (unaryExp->getOpType() == OP_BO_ADD) {
+            return genUnaryExp(unaryExp->getUnaryExp(), ArmStmts);
+        } else if (unaryExp->getOpType() == OP_BO_SUB) {
+            ArmReg *unaryArmReg = genUnaryExp(unaryExp->getUnaryExp(), ArmStmts);
 
+
+        } else if (unaryExp->getOpType() == OP_UO_NOT) {
+
+        }
+    } else {
+
+    }
     return nullptr;
 }
 
