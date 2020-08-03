@@ -118,6 +118,77 @@ void Semantic::semanticArm7Var(Decl *decl, std::vector<Symbol *> *symbols) {
     }
 }
 
+Arm7Func *Semantic::semanticArm7Func(FuncDef *funcDef) {
+    auto *params = new std::vector<Arm7Var *>();
+    funcNameNow = funcDef->getIdent();
+    levelNow++;
+    /// 因为每次分配空间时，capacity 都会提前减，这里应该是sp当前实际位置-4
+    capacity = (PUSH_NUM_DEFAULT-1) * -4;
+
+    if (funcDef->getFuncFParams() != nullptr) {
+        for (int i = 0; i < funcDef->getFuncFParams()->getFuncFParams()->size(); i++) {
+            FuncFParam *funcFParam = funcDef->getFuncFParams()->getFuncFParams()->at(i);
+            Arm7Var *arm7Var;
+            if (funcFParam->getBType() == TYPE_INT) {  // 变量
+                arm7Var = new Arm7Var(funcFParam->getIdent().c_str(), funcNameNow.c_str(),
+                                      funcFParam->getBType(), levelNow,
+                                      CONST_FALSE, ARRAY_FALSE, nullptr, nullptr);
+
+            } else if (funcFParam->getBType() == TYPE_INT_STAR) {  // 数组 （第一维为空）
+                auto *subs = new std::vector<int>();
+                for (Exp *exp: *funcFParam->getExps()) {
+                    subs->push_back(calAddExp(exp->getAddExp()));
+                }
+                arm7Var = new Arm7Var(funcFParam->getIdent().c_str(), funcNameNow.c_str(),
+                                      funcFParam->getBType(), levelNow,
+                                      CONST_FALSE, ARRAY_TRUE, subs, nullptr);
+            } else {
+                Error::errorSim("something wrong in semanticArm7Func funcFParam->getBType()");
+                exit(-1);
+            }
+            if (i >= 4) {
+                capacity -= 4;  /// 由于所存为引用变量，此处无论参数类型均分配四字节数
+                arm7Var->setMemoryLoc(capacity);
+            } else {
+                arm7Var->setMemoryLoc((i - 3) * 4);
+            }
+            params->emplace_back(arm7Var);
+        }
+    }
+    funcParamNow = params;
+
+    semanticBlock(funcDef->getBlock(), funcDef->getFuncType(), params);
+
+    levelNow--;
+    funcParamNow = nullptr;
+    auto *arm7Func = new Arm7Func(funcNameNow.c_str(), funcDef->getFuncType(), params);
+    arm7Func->setCapacity(capacity);
+    return arm7Func;
+}
+
+///===-----------------------------------------------------------------------===///
+/// Stmt 语句
+///===-----------------------------------------------------------------------===///
+
+void Semantic::semanticBlock(Block *block, int funcRetType, std::vector<Arm7Var *> *params) {
+    levelNow++;
+    auto *symbolsLocal = new std::vector<Symbol *>();
+    auto *symbolTableLocal = new SymbolTable(SYMBOL_TABLE_LOCAL, funcNameNow.c_str(), symbolsLocal);
+    symbolTables->emplace_back(symbolTableLocal);
+//    SymbolTable *symbolTableTmp = symbolTableNow;
+//    symbolTableNow = symbolTableLocal;
+
+    for (BlockItem *blockItem:*block->getBlockItems()) {
+        if (blockItem->getConstDecl() != nullptr || blockItem->getVarDecl() != nullptr) {
+            semanticArm7Var(blockItem, symbolsLocal);
+        } else if (blockItem->getStmt() != nullptr) {
+            semanticStmt(blockItem->getStmt(), funcRetType);
+        }
+    }
+    levelNow--;
+    symbolTables->pop_back();
+//    symbolTableNow = symbolTableTmp;
+}
 
 void Semantic::semanticArm7Var(BlockItem *blockItem, std::vector<Symbol *> *symbols) {
     if (blockItem->getConstDecl() != nullptr) {
@@ -200,78 +271,6 @@ void Semantic::semanticArm7Var(BlockItem *blockItem, std::vector<Symbol *> *symb
             symbols->emplace_back(symbol);
         }  // end varDefs
     }
-}
-
-Arm7Func *Semantic::semanticArm7Func(FuncDef *funcDef) {
-    auto *params = new std::vector<Arm7Var *>();
-    funcNameNow = funcDef->getIdent();
-    levelNow++;
-    /// 因为每次分配空间时，capacity 都会提前减，这里应该是sp当前实际位置-4
-    capacity = (PUSH_NUM_DEFAULT-1) * -4;
-
-    if (funcDef->getFuncFParams() != nullptr) {
-        for (int i = 0; i < funcDef->getFuncFParams()->getFuncFParams()->size(); i++) {
-            FuncFParam *funcFParam = funcDef->getFuncFParams()->getFuncFParams()->at(i);
-            Arm7Var *arm7Var;
-            if (funcFParam->getBType() == TYPE_INT) {  // 变量
-                arm7Var = new Arm7Var(funcFParam->getIdent().c_str(), funcNameNow.c_str(),
-                                      funcFParam->getBType(), levelNow,
-                                      CONST_FALSE, ARRAY_FALSE, nullptr, nullptr);
-
-            } else if (funcFParam->getBType() == TYPE_INT_STAR) {  // 数组 （第一维为空）
-                auto *subs = new std::vector<int>();
-                for (Exp *exp: *funcFParam->getExps()) {
-                    subs->push_back(calAddExp(exp->getAddExp()));
-                }
-                arm7Var = new Arm7Var(funcFParam->getIdent().c_str(), funcNameNow.c_str(),
-                                      funcFParam->getBType(), levelNow,
-                                      CONST_FALSE, ARRAY_TRUE, subs, nullptr);
-            } else {
-                Error::errorSim("something wrong in semanticArm7Func funcFParam->getBType()");
-                exit(-1);
-            }
-            if (i >= 4) {
-                capacity -= 4;  /// 由于所存为引用变量，此处无论参数类型均分配四字节数
-                arm7Var->setMemoryLoc(capacity);
-            } else {
-                arm7Var->setMemoryLoc((i - 3) * 4);
-            }
-            params->emplace_back(arm7Var);
-        }
-    }
-    funcParamNow = params;
-
-    semanticBlock(funcDef->getBlock(), funcDef->getFuncType(), params);
-
-    levelNow--;
-    funcParamNow = nullptr;
-    auto *arm7Func = new Arm7Func(funcNameNow.c_str(), funcDef->getFuncType(), params);
-    arm7Func->setCapacity(capacity);
-    return arm7Func;
-}
-
-///===-----------------------------------------------------------------------===///
-/// Stmt 语句
-///===-----------------------------------------------------------------------===///
-
-void Semantic::semanticBlock(Block *block, int funcRetType, std::vector<Arm7Var *> *params) {
-    levelNow++;
-    auto *symbolsLocal = new std::vector<Symbol *>();
-    auto *symbolTableLocal = new SymbolTable(SYMBOL_TABLE_LOCAL, funcNameNow.c_str(), symbolsLocal);
-    symbolTables->emplace_back(symbolTableLocal);
-//    SymbolTable *symbolTableTmp = symbolTableNow;
-//    symbolTableNow = symbolTableLocal;
-
-    for (BlockItem *blockItem:*block->getBlockItems()) {
-        if (blockItem->getConstDecl() != nullptr || blockItem->getVarDecl() != nullptr) {
-            semanticArm7Var(blockItem, symbolsLocal);
-        } else if (blockItem->getStmt() != nullptr) {
-            semanticStmt(blockItem->getStmt(), funcRetType);
-        }
-    }
-    levelNow--;
-    symbolTables->pop_back();
-//    symbolTableNow = symbolTableTmp;
 }
 
 void Semantic::semanticStmt(Stmt *stmt, int funcRetType) {

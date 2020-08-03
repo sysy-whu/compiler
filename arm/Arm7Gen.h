@@ -35,20 +35,20 @@ private:
     ///===-----------------------------------------------------------------------===///
     /// 基本声明定义
     ///===-----------------------------------------------------------------------===///
+    void genArm7Func(FuncDef *funcDef, std::vector<ArmBlock *> *armBlocks);
 
-//    void genArm7Var(Decl *decl, std::vector<ArmGlobal *> *armGlobals);
-
+    ///===-----------------------------------------------------------------------===///
+    /// 语句块中声明语句
+    ///===-----------------------------------------------------------------------===///
     void genArm7Var(BlockItem *blockItem, std::vector<ArmStmt *> *armStmts);
 
     void genVar(VarDef *varDef, std::vector<ArmStmt *> *armStmts);
 
-    void genConstVar(ConstDef *constDef,  std::vector<ArmStmt *> *armStmts);
+    void genConstVar(ConstDef *constDef, std::vector<ArmStmt *> *armStmts);
 
     void genVarArray(VarDef *varDef, std::vector<ArmStmt *> *armStmts);
 
-    void genConstVarArray(ConstDef *constDef,  std::vector<ArmStmt *> *armStmts);
-
-    void genArm7Func(FuncDef *funcDef, std::vector<ArmBlock *> *armBlocks);
+    void genConstVarArray(ConstDef *constDef, std::vector<ArmStmt *> *armStmts);
 
     ///===-----------------------------------------------------------------------===///
     /// 语句、语句块

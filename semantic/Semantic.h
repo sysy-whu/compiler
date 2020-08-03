@@ -31,15 +31,17 @@ private:
     ///===-----------------------------------------------------------------------===///
     /// 分析 ast 得到符号表相关内容
     ///===-----------------------------------------------------------------------===///
+    /// 给全局变量地址分配用
     void semanticArm7Var(Decl *decl, std::vector<Symbol *> *symbols);
-
-    void semanticArm7Var(BlockItem *blockItem, std::vector<Symbol *> *symbols);
-
+    /// 内含参数变量地址分配
     Arm7Func *semanticArm7Func(FuncDef *funcDef);
 
     ///===-----------------------------------------------------------------------===///
     /// Stmt 语句
     ///===-----------------------------------------------------------------------===///
+    /// 给局部变量地址分配用
+    void semanticArm7Var(BlockItem *blockItem, std::vector<Symbol *> *symbols);
+
     void semanticBlock(Block *block, int funcRetType, std::vector<Arm7Var *> *params);
 
     void semanticStmt(Stmt *stmt, int funcRetType);

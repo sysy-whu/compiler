@@ -49,139 +49,6 @@ void Arm7Gen::startGen(AST *ast_, std::vector<SymbolTable *> *symbolTables_) {
 /// 基本声明定义
 ///===-----------------------------------------------------------------------===///
 
-//void Arm7Gen::genArm7Var(Decl *decl, std::vector<ArmGlobal *> *armGlobals) {
-//    ArmGlobal *armGlobal = nullptr;
-//
-//
-//}
-
-void Arm7Gen::genVar(VarDef *varDef, std::vector<ArmStmt *> *armStmts) {
-    if (varDef->getInitVal() != nullptr) {
-        ///	str rRX, [fp, #-LOC]
-        auto *rReg = genAddExp(varDef->getInitVal()->getExp()->getAddExp(), armStmts);
-        auto *armSTRStmt = new ArmStmt(ARM_STMT_STR, rReg->getRegName().c_str(),
-                                       ("[fp, #" + std::to_string(varDef->getBaseMemoryPos()) + "]").c_str());
-        armStmts->emplace_back(armSTRStmt);
-    }
-}
-
-void Arm7Gen::genConstVar(ConstDef *constDef, std::vector<ArmStmt *> *armStmts) {
-    int value = GLOBAL_DEFAULT_VALUE;
-    if (constDef->getConstInitVal() != nullptr) {
-        value = calConstExp(constDef->getConstInitVal()->getConstExp());
-    }
-
-    ///	mov	rX, #CONST_VALUE
-    ///	str	rX, [fp, #-LOC]
-    ArmReg *armReg = armRegManager->getFreeArmReg(armStmts);
-    auto *armStmtMove = new ArmStmt(ARM_STMT_MOVE, armReg->getRegName().c_str(),
-                                    ("#" + std::to_string(value)).c_str());
-    auto *armStmtStr = new ArmStmt(ARM_STMT_STR, armReg->getRegName().c_str(),
-                                   ("[fp, #" + std::to_string(constDef->getBaseMemoryPos()) + "]").c_str());
-    armStmts->emplace_back(armStmtMove);
-    armStmts->emplace_back(armStmtStr);
-}
-
-void Arm7Gen::genVarArray(VarDef *varDef, std::vector<ArmStmt *> *armStmts) {
-    // sub 相关
-    auto *subs = new std::vector<int>();
-    int len = 1;
-    for (ConstExp *constExp:*varDef->getConstExps()) {
-        int sub = calConstExp(constExp);
-        len *= sub;
-        subs->push_back(sub);
-    }
-
-    // value 相关
-    auto *values = new std::vector<Exp *>();
-    if (varDef->getInitVal() != nullptr) {
-        values = genVarArrayInitVals(varDef->getInitVal(), subs, armStmts);
-    } else {
-        for (int i = 0; i < len; i++) {
-            // addExp null 表 DEFAULT_VALUE
-            auto *exp = new Exp(nullptr);
-            values->push_back(exp);
-        }
-    }
-
-    // arm 相关
-    auto *armAssignStmts = new std::vector<ArmStmt *>();
-    for (int i = 0; i < len; i++) {
-        int subPosNow = varDef->getBaseMemoryPos() - i * 4;
-        if (values->at(i)->getAddExp() == nullptr) {
-            ///	mov	rX, #CONST_VALUE
-            ///	str	rX, [fp, #-LOC]
-            ArmReg *armReg = armRegManager->getFreeArmReg(armStmts);
-            auto *armStmtMove = new ArmStmt(ARM_STMT_MOVE, armReg->getRegName().c_str(),
-                                            ("#" + std::to_string(GLOBAL_DEFAULT_VALUE)).c_str());
-            auto *armStmtStr = new ArmStmt(ARM_STMT_STR, armReg->getRegName().c_str(),
-                                           ("[fp, #" + std::to_string(subPosNow) + "]").c_str());
-            armAssignStmts->emplace_back(armStmtMove);
-            armAssignStmts->emplace_back(armStmtStr);
-        } else {
-            ///	str rRX, [fp, #-LOC]
-            auto *rReg = genAddExp(varDef->getInitVal()->getExp()->getAddExp(), armStmts);
-            auto *armSTRStmt = new ArmStmt(ARM_STMT_STR, rReg->getRegName().c_str(),
-                                           ("[fp, #" + std::to_string(subPosNow) + "]").c_str());
-            armStmts->emplace_back(armSTRStmt);
-        }
-    }
-}
-
-void Arm7Gen::genConstVarArray(ConstDef *constDef, std::vector<ArmStmt *> *armStmts) {
-    // sub 相关
-    auto *subs = new std::vector<int>();
-    int len = 1;
-    for (ConstExp *constExp:*constDef->getConstExps()) {
-        int sub = calConstExp(constExp);
-        len *= sub;
-        subs->push_back(sub);
-    }
-
-    // value 相关
-    auto *values = new std::vector<int>();
-    if (constDef->getConstInitVal() != nullptr) {
-        values = calConstArrayInitVals(constDef->getConstInitVal(), subs);
-    } else {
-        for (int i = 0; i < len; i++) {
-            values->push_back(GLOBAL_DEFAULT_VALUE);
-        }
-    }
-
-    // arm
-    ArmReg *armReg = armRegManager->getFreeArmReg(armStmts);
-    for (int i = 0; i < len; i++) {
-        int subPosNow = constDef->getBaseMemoryPos() - i * 4;
-        ///	mov	rX, #SUB_VALUE
-        ///	str	rX, [fp, #-LOC]
-        auto *armStmtMove = new ArmStmt(ARM_STMT_MOVE, armReg->getRegName().c_str(),
-                                        ("#" + std::to_string(values->at(i))).c_str());
-        auto *armStmtStr = new ArmStmt(ARM_STMT_STR, armReg->getRegName().c_str(),
-                                       ("[fp, #" + std::to_string(subPosNow) + "]").c_str());
-        armStmts->emplace_back(armStmtMove);
-        armStmts->emplace_back(armStmtStr);
-    }
-}
-
-void Arm7Gen::genArm7Var(BlockItem *blockItem, std::vector<ArmStmt *> *armStmts) {
-    if (blockItem->getConstDecl() != nullptr) {
-        for (ConstDef *constDef:*blockItem->getConstDecl()->getConstDefs()) {
-            if (constDef->getConstExps()->empty()) {
-                genConstVar(constDef, armStmts);
-            } else {
-                genConstVarArray(constDef, armStmts);
-            }
-        }
-    } else if (blockItem->getVarDecl() != nullptr) {
-        for (VarDef *varDef: *blockItem->getVarDecl()->getVarDefs()) {
-            if (varDef->getConstExps()->empty()) {
-                genVar(varDef, armStmts);
-            } else {
-                genVarArray(varDef, armStmts);
-            }
-        }
-    }
-}
 
 void Arm7Gen::genArm7Func(FuncDef *funcDef, std::vector<ArmBlock *> *armBlocks) {
     funcNameNow = funcDef->getIdent();
@@ -233,6 +100,141 @@ void Arm7Gen::genArm7Func(FuncDef *funcDef, std::vector<ArmBlock *> *armBlocks) 
 
     funcNameNow = nullptr;
     levelNow--;
+}
+
+///===-----------------------------------------------------------------------===///
+/// 语句块中声明语句
+///===-----------------------------------------------------------------------===///
+
+void Arm7Gen::genVar(VarDef *varDef, std::vector<ArmStmt *> *armStmts) {
+    /// 仅初始化时 str
+    if (varDef->getInitVal() != nullptr) {
+        ///	str rRX, [fp, #LOC]
+        auto *rReg = genAddExp(varDef->getInitVal()->getExp()->getAddExp(), armStmts);
+        auto *armSTRStmt = new ArmStmt(ARM_STMT_STR, rReg->getRegName().c_str(),
+                                       ("[fp, #" + std::to_string(varDef->getBaseMemoryPos()) + "]").c_str());
+        armStmts->emplace_back(armSTRStmt);
+    }
+}
+
+void Arm7Gen::genConstVar(ConstDef *constDef, std::vector<ArmStmt *> *armStmts) {
+    int value = GLOBAL_DEFAULT_VALUE;
+    if (constDef->getConstInitVal() != nullptr) {
+        value = calConstExp(constDef->getConstInitVal()->getConstExp());
+    }
+
+    ///	mov	rX, #CONST_VALUE
+    ///	str	rX, [fp, #LOC]
+    ArmReg *armReg = armRegManager->getFreeArmReg(armStmts);
+    auto *armStmtMove = new ArmStmt(ARM_STMT_MOVE, armReg->getRegName().c_str(),
+                                    ("#" + std::to_string(value)).c_str());
+    auto *armStmtStr = new ArmStmt(ARM_STMT_STR, armReg->getRegName().c_str(),
+                                   ("[fp, #" + std::to_string(constDef->getBaseMemoryPos()) + "]").c_str());
+    armStmts->emplace_back(armStmtMove);
+    armStmts->emplace_back(armStmtStr);
+}
+
+void Arm7Gen::genVarArray(VarDef *varDef, std::vector<ArmStmt *> *armStmts) {
+    // sub 相关
+    auto *subs = new std::vector<int>();
+    int len = 1;
+    for (ConstExp *constExp:*varDef->getConstExps()) {
+        int sub = calConstExp(constExp);
+        len *= sub;
+        subs->push_back(sub);
+    }
+
+    // value arm 相关
+    if (varDef->getInitVal() != nullptr) {
+        for (int i = 0; i < len;) {
+            int subPosNow = varDef->getBaseMemoryPos() + i;
+            ///	str rRX, [fp, #SUB_LOC]
+            auto *rReg = genAddExp(varDef->getInitVal()->getExp()->getAddExp(), armStmts);
+            auto *armSTRStmt = new ArmStmt(ARM_STMT_STR, rReg->getRegName().c_str(),
+                                           ("[fp, #" + std::to_string(subPosNow) + "]").c_str());
+            armStmts->emplace_back(armSTRStmt);
+            i += 4;
+        }
+    } else {
+        ArmReg *armReg = armRegManager->getFreeArmReg(armStmts);
+        ///	mov	rX, #GLOBAL_DEFAULT_VALUE <--> 0
+        auto *armStmtMove = new ArmStmt(ARM_STMT_MOVE, armReg->getRegName().c_str(),
+                                        ("#" + std::to_string(GLOBAL_DEFAULT_VALUE)).c_str());
+        armStmts->emplace_back(armStmtMove);
+        for (int i = 0; i < 4 * len;) {
+            int subPosNow = varDef->getBaseMemoryPos() + i;
+            ///	str	rX, [fp, #SUB_LOC]
+            auto *armStmtStr = new ArmStmt(ARM_STMT_STR, armReg->getRegName().c_str(),
+                                           ("[fp, #" + std::to_string(subPosNow) + "]").c_str());
+            armStmts->emplace_back(armStmtStr);
+            i += 4;
+        }
+    }
+
+
+}
+
+void Arm7Gen::genConstVarArray(ConstDef *constDef, std::vector<ArmStmt *> *armStmts) {
+    // sub 相关
+    auto *subs = new std::vector<int>();
+    int len = 1;
+    for (ConstExp *constExp:*constDef->getConstExps()) {
+        int sub = calConstExp(constExp);
+        len *= sub;
+        subs->push_back(sub);
+    }
+
+    // value arm 相关
+    if (constDef->getConstInitVal() != nullptr) {
+        auto *values = calConstArrayInitVals(constDef->getConstInitVal(), subs);
+        ArmReg *armReg = armRegManager->getFreeArmReg(armStmts);
+        for (int i = 0; i < 4 * len;) {
+            int subPosNow = constDef->getBaseMemoryPos() + i;
+            ///	mov	rX, #SUB_VALUE
+            ///	str	rX, [fp, #SUB_LOC]
+            auto *armStmtMove = new ArmStmt(ARM_STMT_MOVE, armReg->getRegName().c_str(),
+                                            ("#" + std::to_string(values->at(i))).c_str());
+            auto *armStmtStr = new ArmStmt(ARM_STMT_STR, armReg->getRegName().c_str(),
+                                           ("[fp, #" + std::to_string(subPosNow) + "]").c_str());
+            armStmts->emplace_back(armStmtMove);
+            armStmts->emplace_back(armStmtStr);
+            i += 4;
+        }
+    } else {
+        ArmReg *armReg = armRegManager->getFreeArmReg(armStmts);
+        ///	mov	rX, #GLOBAL_DEFAULT_VALUE <--> 0
+        auto *armStmtMove = new ArmStmt(ARM_STMT_MOVE, armReg->getRegName().c_str(),
+                                        ("#" + std::to_string(GLOBAL_DEFAULT_VALUE)).c_str());
+        armStmts->emplace_back(armStmtMove);
+        for (int i = 0; i < 4 * len;) {
+            int subPosNow = constDef->getBaseMemoryPos() + i;
+            ///	str	rX, [fp, #SUB_LOC]
+            auto *armStmtStr = new ArmStmt(ARM_STMT_STR, armReg->getRegName().c_str(),
+                                           ("[fp, #" + std::to_string(subPosNow) + "]").c_str());
+            armStmts->emplace_back(armStmtStr);
+            i += 4;
+        }
+    }
+}
+
+void Arm7Gen::genArm7Var(BlockItem *blockItem, std::vector<ArmStmt *> *armStmts) {
+    if (blockItem->getConstDecl() != nullptr) {
+        for (ConstDef *constDef:*blockItem->getConstDecl()->getConstDefs()) {
+            if (constDef->getConstExps()->empty()) {
+                genConstVar(constDef, armStmts);
+            } else {
+                genConstVarArray(constDef, armStmts);
+            }
+        }
+    } else if (blockItem->getVarDecl() != nullptr) {
+        for (VarDef *varDef: *blockItem->getVarDecl()->getVarDefs()) {
+            if (varDef->getConstExps()->empty()) {
+                genVar(varDef, armStmts);
+            } else {
+                genVarArray(varDef, armStmts);
+            }
+        }
+    }
 }
 
 ///===-----------------------------------------------------------------------===///
