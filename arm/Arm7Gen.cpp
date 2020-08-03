@@ -360,6 +360,9 @@ ArmReg *Arm7Gen::genMulExp(MulExp *mulExp, std::vector<ArmStmt *> *ArmStmts) {
         ArmStmts->emplace_back(armAddStmt);
 
         return armRegRet;
+    }else{
+        /// TODO
+        return nullptr;
     }
 }
 

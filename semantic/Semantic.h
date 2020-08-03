@@ -18,7 +18,7 @@ private:
     /// 当前函数形参参数表，用以变量查找
     std::vector<Arm7Var *> *funcParamNow;
     /// 当前符号表，用以检查复杂 level 下的变量查找
-    SymbolTable *symbolTableNow;
+//    SymbolTable *symbolTableNow;
     /// 局部变量内存分配用，semanticFunc 结束后，会赋给 Arm7Func
     int capacity;
 
