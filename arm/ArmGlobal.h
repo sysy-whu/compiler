@@ -30,6 +30,8 @@ public:
     [[nodiscard]] std::vector<ArmGlobal *> *getArmGlobals() const {
         return armGlobals;
     }
+
+    std::string genString();
 };
 
 class ArmGlobal {
@@ -54,6 +56,8 @@ public:
     [[nodiscard]] Arm7GlobalFunc *getArm7GlobalFunc() const {
         return arm7GlobalFunc;
     }
+
+    std::string genString();
 };
 
 class Arm7GlobalVar {
@@ -118,6 +122,8 @@ public:
     void setValue(std::vector<int> *value_) {
         Arm7GlobalVar::value = value_;
     }
+
+    std::string genString();
 };
 
 class Arm7GlobalFunc {
@@ -143,6 +149,7 @@ public:
         return armBlocks;
     }
 
+    std::string genString();
 };
 
 #endif //COMPILER_ARMGLOBAL_H
