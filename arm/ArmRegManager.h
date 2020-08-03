@@ -22,7 +22,9 @@ public:
 
     ArmReg *getFreeArmReg(std::vector<ArmStmt *> *armStmts);
 
-    void freeAllArmReg();
+    void freeAllArmReg( std::vector<ArmStmt *> *ArmStmts);
+
+    void freeOneArmReg(int i,  std::vector<ArmStmt *> *ArmStmts);
 
     void pushOneArmReg(int i, std::vector<ArmStmt *> *ArmStmts);
 
@@ -48,6 +50,7 @@ private:
 
     int newNum;
     /// 仅在已有某个寄存器存了二元运算临时结果，需要一个新寄存器时有效。同一时刻有且只有可能一个寄存器 ifLock 为真
+    /// 0804更新，函数传参时，最多要使用四个寄存器，则存在锁三个寄存器的情况
     int ifLock;
 
 public:

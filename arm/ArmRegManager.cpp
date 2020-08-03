@@ -13,19 +13,16 @@ ArmRegManager::ArmRegManager() {
 
 /// 按照 最先分配最先释放 来分配新寄存器
 ArmReg *ArmRegManager::getFreeArmReg(std::vector<ArmStmt *> *armStmts) {
-    ArmReg *armRegRet = nullptr;
-    if (ArmRegManager::armRegs->at(0)->getIfLock() == ARM_REG_LOCK_FALSE) {
-        armRegRet = ArmRegManager::armRegs->at(0);
-    } else {
-        armRegRet = ArmRegManager::armRegs->at(1);
-    }
+    ArmReg *armRegRet = armRegs->at(0);
 
     for (auto &armRegI : *ArmRegManager::armRegs) {
         if (armRegI->getArm7Var() == nullptr && armRegI->getIfLock() == ARM_REG_LOCK_FALSE) {
             return armRegI;
         } else {
-            if (armRegI->getNewNum() < armRegRet->getNewNum() && armRegI->getIfLock() == ARM_REG_LOCK_FALSE) {
-                armRegRet = armRegI;
+            if (armRegI->getIfLock() == ARM_REG_LOCK_FALSE) {
+                /// if(armRegRet Locked) return armRegI; else if(armRegRet numBigger) return armRegI;
+                armRegRet = armRegRet->getIfLock() == ARM_REG_LOCK_TRUE ? armRegI :
+                            armRegI->getNewNum() < armRegRet->getNewNum() ? armRegI : armRegRet;
             }
         }
     }
@@ -61,24 +58,40 @@ void ArmRegManager::setArmRegs(std::vector<ArmReg *> *armRegs_) {
     ArmRegManager::armRegs = armRegs_;
 }
 
-void ArmRegManager::freeAllArmReg() {
-    for(auto *armReg: *armRegs){
-        armReg->setArm7Var(nullptr);
+void ArmRegManager::freeAllArmReg(std::vector<ArmStmt *> *ArmStmts) {
+    for (auto *armReg: *armRegs) {
+        if (armReg->getArm7Var() != nullptr) {
+            auto *armSTRStmt =
+                    new ArmStmt(ARM_STMT_STR, armReg->getRegName().c_str(),
+                                ("[fp, #" + std::to_string(armReg->getArm7Var()->getMemoryLoc()) + "]").c_str());
+            ArmStmts->emplace_back(armSTRStmt);
+            armReg->setArm7Var(nullptr);
+        }
     }
 }
 
 void ArmRegManager::pushOneArmReg(int i, std::vector<ArmStmt *> *ArmStmts) {
-    if(armRegs->at(i)->getArm7Var() != nullptr){
+    if (armRegs->at(i)->getArm7Var() != nullptr) {
         /// push {rI }
-        auto *pushRIStmt = new ArmStmt(ARM_STMT_PUSH, ("{r"+std::to_string(i)+" }").c_str());
+        auto *pushRIStmt = new ArmStmt(ARM_STMT_PUSH, ("{r" + std::to_string(i) + " }").c_str());
         ArmStmts->emplace_back(pushRIStmt);
     }
 }
 
 void ArmRegManager::popOneArmReg(int i, std::vector<ArmStmt *> *ArmStmts) {
-    if(armRegs->at(i)->getArm7Var() != nullptr){
+    if (armRegs->at(i)->getArm7Var() != nullptr) {
         /// pop {rI }
-        auto *popRIStmt = new ArmStmt(ARM_STMT_POP, ("{r"+std::to_string(i)+" }").c_str());
+        auto *popRIStmt = new ArmStmt(ARM_STMT_POP, ("{r" + std::to_string(i) + " }").c_str());
         ArmStmts->emplace_back(popRIStmt);
+    }
+}
+
+void ArmRegManager::freeOneArmReg(int i, std::vector<ArmStmt *> *ArmStmts) {
+    if (armRegs->at(i)->getArm7Var() != nullptr) {
+        auto *armSTRStmt =
+                new ArmStmt(ARM_STMT_STR, armRegs->at(i)->getRegName().c_str(),
+                            ("[fp, #" + std::to_string(armRegs->at(i)->getArm7Var()->getMemoryLoc()) + "]").c_str());
+        ArmStmts->emplace_back(armSTRStmt);
+        armRegs->at(i)->setArm7Var(nullptr);
     }
 }

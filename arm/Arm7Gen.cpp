@@ -373,7 +373,7 @@ ArmReg *Arm7Gen::genMulExp(MulExp *mulExp, std::vector<ArmStmt *> *ArmStmts) {
             /// 而若是调用系统库函数，可能会毁了我们的寄存器现场状态。并考虑到运算多时提前push/pop全会得不偿失。
 
             /// push    {r0,? r1,? r2,? r3}
-            for(int i=0;i<4;i++){
+            for (int i = 0; i < 4; i++) {
                 armRegManager->pushOneArmReg(i, ArmStmts);
             }
 
@@ -414,7 +414,7 @@ ArmReg *Arm7Gen::genMulExp(MulExp *mulExp, std::vector<ArmStmt *> *ArmStmts) {
             ArmStmts->emplace_back(movRFreeStmt);
 
             /// pop    {r0,? r1,? r2,? r3}
-            for(int i=0;i<4;i++){
+            for (int i = 0; i < 4; i++) {
                 armRegManager->popOneArmReg(i, ArmStmts);
             }
         }
@@ -430,19 +430,75 @@ ArmReg *Arm7Gen::genUnaryExp(UnaryExp *unaryExp, std::vector<ArmStmt *> *ArmStmt
             return genUnaryExp(unaryExp->getUnaryExp(), ArmStmts);
         } else if (unaryExp->getOpType() == OP_BO_SUB) {
             ArmReg *unaryArmReg = genUnaryExp(unaryExp->getUnaryExp(), ArmStmts);
-
-
+            /// 取反 rI = -rI
+            /// rsb	rI, rI, #0
+            auto *armNegStmt = new ArmStmt(ARM_STMT_RSB, unaryArmReg->getRegName().c_str(),
+                                           unaryArmReg->getRegName().c_str(), "#0");
+            ArmStmts->emplace_back(armNegStmt);
+            return unaryArmReg;
         } else if (unaryExp->getOpType() == OP_UO_NOT) {
-
+            /// TODO fix when condExp
+            return nullptr;
         }
+        return nullptr;
     } else {
+        /// 函数调用 有参数
+        /// 万法归宗之 LVal 永存真实地址->则无论参数数组还是局部数组,永远先ldr再add好了
+        /// 注意此处要求，局部数组声明时。
+        if (unaryExp->getFuncRParams() != nullptr) {
+            auto *exps = unaryExp->getFuncRParams()->getExps();
+            if (exps->size() >= 4) {
+                /// sub sp sp #exps->size()*4-16
+                auto *armSPStmt = new ArmStmt(ARM_STMT_SUB, "sp", "sp",
+                                              ("#" + std::to_string(exps->size() * 4 - 16)).c_str());
+                ArmStmts->emplace_back(armSPStmt);
 
+                for (int i = 4; i < exps->size(); i++) {
+                    auto *armRagParam = genAddExp(exps->at(i)->getAddExp(), ArmStmts);
+                    /// str  rX  [sp, #i*4-12]
+                    auto *armStrStmt = new ArmStmt(ARM_STMT_STR, armRagParam->getRegName().c_str(),
+                                                   ("[sp, #" + std::to_string(i * 4 - 12) + "]").c_str());
+                    ArmStmts->emplace_back(armStrStmt);
+                }
+            }
+            for (int i = 0; i < 4; i++) {
+                auto *armRegParam = genAddExp(exps->at(i)->getAddExp(), ArmStmts);
+                if (armRegParam->getRegName() != "r" + std::to_string(i)) {
+                    /// 释放寄存器并锁定不再分配
+                    armRegManager->freeOneArmReg(i, ArmStmts);
+                    armRegParam->setIfLock(ARM_REG_LOCK_TRUE);
+                    /// mov  rI   aParam
+                    auto *armMovStmt = new ArmStmt(ARM_STMT_MOV, ("r" + std::to_string(i)).c_str(),
+                                                   armRegParam->getRegName().c_str());
+                    ArmStmts->emplace_back(armMovStmt);
+                }
+            }
+            for (int i = 0; i < 4; i++) {
+                armRegManager->getArmRegs()->at(i)->setIfLock(ARM_REG_LOCK_FALSE);
+            }
+        }
+
+        /// bl funcName
+        auto *blFuncStmt = new ArmStmt(ARM_STMT_BL, unaryExp->getIdent().c_str());
+        ArmStmts->emplace_back(blFuncStmt);
+        /// 返回 r0 寄存器
+        return armRegManager->getArmRegs()->at(0);
     }
-    return nullptr;
 }
 
 ArmReg *Arm7Gen::genPrimaryExp(PrimaryExp *primaryExp, std::vector<ArmStmt *> *ArmStmts) {
-    return nullptr;
+    if (primaryExp->getExp() != nullptr) {
+        return genAddExp(primaryExp->getExp()->getAddExp(), ArmStmts);
+    } else if (primaryExp->getLVal() != nullptr) {
+        return genLVal(primaryExp->getLVal(), ArmStmts);
+    } else {
+        auto *armDegNum = armRegManager->getFreeArmReg(ArmStmts);
+        /// mov rX #NUMBER
+        auto *armMovStmt = new ArmStmt(ARM_STMT_MOV, armDegNum->getRegName().c_str(),
+                                       ("#" + std::to_string(primaryExp->getNumber())).c_str());
+        ArmStmts->emplace_back(armMovStmt);
+        return armDegNum;
+    }
 }
 
 ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts) {
