@@ -11,7 +11,7 @@ Semantic::Semantic() {
 
     levelNow = 0;
     funcParamNow = nullptr;
-    capacity = PUSH_NUM_DEFAULT * 4;
+    capacity = (PUSH_NUM_DEFAULT-1) * -4;
 //    symbolTableNow = nullptr;
 }
 
@@ -131,7 +131,7 @@ void Semantic::semanticArm7Var(BlockItem *blockItem, std::vector<Symbol *> *symb
                                       blockItem->getConstDecl()->getBType(), levelNow,
                                       CONST_TRUE, ARRAY_FALSE, nullptr, values);
 
-                capacity += 4;
+                capacity -= 4;
                 arm7Var->setMemoryLoc(capacity);
                 constDef->setBaseMemoryPos(capacity);
 //                constDef->setBaseMemoryPos(("[fp, #"+std::to_string(capacity)+"]").c_str());
@@ -148,7 +148,7 @@ void Semantic::semanticArm7Var(BlockItem *blockItem, std::vector<Symbol *> *symb
                                       blockItem->getConstDecl()->getBType(), levelNow,
                                       CONST_TRUE, ARRAY_TRUE, subs, values);
 
-                capacity += len * 4;
+                capacity -= len * 4;
                 arm7Var->setMemoryLoc(capacity);
                 constDef->setBaseMemoryPos(capacity);
 //                constDef->setBaseMemoryPos(("[fp, #"+std::to_string(capacity)+"]").c_str());
@@ -174,7 +174,7 @@ void Semantic::semanticArm7Var(BlockItem *blockItem, std::vector<Symbol *> *symb
                                           CONST_FALSE, ARRAY_FALSE, nullptr, nullptr);
                 }
 
-                capacity += 4;
+                capacity -= 4;
                 arm7Var->setMemoryLoc(capacity);
                 varDef->setBaseMemoryPos(capacity);
 //                varDef->setBaseMemoryPos(("[fp, #"+std::to_string(capacity)+"]").c_str());
@@ -191,7 +191,7 @@ void Semantic::semanticArm7Var(BlockItem *blockItem, std::vector<Symbol *> *symb
                 arm7Var = new Arm7Var(varDef->getIdent().c_str(), funcNameNow.c_str(),
                                       blockItem->getVarDecl()->getBType(), levelNow,
                                       CONST_FALSE, ARRAY_TRUE, subs, nullptr, varDef->getInitVal());
-                capacity += len * 4;
+                capacity -= len * 4;
                 arm7Var->setMemoryLoc(capacity);
                 varDef->setBaseMemoryPos(capacity);
 //                varDef->setBaseMemoryPos(("[fp, #"+std::to_string(capacity)+"]").c_str());
@@ -206,10 +206,12 @@ Arm7Func *Semantic::semanticArm7Func(FuncDef *funcDef) {
     auto *params = new std::vector<Arm7Var *>();
     funcNameNow = funcDef->getIdent();
     levelNow++;
-    capacity = PUSH_NUM_DEFAULT * 4;
+    /// 因为每次分配空间时，capacity 都会提前减，这里应该是sp当前实际位置-4
+    capacity = (PUSH_NUM_DEFAULT-1) * -4;
 
     if (funcDef->getFuncFParams() != nullptr) {
-        for (FuncFParam *funcFParam: *funcDef->getFuncFParams()->getFuncFParams()) {
+        for (int i = 0; i < funcDef->getFuncFParams()->getFuncFParams()->size(); i++) {
+            FuncFParam *funcFParam = funcDef->getFuncFParams()->getFuncFParams()->at(i);
             Arm7Var *arm7Var;
             if (funcFParam->getBType() == TYPE_INT) {  // 变量
                 arm7Var = new Arm7Var(funcFParam->getIdent().c_str(), funcNameNow.c_str(),
@@ -228,8 +230,12 @@ Arm7Func *Semantic::semanticArm7Func(FuncDef *funcDef) {
                 Error::errorSim("something wrong in semanticArm7Func funcFParam->getBType()");
                 exit(-1);
             }
-            capacity += 4;  /// 由于所存为引用变量，此处无论参数类型均分配四字节数
-            arm7Var->setMemoryLoc(capacity);
+            if (i >= 4) {
+                capacity -= 4;  /// 由于所存为引用变量，此处无论参数类型均分配四字节数
+                arm7Var->setMemoryLoc(capacity);
+            } else {
+                arm7Var->setMemoryLoc((i - 3) * 4);
+            }
             params->emplace_back(arm7Var);
         }
     }

@@ -20,6 +20,7 @@ private:
     /// 当前符号表，用以检查复杂 level 下的变量查找
 //    SymbolTable *symbolTableNow;
     /// 局部变量内存分配用，semanticFunc 结束后，会赋给 Arm7Func
+    /// 0804 考虑到参数有#+DIGIT & #-DIGIT,不能使用正数了，要务必维持[sp, #'+/-DIGIT'] 样子
     int capacity;
 
     ///===-----------------------------------------------------------------------===///
