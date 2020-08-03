@@ -521,7 +521,7 @@ ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts) {
                 break;
             }
             case LVAL_ARRAY_PARAM_INT_STAR:
-            case LVAL_ARRAY_LOCAL_INT_STAR
+            case LVAL_ARRAY_LOCAL_INT_STAR:
             case LVAL_ARRAY_PARAM_INT: {
                 /// ldr rLVal [fp, #Loc]
                 auto *armLdrStmt = new ArmStmt(ARM_STMT_LDR, armRegLVal->getRegName().c_str(),
