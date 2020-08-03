@@ -132,6 +132,8 @@ private:
 
     std::vector<ArmBlock *> *armBlocks;
 
+    int pushLen;
+
 public:
     /**
      *
@@ -139,7 +141,7 @@ public:
      * @param armBlocks 函数代码块
      */
     Arm7GlobalFunc(const char *funcName, std::vector<ArmBlock *> *armBlocks) :
-            funcName(funcName), armBlocks(armBlocks) {};
+            funcName(funcName), armBlocks(armBlocks), pushLen(PUSH_NUM_DEFAULT * 4){};
 
     [[nodiscard]] const std::string &getFuncName() const {
         return funcName;
@@ -150,6 +152,10 @@ public:
     }
 
     std::string genString();
+
+    [[nodiscard]] int getPushLen() const;
+
+    void setPushLen(int pushLen_);
 };
 
 #endif //COMPILER_ARMGLOBAL_H

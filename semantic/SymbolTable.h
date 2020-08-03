@@ -124,14 +124,9 @@ public:
         return capacity;
     }
 
-    void addCapacityByOne() {
-        Arm7Func::capacity += 4;
+    void setCapacity(int capacity_) {
+        Arm7Func::capacity = capacity_;
     }
-
-    void addCapacityByNum(int num) {
-        Arm7Func::capacity += 4 * num;
-    }
-
 };
 
 class Arm7Var {

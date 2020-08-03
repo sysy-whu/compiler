@@ -35,4 +35,11 @@ std::string Arm7GlobalFunc::genString() {
     return re;
 }
 
+int Arm7GlobalFunc::getPushLen() const {
+    return pushLen;
+}
+
+void Arm7GlobalFunc::setPushLen(int pushLen_) {
+    Arm7GlobalFunc::pushLen = pushLen_;
+}
 

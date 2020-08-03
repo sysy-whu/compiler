@@ -154,11 +154,13 @@ static const int ARRAY_FALSE = 0;
 
 
 static const std::string GLOBAL_VAR_NO_FUNC = "0NoFunc";
-static const std::string LOCAL_ARRAY = "0LOCAL_ARRAY";
 static const int GLOBAL_VAR_POS = -1;
 static const int LOCAL_VAR_POS = -2;
 
 static const std::string LVAL_VAR_POS_DEFAULT = "#-1";
+
+/// push {fp, lr}
+static const int PUSH_NUM_DEFAULT = 2;
 
 static const int ARM_STMT_STR = -1;
 static const int ARM_STMT_LDR = -2;

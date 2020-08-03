@@ -3,6 +3,7 @@
 #include "util/Util.h"
 #include "util/MyConstants.h"
 #include "semantic/Semantic.h"
+#include "arm/Arm7Gen.h"
 
 
 // Run->Edit Configurations->Program arguments
@@ -14,6 +15,11 @@ int main(int argc, char **argv) {
     }
     Semantic semantic;
     semantic.startSemantic();
+
+    Arm7Gen arm7Gen;
+    arm7Gen.startGen(semantic.getAST(), semantic.getSymbolTable());
+
+
 
     // 移步 semantic 构造方法
     //    Parse parse;

@@ -107,6 +107,10 @@ public:
 
     void startSemantic();
 
+    AST *getAST() { return ast; }
+
+    std::vector<SymbolTable *> *getSymbolTable() { return symbolTables; }
+
 };
 
 
