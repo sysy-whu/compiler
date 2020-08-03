@@ -156,6 +156,14 @@ static const int ARRAY_FALSE = 0;
 static const std::string GLOBAL_VAR_NO_FUNC = "0NoFunc";
 static const int GLOBAL_VAR_POS = -1;
 static const int LOCAL_VAR_POS = -2;
+static const int PARAM_VAR_POS = -3;
+
+static const int LVAL_ARRAY_GLOBAL_INT = -200;
+static const int LVAL_ARRAY_GLOBAL_INT_STAR = -201;
+static const int LVAL_ARRAY_PARAM_INT = -202;
+static const int LVAL_ARRAY_PARAM_INT_STAR = -203;
+static const int LVAL_ARRAY_LOCAL_INT = -204;
+static const int LVAL_ARRAY_LOCAL_INT_STAR = -205;
 
 static const std::string LVAL_VAR_POS_DEFAULT = "#-1";
 

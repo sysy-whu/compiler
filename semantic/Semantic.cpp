@@ -816,9 +816,11 @@ int Semantic::semanticLVal(LVal *lVal) {
                         if (symbol->getArm7Var()->getIfConst() == CONST_TRUE) {
                             lVal->setBaseMemoryPos(
                                     ("#" + std::to_string(symbol->getArm7Var()->getValue()->at(0))).c_str());
+                            lVal->setIntPos(symbol->getArm7Var()->getMemoryLoc());
                         } else {
                             lVal->setBaseMemoryPos(
                                     ("[fp, #" + std::to_string(symbol->getArm7Var()->getMemoryLoc()) + "]").c_str());
+                            lVal->setIntPos(symbol->getArm7Var()->getMemoryLoc());
                         }
 
                         return symbol->getArm7Var()->getVarType();
@@ -832,6 +834,7 @@ int Semantic::semanticLVal(LVal *lVal) {
                 arm7Var->getIfArray() == ARRAY_FALSE) {
 
                 lVal->setBaseMemoryPos(("[fp, #" + std::to_string(arm7Var->getMemoryLoc()) + "]").c_str());
+                lVal->setIntPos(arm7Var->getMemoryLoc());
                 return arm7Var->getVarType();
             }
         }
@@ -843,11 +846,13 @@ int Semantic::semanticLVal(LVal *lVal) {
 
                 if (symbol->getArm7Var()->getIfConst() == CONST_TRUE) {
                     lVal->setBaseMemoryPos(("#" + std::to_string(symbol->getArm7Var()->getValue()->at(0))).c_str());
+                    lVal->setIntPos(symbol->getArm7Var()->getMemoryLoc());
                 } else {
                     /// TODO 全部变量需要
                     /// 	movw	r0, #:lower16: globalVarName
                     /// 	movt	r0, #:upper16: globalVarName
                     lVal->setBaseMemoryPos((std::to_string(symbol->getArm7Var()->getMemoryLoc()).c_str()));
+                    lVal->setIntPos(symbol->getArm7Var()->getMemoryLoc());
 
                 }
                 return symbol->getArm7Var()->getVarType();
@@ -880,12 +885,16 @@ int Semantic::semanticLVal(LVal *lVal) {
                         symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
                         symbol->getArm7Var()->getIfArray() == ARRAY_TRUE) {
 
-                        /// TODO 局部变量
+                        /// 局部变量
                         lVal->setBaseMemoryPos(
                                 ("[fp, #" + std::to_string(symbol->getArm7Var()->getMemoryLoc()) + "]").c_str());
+                        lVal->setIntPos(symbol->getArm7Var()->getMemoryLoc());
+                        lVal->setSubs(symbol->getArm7Var()->getSubs());
                         if (lVal->getExps()->size() == symbol->getArm7Var()->getSubs()->size()) {
+                            lVal->setType(LVAL_ARRAY_LOCAL_INT);
                             return symbol->getArm7Var()->getVarType();
                         } else {
+                            lVal->setType(LVAL_ARRAY_LOCAL_INT_STAR);
                             return TYPE_INT_STAR;
                         }
                     }
@@ -896,12 +905,16 @@ int Semantic::semanticLVal(LVal *lVal) {
         for (Arm7Var *arm7Var: *funcParamNow) {
             if (arm7Var->getIdent() == lVal->getIdent() &&
                 arm7Var->getIfArray() == ARRAY_TRUE) {
-                /// TODO 引用类型实参
+                /// 引用类型实参
 
                 lVal->setBaseMemoryPos(("[fp, #" + std::to_string(arm7Var->getMemoryLoc()) + "]").c_str());
+                lVal->setIntPos(arm7Var->getMemoryLoc());
+                lVal->setSubs(arm7Var->getSubs());
                 if (lVal->getExps()->size() == arm7Var->getSubs()->size() + 1) {  // 形参不写第一维
+                    lVal->setType(LVAL_ARRAY_PARAM_INT);
                     return arm7Var->getVarType();
                 } else {
+                    lVal->setType(LVAL_ARRAY_PARAM_INT_STAR);
                     return TYPE_INT_STAR;
                 }
             }
@@ -911,14 +924,18 @@ int Semantic::semanticLVal(LVal *lVal) {
             if (symbol->getArm7Var() != nullptr &&
                 symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
                 symbol->getArm7Var()->getIfArray() == ARRAY_TRUE) {
-                /// TODO 全局变量
+                /// 全局变量
                 ///     全部变量实际上靠变量名索引
                 /// 	movw	r0, #:lower16: globalVarArrayName
                 /// 	movt	r0, #:upper16: globalVarArrayName
-                lVal->setBaseMemoryPos((std::to_string(symbol->getArm7Var()->getMemoryLoc()).c_str()));
+                lVal->setBaseMemoryPos(lVal->getIdent().c_str());
+                lVal->setIntPos(symbol->getArm7Var()->getMemoryLoc());
+                lVal->setSubs(symbol->getArm7Var()->getSubs());
                 if (lVal->getExps()->size() == symbol->getArm7Var()->getSubs()->size()) {
+                    lVal->setType(LVAL_ARRAY_GLOBAL_INT);
                     return symbol->getArm7Var()->getVarType();
                 } else {
+                    lVal->setType(LVAL_ARRAY_GLOBAL_INT_STAR);
                     return TYPE_INT_STAR;
                 }
             }

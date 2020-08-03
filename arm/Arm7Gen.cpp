@@ -502,7 +502,46 @@ ArmReg *Arm7Gen::genPrimaryExp(PrimaryExp *primaryExp, std::vector<ArmStmt *> *A
 }
 
 ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts) {
-    return nullptr;
+    if (lVal->getExps()->empty()) {  // 整型
+        return armRegManager->getArmRegByNamePos(lVal->getIdent().c_str(), lVal->getIntPos(), ArmStmts);
+    } else {  // 数组
+
+
+
+        for (int i = 0; i < lVal->getExps()->size(); i++) {
+            auto *armRegRet = genAddExp(lVal->getExps()->at(i)->getAddExp(), ArmStmts);
+            int subLenRem = 1;
+            for (int j = i + 1; j < lVal->getSubs()->size(); j++) {
+                subLenRem *= j;
+            }
+
+            if (subLenRem != 1) {
+                /// mov  rFree  subLenRem
+                auto *armRegLenRem = armRegManager->getFreeArmReg(ArmStmts);
+                auto *armLenMovStmt = new ArmStmt(ARM_STMT_MOV, armRegLenRem->getRegName().c_str(),
+                                                  ("#" + std::to_string(subLenRem * 4)).c_str());
+                ArmStmts->emplace_back(armLenMovStmt);
+
+                /// mul rRegRet rRegRet rFree
+                armRegRet->setArm7Var(nullptr);
+                auto *armMulStmt = new ArmStmt(ARM_STMT_MUL, armRegRet->getRegName().c_str(),
+                                               armRegLenRem->getRegName().c_str(), armRegRet->getRegName().c_str());
+                ArmStmts->emplace_back(armMulStmt);
+            }
+
+            if (i == 0) {
+                auto *armRegLVal = armRegManager->getArmRegByNamePos(lVal->getIdent().c_str(), lVal->getIntPos(),
+                                                                     ArmStmts);
+                /// ldr rLVal [rLValLoc]
+                auto *armLdrStmt = new ArmStmt(ARM_STMT_LDR, armRegLVal->getRegName().c_str(),
+                                               lVal->getBaseMemoryPos().c_str());
+                ArmStmts->emplace_back(armLdrStmt);
+                /// add rRegRet rRegRet rLVal
+                auto *armAddStmt = new ArmStmt(ARM_STMT_ADD, armRegRet->getRegName().c_str(),
+                                               armRegRet->getRegName().c_str(), armRegRet->getRegName().c_str());
+            }
+        }
+    }
 }
 
 ///===-----------------------------------------------------------------------===///

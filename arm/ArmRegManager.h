@@ -22,6 +22,10 @@ public:
 
     ArmReg *getFreeArmReg(std::vector<ArmStmt *> *armStmts);
 
+    ArmReg *getArmRegByArmVar(Arm7Var *arm7Var,std::vector<ArmStmt *> *armStmts);
+
+    ArmReg *getArmRegByNamePos(const char *name, int memoryLoc,std::vector<ArmStmt *> *armStmts);
+
     void freeAllArmReg( std::vector<ArmStmt *> *ArmStmts);
 
     void freeOneArmReg(int i,  std::vector<ArmStmt *> *ArmStmts);
@@ -30,15 +34,15 @@ public:
 
     void popOneArmReg(int i, std::vector<ArmStmt *> *ArmStmts);
 
-    static int getNewestNum();
-
-    static void setNewestNum(int newestNum_);
-
-    static void addNewestNum();
-
+//    static int getNewestNum();
+//
+//    static void setNewestNum(int newestNum_);
+//
+//    static void addNewestNum();
+//
     [[nodiscard]] std::vector<ArmReg *> *getArmRegs() const;
-
-    void setArmRegs(std::vector<ArmReg *> *armRegs);
+//
+//    void setArmRegs(std::vector<ArmReg *> *armRegs);
 
 };
 

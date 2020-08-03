@@ -69,3 +69,7 @@ void Arm7GlobalFunc::setPushLen(int pushLen_) {
     Arm7GlobalFunc::pushLen = pushLen_;
 }
 
+std::vector<FuncInnerBlockAux *> *Arm7GlobalFunc::getBlockAuxs() const {
+    return blockAuxs;
+}
+

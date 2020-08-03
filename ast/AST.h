@@ -64,6 +64,12 @@ private:
     /// 如 8 表 [fp, #-8]
     std::string baseMemoryPos;
 
+    int intPos;
+
+    std::vector<int> *subs;
+
+    int type;
+
 public:
     /**
      * 左值表达式 LVal
@@ -72,7 +78,8 @@ public:
      * @param sourLocs _0: identLoc; [_Loc, ]_Loc, ... 数组各维度
      */
     LVal(const char *ident, std::vector<Exp *> *exps, std::list<SourceLocation *> *sourLocs) :
-            ident(ident), exps(exps), Locs(sourLocs), baseMemoryPos(LVAL_VAR_POS_DEFAULT) {};
+            ident(ident), exps(exps), Locs(sourLocs), baseMemoryPos(LVAL_VAR_POS_DEFAULT),
+            intPos(LOCAL_VAR_POS), subs(nullptr), type(LVAL_ARRAY_GLOBAL_INT) {};
 
     [[nodiscard]] const std::string &getIdent() const {
         return ident;
@@ -82,12 +89,36 @@ public:
         return exps;
     }
 
-    const std::string &getBaseMemoryPos() const {
+    int getIntPos() const {
+        return intPos;
+    }
+
+    void setIntPos(int intPos_) {
+        LVal::intPos = intPos_;
+    }
+
+    const std::string &getBaseMemoryPos() {
         return baseMemoryPos;
     }
 
     void setBaseMemoryPos(const char *baseMemoryPos_) {
         LVal::baseMemoryPos = baseMemoryPos_;
+    }
+
+    std::vector<int> *getSubs() const {
+        return subs;
+    }
+
+    void setSubs(std::vector<int> *subs_) {
+        LVal::subs = subs_;
+    }
+
+    int getType() const {
+        return type;
+    }
+
+    void setType(int type_) {
+        LVal::type = type_;
     }
 };
 
@@ -715,7 +746,7 @@ public:
     VarDef(const char *ident, std::vector<ConstExp *> *constExps, InitVal *initVal,
            std::list<SourceLocation *> *sourLocs) :
             ident(ident), constExps(constExps), initVal(initVal), Locs(sourLocs),
-            /*baseMemoryPos(LVAL_VAR_POS_DEFAULT)*/ baseMemoryPos(LOCAL_VAR_POS){};
+            /*baseMemoryPos(LVAL_VAR_POS_DEFAULT)*/ baseMemoryPos(LOCAL_VAR_POS) {};
 
     [[nodiscard]] const std::string &getIdent() const {
         return ident;

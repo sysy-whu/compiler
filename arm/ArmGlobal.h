@@ -126,6 +126,36 @@ public:
     std::string genString();
 };
 
+class FuncInnerBlockAux {
+private:
+    std::string blockName;
+
+    std::vector<std::string> *values;
+
+    int blockType;
+
+public:
+    FuncInnerBlockAux(const char *blockName, std::vector<std::string> *values, int blockType) :
+            blockName(blockName), values(values), blockType(blockType) {};
+
+    [[nodiscard]] std::vector<std::string> *getValues() const {
+        return values;
+    }
+
+    void setValues(std::vector<std::string> *values_) {
+        FuncInnerBlockAux::values = values_;
+    }
+
+    [[nodiscard]] int getBlockType() const {
+        return blockType;
+    }
+
+    [[nodiscard]] const std::string &getBlockName() const {
+        return blockName;
+    }
+
+};
+
 class Arm7GlobalFunc {
 private:
     std::string funcName;
@@ -134,6 +164,8 @@ private:
 
     int pushLen;
 
+    std::vector<FuncInnerBlockAux *> *blockAuxs;
+
 public:
     /**
      *
@@ -141,7 +173,8 @@ public:
      * @param armBlocks 函数代码块
      */
     Arm7GlobalFunc(const char *funcName, std::vector<ArmBlock *> *armBlocks) :
-            funcName(funcName), armBlocks(armBlocks), pushLen(PUSH_NUM_DEFAULT * 4){};
+            funcName(funcName), armBlocks(armBlocks), pushLen(PUSH_NUM_DEFAULT * 4) ,
+            blockAuxs(new std::vector<FuncInnerBlockAux *>()){};
 
     [[nodiscard]] const std::string &getFuncName() const {
         return funcName;
@@ -156,6 +189,8 @@ public:
     [[nodiscard]] int getPushLen() const;
 
     void setPushLen(int pushLen_);
+
+    [[nodiscard]] std::vector<FuncInnerBlockAux *> *getBlockAuxs() const;
 };
 
 #endif //COMPILER_ARMGLOBAL_H
