@@ -126,7 +126,7 @@ void Arm7Gen::genConstVar(ConstDef *constDef, std::vector<ArmStmt *> *armStmts) 
     ///	mov	rX, #CONST_VALUE
     ///	str	rX, [fp, #LOC]
     ArmReg *armReg = armRegManager->getFreeArmReg(armStmts);
-    auto *armStmtMove = new ArmStmt(ARM_STMT_MOVE, armReg->getRegName().c_str(),
+    auto *armStmtMove = new ArmStmt(ARM_STMT_MOV, armReg->getRegName().c_str(),
                                     ("#" + std::to_string(value)).c_str());
     auto *armStmtStr = new ArmStmt(ARM_STMT_STR, armReg->getRegName().c_str(),
                                    ("[fp, #" + std::to_string(constDef->getBaseMemoryPos()) + "]").c_str());
@@ -158,7 +158,7 @@ void Arm7Gen::genVarArray(VarDef *varDef, std::vector<ArmStmt *> *armStmts) {
     } else {
         ArmReg *armReg = armRegManager->getFreeArmReg(armStmts);
         ///	mov	rX, #GLOBAL_DEFAULT_VALUE <--> 0
-        auto *armStmtMove = new ArmStmt(ARM_STMT_MOVE, armReg->getRegName().c_str(),
+        auto *armStmtMove = new ArmStmt(ARM_STMT_MOV, armReg->getRegName().c_str(),
                                         ("#" + std::to_string(GLOBAL_DEFAULT_VALUE)).c_str());
         armStmts->emplace_back(armStmtMove);
         for (int i = 0; i < 4 * len;) {
@@ -192,7 +192,7 @@ void Arm7Gen::genConstVarArray(ConstDef *constDef, std::vector<ArmStmt *> *armSt
             int subPosNow = constDef->getBaseMemoryPos() + i;
             ///	mov	rX, #SUB_VALUE
             ///	str	rX, [fp, #SUB_LOC]
-            auto *armStmtMove = new ArmStmt(ARM_STMT_MOVE, armReg->getRegName().c_str(),
+            auto *armStmtMove = new ArmStmt(ARM_STMT_MOV, armReg->getRegName().c_str(),
                                             ("#" + std::to_string(values->at(i))).c_str());
             auto *armStmtStr = new ArmStmt(ARM_STMT_STR, armReg->getRegName().c_str(),
                                            ("[fp, #" + std::to_string(subPosNow) + "]").c_str());
@@ -203,7 +203,7 @@ void Arm7Gen::genConstVarArray(ConstDef *constDef, std::vector<ArmStmt *> *armSt
     } else {
         ArmReg *armReg = armRegManager->getFreeArmReg(armStmts);
         ///	mov	rX, #GLOBAL_DEFAULT_VALUE <--> 0
-        auto *armStmtMove = new ArmStmt(ARM_STMT_MOVE, armReg->getRegName().c_str(),
+        auto *armStmtMove = new ArmStmt(ARM_STMT_MOV, armReg->getRegName().c_str(),
                                         ("#" + std::to_string(GLOBAL_DEFAULT_VALUE)).c_str());
         armStmts->emplace_back(armStmtMove);
         for (int i = 0; i < 4 * len;) {
@@ -343,7 +343,7 @@ ArmReg *Arm7Gen::genAddExp(AddExp *addExp, std::vector<ArmStmt *> *ArmStmts) {
 ArmReg *Arm7Gen::genMulExp(MulExp *mulExp, std::vector<ArmStmt *> *ArmStmts) {
     if (mulExp->getOpType() == OP_NULL) {
         return genUnaryExp(mulExp->getUnaryExp(), ArmStmts);
-    } else if (mulExp->getOpType() == OP_BO_MUL) {
+    } else {
         /// 乘数一元表达式中间结果，Arm7Var 成员变量不一定为 null
         ArmReg *unaryRet = genUnaryExp(mulExp->getUnaryExp(), ArmStmts);
         /// 中间结果压栈，不用管是否释放寄存器，null时可被直接用；非null时可被重复利用
@@ -353,22 +353,72 @@ ArmReg *Arm7Gen::genMulExp(MulExp *mulExp, std::vector<ArmStmt *> *ArmStmts) {
         ArmReg *mulRet = genMulExp(mulExp->getMulExp(), ArmStmts);
         /// 锁定乘数乘法式中间结果，Arm7Var,防止被误分配为 armRegRet
         mulRet->setIfLock(ARM_REG_LOCK_TRUE);
-
+        /// 此时r0可能被Lock了,故虽然可能div/mod不能一步到位得到r0
         ArmReg *armRegRet = armRegManager->getFreeArmReg(ArmStmts);
         /// 解锁加数加法式中间结果
         mulRet->setIfLock(ARM_REG_LOCK_FALSE);
 
         auto *popStmt = new ArmStmt(ARM_STMT_POP, ("{" + armRegRet->getRegName() + " }").c_str());
-        /// 以 armRegRet 为最终结果，因为 mulRet 可能为某变量，其 ArmReg 有对应某个变量地址
-        auto *armAddStmt = new ArmStmt(mulExp->getOpType(), armRegRet->getRegName().c_str(),
-                                       armRegRet->getRegName().c_str(), mulRet->getRegName().c_str());
-        ArmStmts->emplace_back(popStmt);
-        ArmStmts->emplace_back(armAddStmt);
 
+        if (mulExp->getOpType() == OP_BO_MUL) {
+            /// 以 armRegRet 为最终结果，因为 mulRet 可能为某变量，其 ArmReg 有对应某个变量地址
+            auto *armMulStmt = new ArmStmt(mulExp->getOpType(), armRegRet->getRegName().c_str(),
+                                           armRegRet->getRegName().c_str(), mulRet->getRegName().c_str());
+            ArmStmts->emplace_back(popStmt);
+            ArmStmts->emplace_back(armMulStmt);
+        } else {
+            /// DIV / REM 需要调用函数,注意为：r0 = r0 OP(/or%) r1;
+            /// 注意这里不敢调用 __aeabi_idiv 因为我们知道 mov_zt/dic_zt 用了r0,r1,r2,r3
+            /// 故此处:mod_zt/div_zt 函数内记得保护r2、r3现场;或者这里 free/push+pop 掉r2,r3。目前后者
+            /// 而若是调用系统库函数，可能会毁了我们的寄存器现场状态。并考虑到运算多时提前push/pop全会得不偿失。
+
+            /// push    {r0,? r1,? r2,? r3}
+            for(int i=0;i<4;i++){
+                armRegManager->pushOneArmReg(i, ArmStmts);
+            }
+
+            if (mulRet->getRegName() == "r0") {
+                /// push   {r0 }
+                /// mov    r0 rFree
+                /// pop    {r1 }
+                auto *pushR0Stmt = new ArmStmt(ARM_STMT_PUSH, "{r0 }");
+                auto *movR0Stmt = new ArmStmt(ARM_STMT_MOV, "r0", armRegRet->getRegName().c_str());
+                auto *popR1Stmt = new ArmStmt(ARM_STMT_POP, "r1");
+                ArmStmts->emplace_back(pushR0Stmt);
+                ArmStmts->emplace_back(movR0Stmt);
+                ArmStmts->emplace_back(popR1Stmt);
+            } else {
+                if (armRegRet->getRegName() != "r0") {
+                    /// mov    r0,    rFree
+                    auto *movR0Stmt = new ArmStmt(ARM_STMT_MOV, "r0", armRegRet->getRegName().c_str());
+                    ArmStmts->emplace_back(movR0Stmt);
+                }
+                if (mulRet->getRegName() != "r1") {
+                    /// mov    r1,    rR
+                    auto *movR1Stmt = new ArmStmt(ARM_STMT_MOV, "r1", mulRet->getRegName().c_str());
+                    ArmStmts->emplace_back(movR1Stmt);
+                }
+
+            }
+
+            /// bl	   mod_zt / div_zt
+            /// mov	   rFree, r0
+            if (mulExp->getOpType() == OP_BO_DIV) {
+                auto *blDivStmt = new ArmStmt(ARM_STMT_BL, "div_zt");
+                ArmStmts->emplace_back(blDivStmt);
+            } else if (mulExp->getOpType() == OP_BO_REM) {
+                auto *blRemStmt = new ArmStmt(ARM_STMT_BL, "mod_zt");
+                ArmStmts->emplace_back(blRemStmt);
+            }
+            auto *movRFreeStmt = new ArmStmt(ARM_STMT_MOV, armRegRet->getRegName().c_str(), "r0");
+            ArmStmts->emplace_back(movRFreeStmt);
+
+            /// pop    {r0,? r1,? r2,? r3}
+            for(int i=0;i<4;i++){
+                armRegManager->popOneArmReg(i, ArmStmts);
+            }
+        }
         return armRegRet;
-    } else {
-        /// TODO
-        return nullptr;
     }
 }
 

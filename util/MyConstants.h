@@ -159,8 +159,8 @@ static const int LOCAL_VAR_POS = -2;
 
 static const std::string LVAL_VAR_POS_DEFAULT = "#-1";
 
-/// push {fp, lr}
-static const int PUSH_NUM_DEFAULT = 2;
+/// push {fp, lr, r4}
+static const int PUSH_NUM_DEFAULT = 3;
 
 static const int ARM_STMT_STR = -1;
 static const int ARM_STMT_LDR = -2;
@@ -173,7 +173,7 @@ static const int ARM_STMT_MUL = OP_BO_MUL;
 static const int ARM_STMT_DIV = OP_BO_DIV;
 static const int ARM_STMT_REM = OP_BO_REM;
 
-static const int ARM_STMT_MOVE = -10;
+static const int ARM_STMT_MOV = -10;
 static const int ARM_STMT_MOVEQ = -11;
 static const int ARM_STMT_MOVNE = -12;
 static const int ARM_STMT_MOVLE = -13;
@@ -183,8 +183,14 @@ static const int ARM_STMT_MOVLT = -16;
 static const int ARM_STMT_MOVW = -17;
 static const int ARM_STMT_MOVT = -18;
 
+static const int ARM_STMT_BL = -19;
+
 static const int ARM_REG_LOCK_TRUE = 1;
 static const int ARM_REG_LOCK_FALSE = 0;
+
+/// 自定义库函数
+static const std::string FUNC_MINE_DIV_ZT = "div_zt";
+static const std::string FUNC_MINE_MOD_ZT = "mod_zt";
 
 // ARM_DAG Type
 enum ARM_DAG {

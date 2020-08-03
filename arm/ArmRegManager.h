@@ -22,6 +22,12 @@ public:
 
     ArmReg *getFreeArmReg(std::vector<ArmStmt *> *armStmts);
 
+    void freeAllArmReg();
+
+    void pushOneArmReg(int i, std::vector<ArmStmt *> *ArmStmts);
+
+    void popOneArmReg(int i, std::vector<ArmStmt *> *ArmStmts);
+
     static int getNewestNum();
 
     static void setNewestNum(int newestNum_);
