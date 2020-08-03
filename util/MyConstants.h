@@ -165,11 +165,11 @@ static const int ARM_STMT_LDR = -2;
 static const int ARM_STMT_PUSH = -3;
 static const int ARM_STMT_POP = -4;
 
-static const int ARM_STMT_ADD = -5;
-static const int ARM_STMT_SUB = -6;
-static const int ARM_STMT_MUL = -7;
-static const int ARM_STMT_DIV = -8;
-static const int ARM_STMT_MOD = -9;
+static const int ARM_STMT_ADD = OP_BO_ADD;
+static const int ARM_STMT_SUB = OP_BO_SUB;
+static const int ARM_STMT_MUL = OP_BO_MUL;
+static const int ARM_STMT_DIV = OP_BO_DIV;
+static const int ARM_STMT_REM = OP_BO_REM;
 
 static const int ARM_STMT_MOVE = -10;
 static const int ARM_STMT_MOVEQ = -11;
