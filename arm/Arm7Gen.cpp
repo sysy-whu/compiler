@@ -505,9 +505,47 @@ ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts) {
     if (lVal->getExps()->empty()) {  // 整型
         return armRegManager->getArmRegByNamePos(lVal->getIdent().c_str(), lVal->getIntPos(), ArmStmts);
     } else {  // 数组
-
-
-
+        /// 数组起点地址
+        ArmReg *armRegLVal;
+        armRegLVal = armRegManager->getArmRegByNamePos(lVal->getIdent().c_str(), lVal->getIntPos(),
+                                                       ArmStmts);
+        armRegLVal->setIfLock(ARM_REG_LOCK_TRUE);
+        armRegLVal->setArm7Var(nullptr);
+        /// 获得不同情况下数组的位置（内存地址）
+        switch (lVal->getType()) {
+            case LVAL_ARRAY_LOCAL_INT: {
+                /// sub rF fp #Loc
+                auto *armSubStmt = new ArmStmt(ARM_STMT_SUB, armRegLVal->getRegName().c_str(),
+                                               "fp", ("#" + std::to_string(lVal->getIntPos())).c_str());
+                ArmStmts->emplace_back(armSubStmt);
+                break;
+            }
+            case LVAL_ARRAY_PARAM_INT_STAR:
+            case LVAL_ARRAY_LOCAL_INT_STAR
+            case LVAL_ARRAY_PARAM_INT: {
+                /// ldr rLVal [fp, #Loc]
+                auto *armLdrStmt = new ArmStmt(ARM_STMT_LDR, armRegLVal->getRegName().c_str(),
+                                               lVal->getBaseMemoryPos().c_str());
+                ArmStmts->emplace_back(armLdrStmt);
+                break;
+            }
+            case LVAL_ARRAY_GLOBAL_INT:
+            case LVAL_ARRAY_GLOBAL_INT_STAR: {
+                /// movw	r3, #:lower16:gR
+                /// movt	r3, #:upper16:gR
+                auto *armLMovWStmt = new ArmStmt(ARM_STMT_MOVW, armRegLVal->getRegName().c_str(),
+                                                 ("#:lower16:" + lVal->getIdent()).c_str());
+                ArmStmts->emplace_back(armLMovWStmt);
+                auto *armLMovTStmt = new ArmStmt(ARM_STMT_MOVT, armRegLVal->getRegName().c_str(),
+                                                 ("#:lower16:" + lVal->getIdent()).c_str());
+                ArmStmts->emplace_back(armLMovTStmt);
+                break;
+            }
+            default:
+                Error::errorSim("wrong when gen at LVal Array");
+                exit(-1);
+        }
+        /// 索引！索引！
         for (int i = 0; i < lVal->getExps()->size(); i++) {
             auto *armRegRet = genAddExp(lVal->getExps()->at(i)->getAddExp(), ArmStmts);
             int subLenRem = 1;
@@ -528,19 +566,38 @@ ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts) {
                                                armRegLenRem->getRegName().c_str(), armRegRet->getRegName().c_str());
                 ArmStmts->emplace_back(armMulStmt);
             }
+            /// add rRegRet rRegRet rLVal
+            auto *armAddStmt = new ArmStmt(ARM_STMT_ADD, armRegRet->getRegName().c_str(),
+                                           armRegRet->getRegName().c_str(), armRegLVal->getRegName().c_str());
+            ArmStmts->emplace_back(armAddStmt);
 
-            if (i == 0) {
-                auto *armRegLVal = armRegManager->getArmRegByNamePos(lVal->getIdent().c_str(), lVal->getIntPos(),
-                                                                     ArmStmts);
-                /// ldr rLVal [rLValLoc]
+
+        }  // end for exps
+
+        /// 返回值或者地址！
+        switch (lVal->getType()) {
+            case LVAL_ARRAY_LOCAL_INT:
+            case LVAL_ARRAY_PARAM_INT:
+            case LVAL_ARRAY_GLOBAL_INT: {
+                /// ldr armRegLVal [armRegLVal]
                 auto *armLdrStmt = new ArmStmt(ARM_STMT_LDR, armRegLVal->getRegName().c_str(),
-                                               lVal->getBaseMemoryPos().c_str());
+                                               ("[" + armRegLVal->getRegName() + "]").c_str());
                 ArmStmts->emplace_back(armLdrStmt);
-                /// add rRegRet rRegRet rLVal
-                auto *armAddStmt = new ArmStmt(ARM_STMT_ADD, armRegRet->getRegName().c_str(),
-                                               armRegRet->getRegName().c_str(), armRegRet->getRegName().c_str());
+                armRegLVal->setIfLock(ARM_REG_LOCK_FALSE);
+                break;
             }
+
+            case LVAL_ARRAY_LOCAL_INT_STAR:
+            case LVAL_ARRAY_PARAM_INT_STAR:
+            case LVAL_ARRAY_GLOBAL_INT_STAR: {
+                armRegLVal->setIfLock(ARM_REG_LOCK_FALSE);
+                break;
+            }
+            default:
+                Error::errorSim("wrong when gen at LVal Array");
+                exit(-1);
         }
+        return armRegLVal;
     }
 }
 
