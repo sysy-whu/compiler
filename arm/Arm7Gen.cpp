@@ -61,10 +61,10 @@ void Arm7Gen::genArm7Func(FuncDef *funcDef, std::vector<ArmBlock *> *armBlocks) 
 
     for (Symbol *symbol:*symbolTables->at(1)->getSymbols()) {
         if (symbol->getArm7Func() != nullptr && symbol->getArm7Func()->getIdent() == funcDef->getIdent()) {
-            /// push	{fp, lr}
+            /// push	{r4, fp, lr}
             /// add	fp, sp, #PUSH_NUM_DEFUALT * 4
             /// sub	sp, sp, #DIGIT_CAPACITY
-            auto *armStmtPush = new ArmStmt(ARM_STMT_PUSH, "{fp, lr}");
+            auto *armStmtPush = new ArmStmt(ARM_STMT_PUSH, "{r4, fp, lr}");
             auto *armStmtAdd = new ArmStmt(ARM_STMT_ADD, "sp", ("#" + std::to_string(PUSH_NUM_DEFAULT * 4)).c_str());
             /// 此句负数 capacity 转正
             auto *armStmtSub = new ArmStmt(ARM_STMT_SUB, "sp", "sp",
@@ -269,7 +269,68 @@ const char *Arm7Gen::genBlock(Block *block, std::vector<ArmBlock *> *basicBlocks
 
 const char *Arm7Gen::genStmt(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
                              std::vector<ArmStmt *> *lastBlockStmts) {
-    return nullptr;
+    switch (stmt->getStmtType()) {
+        case STMT_EXP: {
+            genAddExp(stmt->getExp()->getAddExp(), lastBlockStmts);
+            return lastBlock->getBlockName().c_str();
+        }
+        case STMT_LVAL_ASSIGN: {
+            auto *rRet = genAddExp(stmt->getExp()->getAddExp(), lastBlockStmts);
+            if (stmt->getLVal()->getExps()->empty()) {
+                /// str rRet [lVal]
+                auto *armStmtStr = new ArmStmt(ARM_STMT_STR, rRet->getRegName().c_str(),
+                                               stmt->getLVal()->getBaseMemoryPos().c_str());
+                lastBlockStmts->emplace_back(armStmtStr);
+            } else {
+                /// str rRet [lVal]
+                auto *armRegPos = genLVal(stmt->getLVal(), lastBlockStmts, 1);
+                auto *armStmtStr = new ArmStmt(ARM_STMT_STR, rRet->getRegName().c_str(),
+                                               ("[" + armRegPos->getRegName() + "]").c_str());
+                lastBlockStmts->emplace_back(armStmtStr);
+            }
+            return lastBlock->getBlockName().c_str();
+        }
+        case STMT_BLOCK:
+            return genBlock(stmt->getBlock(), basicBlocks, lastBlock, lastBlockStmts);
+        case STMT_IF: {
+            return genStmtAuxIf(stmt, basicBlocks, lastBlock, lastBlockStmts);
+        }
+        case STMT_WHILE: {
+            return genStmtAuxWhile(stmt, basicBlocks, lastBlock, lastBlockStmts);
+        }
+        case STMT_RETURN: {
+            if (stmt->getExp() != nullptr) {
+                auto *armRegRet = genAddExp(stmt->getExp()->getAddExp(), lastBlockStmts);
+                if (armRegRet->getRegName() != "r0") {
+                    /// mov r0 rX
+                    auto *armMov0Stmt = new ArmStmt(ARM_STMT_MOV, "r0", armRegRet->getRegName().c_str());
+                    lastBlockStmts->emplace_back(armMov0Stmt);
+                }
+                /// TODO 留给输出文件
+                ///	  nop
+                ///	  sub	sp, fp, #PUSH_NUM_DEFAULT *4
+                ///	  pop	{r4, fp, pc}
+            }
+            return lastBlock->getBlockName().c_str();
+        }
+        case STMT_EXP_BLANK: {
+            return lastBlock->getBlockName().c_str();
+        }
+        case STMT_CONTINUE: {
+            /// b whileStart
+            auto *armBStmt = new ArmStmt(ARM_STMT_B, whilePos->at(whilePos->size() - 1).c_str());
+            lastBlockStmts->emplace_back(armBStmt);
+            return lastBlock->getBlockName().c_str();
+        }
+        case STMT_BREAK: {
+            /// b whileEnd
+            auto *armBStmt = new ArmStmt(ARM_STMT_B, whileEndPos->at(whileEndPos->size() - 1).c_str());
+            lastBlockStmts->emplace_back(armBStmt);
+            return lastBlock->getBlockName().c_str();
+        }
+        default:
+            return lastBlock->getBlockName().c_str();
+    }
 }
 
 const char *Arm7Gen::genStmtAuxIf(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
@@ -490,7 +551,7 @@ ArmReg *Arm7Gen::genPrimaryExp(PrimaryExp *primaryExp, std::vector<ArmStmt *> *A
     if (primaryExp->getExp() != nullptr) {
         return genAddExp(primaryExp->getExp()->getAddExp(), ArmStmts);
     } else if (primaryExp->getLVal() != nullptr) {
-        return genLVal(primaryExp->getLVal(), ArmStmts);
+        return genLVal(primaryExp->getLVal(), ArmStmts, 0);
     } else {
         auto *armDegNum = armRegManager->getFreeArmReg(ArmStmts);
         /// mov rX #NUMBER
@@ -501,7 +562,7 @@ ArmReg *Arm7Gen::genPrimaryExp(PrimaryExp *primaryExp, std::vector<ArmStmt *> *A
     }
 }
 
-ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts) {
+ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts, int ifGetPos) {
     if (lVal->getExps()->empty()) {  // 整型
         return armRegManager->getArmRegByNamePos(lVal->getIdent().c_str(), lVal->getIntPos(), ArmStmts);
     } else {  // 数组
@@ -579,10 +640,12 @@ ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts) {
             case LVAL_ARRAY_LOCAL_INT:
             case LVAL_ARRAY_PARAM_INT:
             case LVAL_ARRAY_GLOBAL_INT: {
-                /// ldr armRegLVal [armRegLVal]
-                auto *armLdrStmt = new ArmStmt(ARM_STMT_LDR, armRegLVal->getRegName().c_str(),
-                                               ("[" + armRegLVal->getRegName() + "]").c_str());
-                ArmStmts->emplace_back(armLdrStmt);
+                if (ifGetPos == 0) {
+                    /// ldr armRegLVal [armRegLVal]
+                    auto *armLdrStmt = new ArmStmt(ARM_STMT_LDR, armRegLVal->getRegName().c_str(),
+                                                   ("[" + armRegLVal->getRegName() + "]").c_str());
+                    ArmStmts->emplace_back(armLdrStmt);
+                }
                 armRegLVal->setIfLock(ARM_REG_LOCK_FALSE);
                 break;
             }

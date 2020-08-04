@@ -110,7 +110,7 @@ private:
 
     ArmReg *genPrimaryExp(PrimaryExp *primaryExp, std::vector<ArmStmt *> *ArmStmts);
 
-    ArmReg *genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts);
+    ArmReg *genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts, int ifGetPos);
 
 
 public:
