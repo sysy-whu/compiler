@@ -376,7 +376,7 @@ std::vector<int> *Semantic::calVarArrayInitVals(InitVal *initVal, std::vector<in
     for (int i : *subs) {
         len *= i;
     }
-    if (initVal->getInitVals()->empty()) {
+    if (initVal == nullptr || initVal->getInitVals()->empty()) {
         for (int i = 0; i < len; i++) {
             valuesRet->push_back(0);
         }

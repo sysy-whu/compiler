@@ -6,7 +6,7 @@ int ArmRegManager::newestNum = 0;
 ArmRegManager::ArmRegManager() {
     ArmRegManager::armRegs = new std::vector<ArmReg *>();
     for (int i = 0; i < 10; i++) {
-        auto *armReg = new ArmReg(("R" + std::to_string(i)).c_str(), nullptr, 0);
+        auto *armReg = new ArmReg(("r" + std::to_string(i)).c_str(), nullptr, 0);
         armRegs->emplace_back(armReg);
         armReg->setNewNum(++newestNum);
     }
@@ -46,7 +46,11 @@ ArmReg *ArmRegManager::getArmRegByArmVar(Arm7Var *arm7Var, std::vector<ArmStmt *
         if (armReg->getArm7Var() == arm7Var)
             return armReg;
     }
-    return getFreeArmReg(armStmts);
+    auto *armRegRet = getFreeArmReg(armStmts);
+    auto *armLdr = new ArmStmt(ARM_STMT_LDR, armRegRet->getRegName().c_str(),
+                               ("[fp, #" + std::to_string(arm7Var->getMemoryLoc()) + "]").c_str());
+    armStmts->emplace_back(armLdr);
+    return armRegRet;
 }
 
 
@@ -58,7 +62,11 @@ ArmReg *ArmRegManager::getArmRegByNamePos(const char *name, int memoryLoc, std::
             armReg->getArm7Var()->getMemoryLoc() == memoryLoc)
             return armReg;
     }
-    return getFreeArmReg(armStmts);
+    auto *armRegRet = getFreeArmReg(armStmts);
+    auto *armLdr = new ArmStmt(ARM_STMT_LDR, armRegRet->getRegName().c_str(),
+                               ("[fp, #" + std::to_string(memoryLoc) + "]").c_str());
+    armStmts->emplace_back(armLdr);
+    return armRegRet;
 }
 
 
