@@ -915,6 +915,7 @@ ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts, int ifGet
         /// 索引！索引！
         for (int i = 0; i < lVal->getExps()->size(); i++) {
             auto *armRegRet = genAddExp(lVal->getExps()->at(i)->getAddExp(), ArmStmts);
+            armRegRet->setIfLock(ARM_REG_LOCK_TRUE);
             int subLenRem = 1;
             for (int j = i + 1; j < lVal->getSubs()->size(); j++) {
                 subLenRem *= lVal->getSubs()->at(j);
@@ -926,7 +927,7 @@ ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts, int ifGet
                 auto *armLenMovStmt = new ArmStmt(ARM_STMT_MOV, armRegLenRem->getRegName().c_str(),
                                                   ("#" + std::to_string(subLenRem * 4)).c_str());
                 ArmStmts->emplace_back(armLenMovStmt);
-
+                armRegRet->setIfLock(ARM_REG_LOCK_FALSE);
                 /// mul rRegRet rRegRet rFree
                 armRegRet->setArm7Var(nullptr);
                 auto *armMulStmt = new ArmStmt(ARM_STMT_MUL, armRegRet->getRegName().c_str(),
