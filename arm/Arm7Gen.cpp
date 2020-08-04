@@ -95,6 +95,7 @@ void Arm7Gen::genArm7Func(FuncDef *funcDef, std::vector<ArmBlock *> *armBlocks) 
     }
 
     genBlock(funcDef->getBlock(), armBlocks, blockEntry, armStmts);
+    addArmRetStmts(armStmts);
     armRegManager->freeAllArmReg(armStmts);
     /// 考虑到如下固定格式结尾无需计算，保留在 output 时输出到文件
     /// sub	sp, fp, #4
@@ -320,13 +321,9 @@ const char *Arm7Gen::genStmt(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, A
                     /// mov r0 rX
                     auto *armMov0Stmt = new ArmStmt(ARM_STMT_MOV, "r0", armRegRet->getRegName().c_str());
                     lastBlockStmts->emplace_back(armMov0Stmt);
-                } else {
 
                 }
-                /// TODO 留给输出文件
-                ///	  nop
-                ///	  sub	sp, fp, #PUSH_NUM_DEFAULT *4
-                ///	  pop	{r4, fp, pc}
+                addArmRetStmts(lastBlockStmts);
             }
             return lastBlock->getBlockName().c_str();
         }
@@ -600,7 +597,7 @@ ArmReg *Arm7Gen::genEqExp(EqExp *eqExp, std::vector<ArmStmt *> *ArmStmts) {
         eqRet->setIfLock(ARM_REG_LOCK_TRUE);
         auto *relRet = genRelExp(eqExp->getRelExp(), ArmStmts);
         // 比较eqRet和eqRet
-        ArmStmts->emplace_back(new ArmStmt(ARM_STMT_CMP, relRet->getRegName().c_str(),eqRet->getRegName().c_str()));
+        ArmStmts->emplace_back(new ArmStmt(ARM_STMT_CMP, relRet->getRegName().c_str(), eqRet->getRegName().c_str()));
         eqRet->setIfLock(ARM_REG_LOCK_FALSE);
         auto *armRegFree = armRegManager->getFreeArmReg(ArmStmts);
         switch (eqExp->getOpType()) {
@@ -1244,4 +1241,14 @@ int Arm7Gen::calLVal(LVal *lVal) {
     }  // end find lVal
     Error::errorSim("undefined ident Semantic calLVal");
     exit(-1);
+}
+
+void Arm7Gen::addArmRetStmts(std::vector<ArmStmt *> *ArmStmts) {
+    ///	  nop   @舍弃
+    ///	  sub	sp, fp, #PUSH_NUM_DEFAULT *4
+    ///	  pop	{r4, fp, pc}
+    auto *armSubStmt = new ArmStmt(ARM_STMT_SUB, "sp", "fp", ("#" + std::to_string(PUSH_NUM_DEFAULT * 4 - 4)).c_str());
+    auto *armPopStmt = new ArmStmt(ARM_STMT_POP, "{r4, fp, pc}");
+    ArmStmts->emplace_back(armSubStmt);
+    ArmStmts->emplace_back(armPopStmt);
 }

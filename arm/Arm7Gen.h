@@ -62,6 +62,8 @@ private:
     const char *genStmt(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
                         std::vector<ArmStmt *> *lastBlockStmts);
 
+    void addArmRetStmts(std::vector<ArmStmt *> *ArmStmts);
+
     const char *genStmtAuxIf(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
                              std::vector<ArmStmt *> *lastBlockStmts);
 
