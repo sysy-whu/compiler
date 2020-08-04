@@ -945,6 +945,7 @@ int Semantic::semanticLVal(LVal *lVal) {
                 lVal->setBaseMemoryPos(lVal->getIdent().c_str());
                 lVal->setIntPos(symbol->getArm7Var()->getMemoryLoc());
                 lVal->setSubs(symbol->getArm7Var()->getSubs());
+
                 if (lVal->getExps()->size() == symbol->getArm7Var()->getSubs()->size()) {
                     lVal->setType(LVAL_ARRAY_GLOBAL_INT);
                     return symbol->getArm7Var()->getVarType();

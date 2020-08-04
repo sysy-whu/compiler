@@ -91,7 +91,7 @@ void Arm7Gen::genArm7Func(FuncDef *funcDef, std::vector<ArmBlock *> *armBlocks) 
     }
 
     genBlock(funcDef->getBlock(), armBlocks, blockEntry, armStmts);
-
+    armRegManager->freeAllArmReg(armStmts);
     /// 考虑到如下固定格式结尾无需计算，保留在 output 时输出到文件
     /// sub	sp, fp, #4
     /// @ sp needed
@@ -274,11 +274,22 @@ const char *Arm7Gen::genStmt(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, A
         }
         case STMT_LVAL_ASSIGN: {
             auto *rRet = genAddExp(stmt->getExp()->getAddExp(), lastBlockStmts);
+            rRet->setIfLock(ARM_REG_LOCK_TRUE);
             if (stmt->getLVal()->getExps()->empty()) {
                 /// str rRet [lVal]
-                auto *armStmtStr = new ArmStmt(ARM_STMT_STR, rRet->getRegName().c_str(),
-                                               stmt->getLVal()->getBaseMemoryPos().c_str());
-                lastBlockStmts->emplace_back(armStmtStr);
+                /// TODO 全局变量查错了
+                /// str rRet [lVal]
+                if ((stmt->getLVal()->getBaseMemoryPos() == ("[fp, #" + std::to_string(GLOBAL_VAR_POS) + "]") ||
+                     stmt->getLVal()->getBaseMemoryPos() == std::to_string(GLOBAL_VAR_POS))) {
+                    auto *armRegPos = genLVal(stmt->getLVal(), lastBlockStmts, 1);
+                    auto *armStmtStr = new ArmStmt(ARM_STMT_STR, rRet->getRegName().c_str(),
+                                                   ("[" + armRegPos->getRegName() + "]").c_str());
+                    lastBlockStmts->emplace_back(armStmtStr);
+                } else {
+                    auto *armStmtStr = new ArmStmt(ARM_STMT_STR, rRet->getRegName().c_str(),
+                                                   stmt->getLVal()->getBaseMemoryPos().c_str());
+                    lastBlockStmts->emplace_back(armStmtStr);
+                }
             } else {
                 /// str rRet [lVal]
                 auto *armRegPos = genLVal(stmt->getLVal(), lastBlockStmts, 1);
@@ -286,6 +297,7 @@ const char *Arm7Gen::genStmt(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, A
                                                ("[" + armRegPos->getRegName() + "]").c_str());
                 lastBlockStmts->emplace_back(armStmtStr);
             }
+            rRet->setIfLock(ARM_REG_LOCK_FALSE);
             return lastBlock->getBlockName().c_str();
         }
         case STMT_BLOCK:
@@ -466,7 +478,6 @@ ArmReg *Arm7Gen::genLOrExp(LOrExp *lOrExp, std::vector<ArmBlock *> *basicBlocks,
     if (lOrExp->getLOrExp() == nullptr) {
         return genLAndExp(lOrExp->getLAndExp(), basicBlocks, lastBlock, lastBlockStmts, newBlockName);
     } else {
-        // todo ||需要新增block，这里目前无法实现
         auto *lAndRet = genLAndExp(lOrExp->getLAndExp(), basicBlocks, lastBlock, lastBlockStmts, newBlockName);
         if (lastBlock->getBlockName() != newBlockName) {
             auto *armNewStmts = new std::vector<ArmStmt *>();
@@ -829,7 +840,30 @@ ArmReg *Arm7Gen::genPrimaryExp(PrimaryExp *primaryExp, std::vector<ArmStmt *> *A
 
 ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts, int ifGetPos) {
     if (lVal->getExps()->empty()) {  // 整型
-        return armRegManager->getArmRegByNamePos(lVal->getIdent().c_str(), lVal->getIntPos(), ArmStmts);
+        if (lVal->getBaseMemoryPos() == ("[fp, #" + std::to_string(GLOBAL_VAR_POS) + "]") ||
+            lVal->getBaseMemoryPos() == std::to_string(GLOBAL_VAR_POS)) {
+            /// movw	rX, #:lower16:gR
+            /// movt	rX, #:upper16:gR
+            auto *armStrReg = armRegManager->getFreeArmReg(ArmStmts);
+
+            auto *armLMovWStmt = new ArmStmt(ARM_STMT_MOVW, armStrReg->getRegName().c_str(),
+                                             ("#:lower16:" + lVal->getIdent()).c_str());
+            auto *armLMovTStmt = new ArmStmt(ARM_STMT_MOVT, armStrReg->getRegName().c_str(),
+                                             ("#:lower16:" + lVal->getIdent()).c_str());
+            ArmStmts->emplace_back(armLMovWStmt);
+            ArmStmts->emplace_back(armLMovTStmt);
+            if (ifGetPos == 0) {
+                auto *armLdrStmt = new ArmStmt(ARM_STMT_LDR, armStrReg->getRegName().c_str(),
+                                               ("[" + armStrReg->getRegName() + "]").c_str());
+                ArmStmts->emplace_back(armLdrStmt);
+                return armStrReg;
+            } else {
+
+                return armStrReg;
+            }
+        } else {
+            return armRegManager->getArmRegByNamePos(lVal->getIdent().c_str(), lVal->getIntPos(), ArmStmts);
+        }
     } else {  // 数组
         /// 数组起点地址
         ArmReg *armRegLVal;

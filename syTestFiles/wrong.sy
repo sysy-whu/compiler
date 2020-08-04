@@ -6,6 +6,7 @@ int func(int p){
 
 int main(){
 	int b;
+	int c = a;
 	a = 10;
 	b = func(a);
 	return b;
