@@ -33,9 +33,7 @@ void Semantic::startSemantic() {
         if (decl->getVarDecl() != nullptr || decl->getConstDecl() != nullptr) {  // 变量
             semanticArm7Var(decl, symbolsGlobal);
         } else if (decl->getFuncDef() != nullptr) {  // 函数
-            Arm7Func *arm7Func = semanticArm7Func(decl->getFuncDef());
-            auto *symbol = new Symbol(nullptr, arm7Func);
-            symbolsGlobal->emplace_back(symbol);
+            semanticArm7Func(decl->getFuncDef(), symbolsGlobal);
         } else {
             Error::errorSemanticDecl("Error Semantic", decl);
         }
@@ -118,7 +116,7 @@ void Semantic::semanticArm7Var(Decl *decl, std::vector<Symbol *> *symbols) {
     }
 }
 
-Arm7Func *Semantic::semanticArm7Func(FuncDef *funcDef) {
+void Semantic::semanticArm7Func(FuncDef *funcDef, std::vector<Symbol *> *symbolGlobalNow) {
     auto *params = new std::vector<Arm7Var *>();
     funcNameNow = funcDef->getIdent();
     levelNow++;
@@ -157,13 +155,15 @@ Arm7Func *Semantic::semanticArm7Func(FuncDef *funcDef) {
     }
     funcParamNow = params;
 
+    auto *arm7Func = new Arm7Func(funcNameNow.c_str(), funcDef->getFuncType(), params);
+    auto *symbol = new Symbol(nullptr, arm7Func);
+    symbolGlobalNow->emplace_back(symbol);
+
     semanticBlock(funcDef->getBlock(), funcDef->getFuncType(), params);
 
+    arm7Func->setCapacity(capacity);
     levelNow--;
     funcParamNow = nullptr;
-    auto *arm7Func = new Arm7Func(funcNameNow.c_str(), funcDef->getFuncType(), params);
-    arm7Func->setCapacity(capacity);
-    return arm7Func;
 }
 
 ///===-----------------------------------------------------------------------===///

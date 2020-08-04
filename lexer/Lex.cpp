@@ -34,7 +34,7 @@ Token Lex::getToken() {
         nextSpaceChar();
     }
 
-    if (isalpha(LastChar)) {
+    if (isalpha(LastChar) || LastChar == CHAR_UNDERLINE) {
         str.push_back(LastChar);
         LastChar = fgetc(fp);
         endColumn++;

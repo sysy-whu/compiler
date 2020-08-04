@@ -33,8 +33,9 @@ private:
     ///===-----------------------------------------------------------------------===///
     /// 给全局变量地址分配用
     void semanticArm7Var(Decl *decl, std::vector<Symbol *> *symbols);
+
     /// 内含参数变量地址分配
-    Arm7Func *semanticArm7Func(FuncDef *funcDef);
+    void semanticArm7Func(FuncDef *funcDef, std::vector<Symbol *> *symbolGlobalNow);
 
     ///===-----------------------------------------------------------------------===///
     /// Stmt 语句
