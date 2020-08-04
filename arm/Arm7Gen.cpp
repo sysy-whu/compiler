@@ -695,12 +695,12 @@ ArmReg *Arm7Gen::genMulExp(MulExp *mulExp, std::vector<ArmStmt *> *ArmStmts) {
         mulRet->setIfLock(ARM_REG_LOCK_FALSE);
 
         auto *popStmt = new ArmStmt(ARM_STMT_POP, ("{" + armRegRet->getRegName() + " }").c_str());
-
+        ArmStmts->emplace_back(popStmt);
+        /// 此时 mulRet->mulRet unaryRet->armRegRet
         if (mulExp->getOpType() == OP_BO_MUL) {
             /// 以 armRegRet 为最终结果，因为 mulRet 可能为某变量，其 ArmReg 有对应某个变量地址
             auto *armMulStmt = new ArmStmt(mulExp->getOpType(), armRegRet->getRegName().c_str(),
                                            armRegRet->getRegName().c_str(), mulRet->getRegName().c_str());
-            ArmStmts->emplace_back(popStmt);
             ArmStmts->emplace_back(armMulStmt);
         } else {
             /// DIV / REM 需要调用函数,注意为：r0 = r0 OP(/or%) r1;
@@ -719,7 +719,7 @@ ArmReg *Arm7Gen::genMulExp(MulExp *mulExp, std::vector<ArmStmt *> *ArmStmts) {
                 /// pop    {r1 }
                 auto *pushR0Stmt = new ArmStmt(ARM_STMT_PUSH, "{r0 }");
                 auto *movR0Stmt = new ArmStmt(ARM_STMT_MOV, "r0", armRegRet->getRegName().c_str());
-                auto *popR1Stmt = new ArmStmt(ARM_STMT_POP, "r1");
+                auto *popR1Stmt = new ArmStmt(ARM_STMT_POP, "{r1 }");
                 ArmStmts->emplace_back(pushR0Stmt);
                 ArmStmts->emplace_back(movR0Stmt);
                 ArmStmts->emplace_back(popR1Stmt);
