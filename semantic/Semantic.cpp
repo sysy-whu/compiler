@@ -11,7 +11,7 @@ Semantic::Semantic() {
 
     levelNow = 0;
     funcParamNow = nullptr;
-    capacity = (PUSH_NUM_DEFAULT-1) * -4;
+    capacity = (PUSH_NUM_DEFAULT - 1) * -4;
 //    symbolTableNow = nullptr;
 }
 
@@ -123,7 +123,7 @@ Arm7Func *Semantic::semanticArm7Func(FuncDef *funcDef) {
     funcNameNow = funcDef->getIdent();
     levelNow++;
     /// 因为每次分配空间时，capacity 都会提前减，这里应该是sp当前实际位置-4
-    capacity = (PUSH_NUM_DEFAULT-1) * -4;
+    capacity = (PUSH_NUM_DEFAULT - 1) * -4;
 
     if (funcDef->getFuncFParams() != nullptr) {
         for (int i = 0; i < funcDef->getFuncFParams()->getFuncFParams()->size(); i++) {
@@ -231,14 +231,12 @@ void Semantic::semanticArm7Var(BlockItem *blockItem, std::vector<Symbol *> *symb
         for (VarDef *varDef: *blockItem->getVarDecl()->getVarDefs()) {
             Arm7Var *arm7Var;
             if (varDef->getConstExps()->empty()) {
+                int varDeclType = blockItem->getVarDecl()->getBType();
                 if (varDef->getInitVal() != nullptr &&
-                    semanticAddExp(varDef->getInitVal()->getExp()->getAddExp()) !=
-                    blockItem->getVarDecl()->getBType()) {
+                    semanticAddExp(varDef->getInitVal()->getExp()->getAddExp()) != varDeclType) {
+
                     Error::errorSim("var init wrong when assign");
                     exit(-1);
-                    arm7Var = new Arm7Var(varDef->getIdent().c_str(), funcNameNow.c_str(),
-                                          blockItem->getVarDecl()->getBType(), levelNow,
-                                          CONST_FALSE, ARRAY_FALSE, nullptr, nullptr, varDef->getInitVal());
                 } else {
                     arm7Var = new Arm7Var(varDef->getIdent().c_str(), funcNameNow.c_str(),
                                           blockItem->getVarDecl()->getBType(), levelNow,
@@ -520,7 +518,9 @@ int Semantic::calLVal(LVal *lVal) {
                         symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
                         symbol->getArm7Var()->getIfArray() == ARRAY_FALSE &&
                         symbol->getArm7Var()->getIfConst() == CONST_TRUE) {
-
+                        lVal->setBaseMemoryPos(
+                                ("#" + std::to_string(symbol->getArm7Var()->getValue()->at(0))).c_str());
+                        lVal->setIntPos(symbol->getArm7Var()->getMemoryLoc());
                         return symbol->getArm7Var()->getValue()->at(0);
                     }
                 }
@@ -568,6 +568,17 @@ int Semantic::calLVal(LVal *lVal) {
                         symbol->getArm7Var()->getIfArray() == ARRAY_TRUE &&
                         symbol->getArm7Var()->getIfConst() == CONST_TRUE) {
 
+                        lVal->setIntPos(symbol->getArm7Var()->getMemoryLoc());
+                        lVal->setSubs(subs);
+                        if (i == 1) {  // 全局变量
+                            lVal->setBaseMemoryPos(lVal->getIdent().c_str());
+                            lVal->setType(LVAL_ARRAY_GLOBAL_INT);
+                        } else {
+                            lVal->setBaseMemoryPos(
+                                    ("[fp, #" + std::to_string(symbol->getArm7Var()->getMemoryLoc()) + "]").c_str());
+                            lVal->setType(LVAL_ARRAY_LOCAL_INT);
+                        }
+
                         if (subs->size() == symbol->getArm7Var()->getSubs()->size()) {
                             int pos = 0;  // 计算索引一维位置
                             for (int j = 0; j < subs->size(); j++) {
@@ -611,7 +622,9 @@ std::vector<int> *Semantic::semanticVarArrayInitVals(InitVal *initVal, std::vect
     } else {
         for (InitVal *initValInner : *initVal->getInitVals()) {
             if (initValInner->getExp() != nullptr) {  // 实值
-                valuesRet->push_back(0);
+                if (semanticAddExp(initValInner->getExp()->getAddExp()) == TYPE_INT){
+                    valuesRet->push_back(0);
+                }
             } else {  // 数组嵌套
                 int sub_first_len = 1;  // 子维展开一维的长度
                 for (int i = 1; i < subs->size(); i++) {
@@ -884,8 +897,8 @@ int Semantic::semanticLVal(LVal *lVal) {
                     if (symbol->getArm7Var() != nullptr &&
                         symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
                         symbol->getArm7Var()->getIfArray() == ARRAY_TRUE) {
-
                         /// 局部变量
+                        lVal->setSubs(symbol->getArm7Var()->getSubs());
                         lVal->setBaseMemoryPos(
                                 ("[fp, #" + std::to_string(symbol->getArm7Var()->getMemoryLoc()) + "]").c_str());
                         lVal->setIntPos(symbol->getArm7Var()->getMemoryLoc());
@@ -906,7 +919,7 @@ int Semantic::semanticLVal(LVal *lVal) {
             if (arm7Var->getIdent() == lVal->getIdent() &&
                 arm7Var->getIfArray() == ARRAY_TRUE) {
                 /// 引用类型实参
-
+                lVal->setSubs(arm7Var->getSubs());
                 lVal->setBaseMemoryPos(("[fp, #" + std::to_string(arm7Var->getMemoryLoc()) + "]").c_str());
                 lVal->setIntPos(arm7Var->getMemoryLoc());
                 lVal->setSubs(arm7Var->getSubs());
@@ -928,6 +941,7 @@ int Semantic::semanticLVal(LVal *lVal) {
                 ///     全部变量实际上靠变量名索引
                 /// 	movw	r0, #:lower16: globalVarArrayName
                 /// 	movt	r0, #:upper16: globalVarArrayName
+                lVal->setSubs(symbol->getArm7Var()->getSubs());
                 lVal->setBaseMemoryPos(lVal->getIdent().c_str());
                 lVal->setIntPos(symbol->getArm7Var()->getMemoryLoc());
                 lVal->setSubs(symbol->getArm7Var()->getSubs());

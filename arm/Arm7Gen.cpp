@@ -144,33 +144,6 @@ void Arm7Gen::genVarArray(VarDef *varDef, std::vector<ArmStmt *> *armStmts) {
         subs->push_back(sub);
     }
 
-//    // value arm 相关
-//    if (varDef->getInitVal() != nullptr) {
-//        for (int i = 0; i < len;) {
-//            int subPosNow = varDef->getBaseMemoryPos() + i;
-//            ///	str rRX, [fp, #SUB_LOC]
-//            auto *rReg = genAddExp(varDef->getInitVal()->getExp()->getAddExp(), armStmts);
-//            auto *armSTRStmt = new ArmStmt(ARM_STMT_STR, rReg->getRegName().c_str(),
-//                                           ("[fp, #" + std::to_string(subPosNow) + "]").c_str());
-//            armStmts->emplace_back(armSTRStmt);
-//            i += 4;
-//        }
-//    } else {
-//        ArmReg *armReg = armRegManager->getFreeArmReg(armStmts);
-//        ///	mov	rX, #GLOBAL_DEFAULT_VALUE <--> 0
-//        auto *armStmtMove = new ArmStmt(ARM_STMT_MOV, armReg->getRegName().c_str(),
-//                                        ("#" + std::to_string(GLOBAL_DEFAULT_VALUE)).c_str());
-//        armStmts->emplace_back(armStmtMove);
-//        for (int i = 0; i < 4 * len;) {
-//            int subPosNow = varDef->getBaseMemoryPos() + i;
-//            ///	str	rX, [fp, #SUB_LOC]
-//            auto *armStmtStr = new ArmStmt(ARM_STMT_STR, armReg->getRegName().c_str(),
-//                                           ("[fp, #" + std::to_string(subPosNow) + "]").c_str());
-//            armStmts->emplace_back(armStmtStr);
-//            i += 4;
-//        }
-//    }
-
 // value 相关
     auto *values = new std::vector<Exp *>();
     if (varDef->getInitVal() != nullptr) {
@@ -217,37 +190,6 @@ void Arm7Gen::genConstVarArray(ConstDef *constDef, std::vector<ArmStmt *> *armSt
         subs->push_back(sub);
     }
 
-//    // value arm 相关
-//    if (constDef->getConstInitVal() != nullptr) {
-//        auto *values = calConstArrayInitVals(constDef->getConstInitVal(), subs);
-//        ArmReg *armReg = armRegManager->getFreeArmReg(armStmts);
-//        for (int i = 0; i < 4 * len;) {
-//            int subPosNow = constDef->getBaseMemoryPos() + i;
-//            ///	mov	rX, #SUB_VALUE
-//            ///	str	rX, [fp, #SUB_LOC]
-//            auto *armStmtMove = new ArmStmt(ARM_STMT_MOV, armReg->getRegName().c_str(),
-//                                            ("#" + std::to_string(values->at(i))).c_str());
-//            auto *armStmtStr = new ArmStmt(ARM_STMT_STR, armReg->getRegName().c_str(),
-//                                           ("[fp, #" + std::to_string(subPosNow) + "]").c_str());
-//            armStmts->emplace_back(armStmtMove);
-//            armStmts->emplace_back(armStmtStr);
-//            i += 4;
-//        }
-//    } else {
-//        ArmReg *armReg = armRegManager->getFreeArmReg(armStmts);
-//        ///	mov	rX, #GLOBAL_DEFAULT_VALUE <--> 0
-//        auto *armStmtMove = new ArmStmt(ARM_STMT_MOV, armReg->getRegName().c_str(),
-//                                        ("#" + std::to_string(GLOBAL_DEFAULT_VALUE)).c_str());
-//        armStmts->emplace_back(armStmtMove);
-//        for (int i = 0; i < 4 * len;) {
-//            int subPosNow = constDef->getBaseMemoryPos() + i;
-//            ///	str	rX, [fp, #SUB_LOC]
-//            auto *armStmtStr = new ArmStmt(ARM_STMT_STR, armReg->getRegName().c_str(),
-//                                           ("[fp, #" + std::to_string(subPosNow) + "]").c_str());
-//            armStmts->emplace_back(armStmtStr);
-//            i += 4;
-//        }
-//    }
 // value 相关
     auto *values = new std::vector<int>();
     if (constDef->getConstInitVal() != nullptr) {

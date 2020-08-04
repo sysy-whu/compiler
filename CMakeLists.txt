@@ -4,7 +4,6 @@ project(compiler)
 set(CMAKE_CXX_STANDARD 17)
 
 file(GLOB SOURCES
-        *.h
         *.cpp
         util/*.h
         util/*.cpp
