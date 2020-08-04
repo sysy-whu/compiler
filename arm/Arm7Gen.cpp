@@ -336,118 +336,199 @@ const char *Arm7Gen::genStmt(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, A
 
 const char *Arm7Gen::genStmtAuxIf(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
                                   std::vector<ArmStmt *> *lastBlockStmts) {
-//    const char *ifCondRet = genCondExp(stmt->getCond(), lastBlockStmts, stepName);
-//
-//    auto *irBodyStmts = new std::vector<IRStmt *>();
-//    auto *irBodyPreLocs = new std::set<std::string>();
-//    irBodyPreLocs->insert(lastBlock->getBlockName());
-//    int bodyStep = stepName++;
-//    auto *bodyBlock = new IRLocalBlock((REGISTER_LOCAL + std::to_string(bodyStep)).c_str(), irBodyStmts,
-//                                       irBodyPreLocs);
-//    basicBlocks->emplace_back(bodyBlock);
-//
-//    genStmt(stmt->getStmtBrBody(), basicBlocks, lastBlock, lastBlockStmts, stepName);
-//
-//    if (stmt->getElseBody() != nullptr) {
-//        auto *irElseStmts = new std::vector<IRStmt *>();
-//        auto *irElsePreLocs = new std::set<std::string>();
-//        irElsePreLocs->insert(lastBlock->getBlockName());
-//        int elseStep = stepName++;
-//        auto *elseBlock = new IRLocalBlock((REGISTER_LOCAL + std::to_string(elseStep)).c_str(), irElseStmts,
-//                                           irElsePreLocs);
-//        basicBlocks->emplace_back(elseBlock);
-//
-//        genStmt(stmt->getElseBody(), basicBlocks, lastBlock, lastBlockStmts, stepName);
-//
-//        // lastBlockStmts (原if之前的语句) 添加最后跳转 br
-//        auto *elseStepArray = new std::vector<std::string>();
-//        elseStepArray->emplace_back(REGISTER_LOCAL + std::to_string(elseStep));
-//        auto *irBrCondStmt = new IRStmt(DAG_BR, ifCondRet, (REGISTER_LOCAL + std::to_string(bodyStep)).c_str(),
-//                                        elseStepArray);
-//        lastBlockStmts->emplace_back(irBrCondStmt);
-//
-//        // if {...} else {...} 各自最后一句添加跳转
-//        auto *afterEndStepStr = new std::string(REGISTER_LOCAL + std::to_string(++stepName));
-//        auto *irIfBodyStmt = new IRStmt(DAG_BR, afterEndStepStr->c_str());
-//        irBodyStmts->emplace_back(irIfBodyStmt);
-//        auto *irIfElseBodyStmt = new IRStmt(DAG_BR, afterEndStepStr->c_str());
-//        irElseStmts->emplace_back(irIfElseBodyStmt);
-//        return afterEndStepStr->c_str();
-//    } else {
-//        // lastBlockStmts (原if之前的语句) 添加最后跳转 br
-//        stepName++;
-//        auto *afterIfStepArray = new std::vector<std::string>();
-//        afterIfStepArray->emplace_back(REGISTER_LOCAL + std::to_string(stepName));
-//        auto *irBrCondStmt = new IRStmt(DAG_BR, ifCondRet, (REGISTER_LOCAL + std::to_string(bodyStep)).c_str(),
-//                                        afterIfStepArray);
-//        lastBlockStmts->emplace_back(irBrCondStmt);
-//
-//        // if {...} 最后一句添加跳转
-//        auto *afterEndStepStr = new std::string(REGISTER_LOCAL + std::to_string(++stepName));
-//        auto *irIfBodyStmt = new IRStmt(DAG_BR, afterEndStepStr->c_str());
-//        irBodyStmts->emplace_back(irIfBodyStmt);
-//        return afterEndStepStr->c_str();
-//    }
+    auto *newBlockName = new std::string (lastBlock->getBlockName());
+    auto *armRegCond = genCondExp(stmt->getCond(), basicBlocks, lastBlock, lastBlockStmts,*newBlockName);
+
+    /// .L_NEW_BLOCK_NAME
+    /// cmp armRegCOnd #0
+    /// bNE  .LBodyBlock
+
+
+    /// 分配 .LEnd blockName
+    /// 可能有的 else块语句们
+    /// b.LEnd
+
+    /// 分配 .LBodyBlock blockName
+    /// .LBodyBlock 标签代码块
+    /// body 语句们
+    /// b  .LEnd
+
+    /// 返回 .LEnd BlockName
+
     return nullptr;
 }
 
 const char *Arm7Gen::genStmtAuxWhile(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
                                      std::vector<ArmStmt *> *lastBlockStmts) {
-//    auto *irCondStmts = new std::vector<IRStmt *>();
-//    auto *irCondPreLocs = new std::set<std::string>();
-//    irCondPreLocs->insert(lastBlock->getBlockName());
-//    int condStep = stepName++;
-//    auto *condBlock = new IRLocalBlock((REGISTER_LOCAL + std::to_string(condStep)).c_str(), irCondStmts, irCondPreLocs);
-//    basicBlocks->emplace_back(condBlock);
-//    whilePos->push_back(condBlock->getBlockName());
-//
-//    const char *ifCondRet = genCondExp(stmt->getCond(), lastBlockStmts, stepName);
-//
-//    auto *irBodyStmts = new std::vector<IRStmt *>();
-//    auto *irBodyPreLocs = new std::set<std::string>();
-//    irBodyPreLocs->insert(condBlock->getBlockName());
-//    int bodyStep = stepName++;
-//    auto *bodyBlock = new IRLocalBlock((REGISTER_LOCAL + std::to_string(bodyStep)).c_str(), irBodyStmts, irBodyPreLocs);
-//    basicBlocks->emplace_back(bodyBlock);
-//    auto *afterEndStepStr = new std::string("tmp");
-//    whileEndPos->push_back(*afterEndStepStr);
-//
-//    genStmt(stmt->getStmtBrBody(), basicBlocks, bodyBlock, irBodyStmts, stepName);
-//
-//    afterEndStepStr = new std::string(REGISTER_LOCAL + std::to_string(++stepName));
-//    auto *bodyStepArray = new std::vector<std::string>();
-//    bodyStepArray->emplace_back(afterEndStepStr->c_str());
-//    auto *irWhileCondStmt = new IRStmt(DAG_BR, ifCondRet, bodyBlock->getBlockName().c_str(), bodyStepArray);
-//    irCondStmts->emplace_back(irWhileCondStmt);
-//
-//    whilePos->pop_back();
-//    whileEndPos->pop_back();
-//    return afterEndStepStr->c_str();
-    return nullptr;
+    /// 分配 .L whileCondBlockName
+    /// whilePos.pushBack(.L whileCondBlockName)
+    auto *newBlockCondName = new std::string (".L"+std::to_string(blockName++));
+    whilePos->emplace_back(*newBlockCondName);
+    auto *armCondStmts = new std::vector<ArmStmt *>();
+    auto *armCondBlock = new ArmBlock(newBlockCondName->c_str(), armCondStmts);
+    basicBlocks->emplace_back(armCondBlock);
+
+    /// 分配 .L whileEndBlockName
+    /// whileEndPos.poshBAck(.L whileEndBlockName)
+    auto *newBlockEndName = new std::string (".L"+std::to_string(blockName++););
+    whilePos->emplace_back(*newBlockEndName);
+
+    auto *armRegCond = genCondExp(stmt->getCond(), basicBlocks, armCondBlock, armCondStmts,*newBlockCondName);
+
+    /// 在.L whileCondBlockName 代码块内
+    ///    cmp armRegCond #0
+    ///    beq .L whileEndBlockName
+    ///    whileBody 的语句们
+    ///    b .L whileCondBlockName
+    auto *armCondCmpStmt = new ArmStmt(ARM_STMT_CMP, armRegCond->getRegName().c_str(), "#0");
+    auto *armBEqStmt = new ArmStmt(ARM_STMT_BEQ, newBlockEndName->c_str());
+    armCondStmts->emplace_back(armBEqStmt);
+
+    genStmt(stmt->getStmtBrBody(), basicBlocks, armCondBlock, armCondStmts);
+    auto *armBCondStmt = new ArmStmt(ARM_STMT_B, newBlockCondName->c_str());
+    armCondStmts->emplace_back(armBCondStmt);
+
+    /// whilePos.pop_back()
+    /// whileEndPos.popBack()
+    whilePos->pop_back();
+    whileEndPos->pop_back();
+    /// 返回 .LEndBlockName
+    return newBlockEndName->c_str();
 }
 
 ///===-----------------------------------------------------------------------===///
 /// 表达式 不计算 生成代码
 ///===-----------------------------------------------------------------------===///
 
-const char *Arm7Gen::genCondExp(Cond *cond, std::vector<ArmStmt *> *ArmStmts) {
-    return nullptr;
+ArmReg *Arm7Gen::genCondExp(Cond *cond,  std::vector<ArmBlock *> *basicBlocks,
+                            ArmBlock *lastBlock,std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName) {
+    return genLOrExp(cond->getLOrExp(), basicBlocks, lastBlock, lastBlockStmts, newBlockName);
 }
 
-const char *Arm7Gen::genLOrExp(LOrExp *lOrExp, std::vector<ArmStmt *> *ArmStmts) {
-    return nullptr;
+ArmReg *Arm7Gen::genLOrExp(LOrExp *lOrExp,  std::vector<ArmBlock *> *basicBlocks,
+                           ArmBlock *lastBlock,std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName) {
+    if (lOrExp->getLOrExp() == nullptr) {
+        return genLAndExp(lOrExp->getLAndExp(),basicBlocks, lastBlock, lastBlockStmts, newBlockName);
+    } else {
+        // todo ||需要新增block，这里目前无法实现
+        auto *lAndRet = genLAndExp(lOrExp->getLAndExp(), basicBlocks, lastBlock, lastBlockStmts, newBlockName);
+        if(lastBlock->getBlockName() != newBlockName){
+            auto *armNewStmts = new std::vector<ArmStmt *>();
+            auto *newBlock = new ArmBlock(newBlockName.c_str(), armNewStmts);
+            basicBlocks->emplace_back(newBlock);
+            lastBlock = newBlock;
+            lastBlockStmts = armNewStmts;
+        }
+        /// cmp lAndRet #0
+        /// bne  .L_True
+
+        auto *lOrRet = genLOrExp(lOrExp->getLOrExp(), basicBlocks, lastBlock, lastBlockStmts, newBlockName);
+        if(lastBlock->getBlockName() != newBlockName){
+            auto *armNewStmts = new std::vector<ArmStmt *>();
+            auto *newBlock = new ArmBlock(newBlockName.c_str(), armNewStmts);
+            basicBlocks->emplace_back(newBlock);
+            lastBlock = newBlock;
+            lastBlockStmts = armNewStmts;
+        }
+        /// cmp lAndRet #0
+        /// bne  .L_True
+
+        /// distribute new blockName which means the end of total LandExp
+        newBlockName = ".L"+std::to_string(blockName++);
+        auto *armRegRet = armRegManager->getFreeArmReg(lastBlockStmts);
+
+        /// mov aFreeReg #0
+        /// b  newBlockName
+
+        /// block->.L_True
+        /// mov aFreeReg #1
+        /// b  newBlockName
+
+        return armRegRet;
+    }
 }
 
-const char *Arm7Gen::genLAndExp(LAndExp *lAndExp, std::vector<ArmStmt *> *ArmStmts) {
-    return nullptr;
+ArmReg *Arm7Gen::genLAndExp(LAndExp *lAndExp,  std::vector<ArmBlock *> *basicBlocks,
+                            ArmBlock *lastBlock,std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName) {
+    if (lAndExp->getLAndExp() == nullptr) {
+        return genEqExp(lAndExp->getEqExp(), lastBlockStmts);
+    } else {
+        auto *eqRet = genEqExp(lAndExp->getEqExp(), lastBlockStmts);
+        /// cmp eqRet #0
+        /// be  .L_FALSE
+
+        auto *lAndRet = genLAndExp(lAndExp->getLAndExp(),basicBlocks, lastBlock, lastBlockStmts, newBlockName);
+        /// cmp lAndRet #0
+        /// be  .L_FALSE
+
+        /// distribute new blockName which means the end of total LandExp
+        newBlockName = ".L"+std::to_string(blockName++);
+        auto *armRegRet = armRegManager->getFreeArmReg(lastBlockStmts);
+
+        /// mov aFreeReg #1
+        /// b  newBlockName
+
+        /// block->.L_FALSE
+        /// mov aFreeReg #0
+        /// b  newBlockName
+
+        return armRegRet;
+    }
 }
 
-const char *Arm7Gen::genEqExp(EqExp *eqExp, std::vector<ArmStmt *> *ArmStmts) {
-    return nullptr;
+ArmReg *Arm7Gen::genEqExp(EqExp *eqExp, std::vector<ArmStmt *> *ArmStmts) {
+    if (eqExp->getOpType() == OP_NULL) {
+        return genRelExp(eqExp->getRelExp(), ArmStmts);
+    } else {
+        auto *eqRet = genEqExp(eqExp->getEqExp(), ArmStmts);
+        auto *relRet = genRelExp(eqExp->getRelExp(), ArmStmts);
+        // 比较eqRet和eqRet
+        ArmStmts->emplace_back(new ArmStmt(ARM_STMT_CMP, eqRet->getRegName().c_str(), relRet->getRegName().c_str()));
+        auto *armRegFree = armRegManager->getFreeArmReg(ArmStmts);
+        switch (eqExp->getOpType()) {
+            case OP_BO_EQ:
+                ArmStmts->emplace_back(new ArmStmt(ARM_STMT_MOVEQ, armRegFree->getRegName().c_str(), "#1"));
+                ArmStmts->emplace_back(new ArmStmt(ARM_STMT_MOVNE, armRegFree->getRegName().c_str(), "#0"));
+                break;
+            case OP_BO_NEQ:
+                ArmStmts->emplace_back(new ArmStmt(ARM_STMT_MOVNE, armRegFree->getRegName().c_str(), "#1"));
+                ArmStmts->emplace_back(new ArmStmt(ARM_STMT_MOVEQ, armRegFree->getRegName().c_str(), "#0"));
+                break;
+        }
+        return armRegFree;
+    }
 }
 
-const char *Arm7Gen::genRelExp(RelExp *relExp, std::vector<ArmStmt *> *ArmStmts) {
-    return nullptr;
+ArmReg *Arm7Gen::genRelExp(RelExp *relExp, std::vector<ArmStmt *> *ArmStmts) {
+    if (relExp->getOpType() == OP_NULL) {
+        return genAddExp(relExp->getAddExp(), ArmStmts);
+    } else {
+        auto *relRet = genRelExp(relExp->getRelExp(), ArmStmts);
+        auto *addRet = genAddExp(relExp->getAddExp(), ArmStmts);
+        // 比较relRet和addRet
+        ArmStmts->emplace_back(new ArmStmt(ARM_STMT_CMP, relRet->getRegName().c_str(), addRet->getRegName().c_str()));
+
+        auto *armRegFree = armRegManager->getFreeArmReg(ArmStmts);
+        switch (relExp->getOpType()) {
+            case OP_BO_LT:
+                ArmStmts->emplace_back(new ArmStmt(ARM_STMT_MOVLT, armRegFree->getRegName().c_str(), "#1"));
+                ArmStmts->emplace_back(new ArmStmt(ARM_STMT_MOVGE, armRegFree->getRegName().c_str(), "#0"));
+                break;
+            case OP_BO_GT:
+                ArmStmts->emplace_back(new ArmStmt(ARM_STMT_MOVGT, armRegFree->getRegName().c_str(), "#1"));
+                ArmStmts->emplace_back(new ArmStmt(ARM_STMT_MOVLE, armRegFree->getRegName().c_str(), "#0"));
+                break;
+            case OP_BO_LTE:
+                ArmStmts->emplace_back(new ArmStmt(ARM_STMT_MOVLE, armRegFree->getRegName().c_str(), "#1"));
+                ArmStmts->emplace_back(new ArmStmt(ARM_STMT_MOVGT, armRegFree->getRegName().c_str(), "#0"));
+                break;
+            case OP_BO_GTE:
+                ArmStmts->emplace_back(new ArmStmt(ARM_STMT_MOVGE, armRegFree->getRegName().c_str(), "#1"));
+                ArmStmts->emplace_back(new ArmStmt(ARM_STMT_MOVLT, armRegFree->getRegName().c_str(), "#0"));
+                break;
+        }
+        return armRegFree;
+    }
 }
 
 ArmReg *Arm7Gen::genAddExp(AddExp *addExp, std::vector<ArmStmt *> *ArmStmts) {
@@ -576,10 +657,18 @@ ArmReg *Arm7Gen::genUnaryExp(UnaryExp *unaryExp, std::vector<ArmStmt *> *ArmStmt
             ArmStmts->emplace_back(armNegStmt);
             return unaryArmReg;
         } else if (unaryExp->getOpType() == OP_UO_NOT) {
-            /// TODO fix when condExp
-            return nullptr;
+            ArmReg *unaryArmReg = genUnaryExp(unaryExp->getUnaryExp(), ArmStmts);
+            /// cmp rU #0
+            auto *armCmpStmt = new ArmStmt(ARM_STMT_CMP, unaryArmReg->getRegName().c_str(), "#0");
+            ArmStmts->emplace_back(armCmpStmt);
+            auto *armRegFree = armRegManager->getFreeArmReg(ArmStmts);
+
+            ArmStmts->emplace_back(new ArmStmt(ARM_STMT_MOVEQ, armRegFree->getRegName().c_str(), "#1"));
+            ArmStmts->emplace_back(new ArmStmt(ARM_STMT_MOVNE, armRegFree->getRegName().c_str(), "#0"));
+            return armRegFree;
         }
-        return nullptr;
+        Error::errorSim("unary genArm not");
+        exit(-1);
     } else {
         /// 函数调用 有参数
         /// 万法归宗之 LVal 永存真实地址->则无论参数数组还是局部数组,永远先ldr再add好了

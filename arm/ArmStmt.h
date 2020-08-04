@@ -15,56 +15,6 @@ private:
     std::string opd2;
 
     std::string opd3;
-private:
-    std::string opType2String() {
-//        switch (opType) {
-//            case ARM_TYPE::MOV:
-//                return "MOV";
-//            case ARM_TYPE::MOVEQ:
-//                return "MOVEQ";
-//            case ARM_TYPE::MOVNE:
-//                return "MOVNE";
-//            case ARM_TYPE::MOVGE:
-//                return "MOVGE";
-//            case ARM_TYPE::MOVGT:
-//                return "MOVGT";
-//            case ARM_TYPE::MOVLT:
-//                return "MOVLT";
-//            case ARM_TYPE::MOVW:
-//                return "MOVW";
-//            case ARM_TYPE::MOVT:
-//                return "MOVT";
-//            case ARM_TYPE::ADD:
-//                return "ADD";
-//            case ARM_TYPE::SUB:
-//                return "SUB";
-//            case ARM_TYPE::MUL:
-//                return "MUL";
-//            case ARM_TYPE::DIV:
-//                return "DIV";
-//            case ARM_TYPE::MOD:
-//                return "MOD";
-//            case ARM_TYPE::CMP:
-//                return "CMP";
-//            case ARM_TYPE::LDR:
-//                return "LDR";
-//            case ARM_TYPE::STR:
-//                return "STR";
-//            case ARM_TYPE::B:
-//                return "B";
-//            case ARM_TYPE::BL:
-//                return "BL";
-//            case ARM_TYPE::BX:
-//                return "BX";
-//            case ARM_TYPE::BEQ:
-//                return "BEQ";
-//            case ARM_TYPE::PUSH:
-//                return "PUSH";
-//            case ARM_TYPE::POP:
-//                return "POP";
-//        }
-        return "";
-    }
 
 public:
     ArmStmt(int opType, const char *opd1) :
@@ -92,6 +42,48 @@ public:
         return opd3;
     }
 
+private:
+    std::string opType2String() {
+        // todo type转相应str
+        switch (opType) {
+            case ARM_STMT_STR:
+                return "str";
+            case ARM_STMT_LDR:
+                return "ldr";
+            case ARM_STMT_PUSH:
+                return "push";
+            case ARM_STMT_POP:
+                return "pop";
+            case ARM_STMT_ADD:
+                return "add";
+            case ARM_STMT_SUB:
+                return "sub";
+            case ARM_STMT_MUL:
+                return "mul";
+//            case ARM_STMT_MOVE:
+//                return "move";
+            case ARM_STMT_MOVEQ:
+                return "moveq";
+            case ARM_STMT_MOVNE:
+                return "movne";
+            case ARM_STMT_MOVLE:
+                return "movle";
+            case ARM_STMT_MOVGE:
+                return "movge";
+            case ARM_STMT_MOVGT:
+                return "movgt";
+            case ARM_STMT_MOVLT:
+                return "movlt";
+            case ARM_STMT_MOVW:
+                return "movw";
+            case ARM_STMT_MOVT:
+                return "movt";
+
+        }
+        return "";
+    }
+
+public:
     std::string genString() {
         return opType2String() + " " + opd1 + " " + opd2 + " " + opd3 + "\n";
     }
@@ -120,6 +112,7 @@ public:
         return armStmts;
     }
 
+    /// ArmBlock输出
     std::string genString() {
         std::string re = "";
         if (blockName != "entry") {
