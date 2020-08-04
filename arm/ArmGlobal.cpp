@@ -53,8 +53,8 @@ std::string Arm7GlobalVar::genString() {
 std::string Arm7GlobalFunc::genString() {
     // todo Arm7GlobalFunc 的输出方法
     std::string re = ".global " + funcName + "\n";
-    re += ".global " + funcName + "\n";
     re += ".type " + funcName + ",%function\n";
+    re += funcName + ":\n";
     for (auto armBlock:*armBlocks) {
         re += armBlock->genString();
     }

@@ -62,6 +62,8 @@ private:
                 return "mul";
             case ARM_STMT_RSB:
                 return "rsb";
+            case ARM_STMT_MOV:
+                return "mov";
             case ARM_STMT_MOVEQ:
                 return "moveq";
             case ARM_STMT_MOVNE:
