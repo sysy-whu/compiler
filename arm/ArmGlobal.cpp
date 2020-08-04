@@ -44,7 +44,7 @@ std::string Arm7GlobalVar::genString() {
     }
     re += ident + ":\n";
     for (auto it:*value) {
-        re += ".word " + std::to_string(value->at(0))+"\n";
+        re += ".word " + std::to_string(it)+"\n";
     }
     /// TODO 有警告
     /// warning: no return statement in function returning non-void [-Wreturn-type]
