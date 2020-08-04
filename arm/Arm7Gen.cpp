@@ -199,7 +199,7 @@ void Arm7Gen::genVarArray(VarDef *varDef, std::vector<ArmStmt *> *armStmts) {
             armAssignStmts->emplace_back(armStmtStr);
         } else {
             ///	str rRX, [fp, #-LOC]
-            auto *rReg = genAddExp(varDef->getInitVal()->getExp()->getAddExp(), armStmts);
+            auto *rReg = genAddExp(values->at(i)->getAddExp(), armStmts);
             auto *armSTRStmt = new ArmStmt(ARM_STMT_STR, rReg->getRegName().c_str(),
                                            ("[fp, #" + std::to_string(subPosNow) + "]").c_str());
             armStmts->emplace_back(armSTRStmt);
@@ -407,7 +407,7 @@ const char *Arm7Gen::genStmtAuxIf(Stmt *stmt, std::vector<ArmBlock *> *basicBloc
     /// 分配 .LEnd blockName
     /// 可能有的 else块语句们
     /// b.LEnd
-    if(stmt->getElseBody() != nullptr){
+    if (stmt->getElseBody() != nullptr) {
         genStmt(stmt->getElseBody(), basicBlocks, lastBlock, lastBlockStmts);
     }
     auto armBEndStmt = new ArmStmt(ARM_STMT_B, endBlockName->c_str());
