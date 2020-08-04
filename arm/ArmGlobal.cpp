@@ -128,28 +128,28 @@ std::string ArmGlobal::genString() {
 
 std::string Arm7GlobalVar::genString() {
     // todo Arm7GlobalVar的输出方法
-    std::string re = ".text\n";
-    re += ".global " + ident + "\n";
-    re += ".data\n";
-    re += ".align 2\n";
-    re += ".type " + ident + ", %object\n";
+    std::string re = "\t.text\n";
+    re += "\t.global " + ident + "\n";
+    re += "\t.data\n";
+    re += "\t.align 2\n";
+    re += "\t.type " + ident + ", %object\n";
     /// TODO
     /// 这里的 .size 肯定有误;
     /// 1、ArmGlobal.h Line:80 Arm7GlobalVar 构造函数说明有歧义（已完善）
     ///   见 SymbolTable.h Line:160 Arm7Var 构造函数各个变量说明, subs仅在 ifArray 为 ARRAY_TRUE 时有效（不为null）
     /// 2、subs 是各个维度的长度，不是总元素个数
     if (subs == nullptr) {
-        re += ".size " + ident + "," + std::to_string(4) + "\n";
+        re += "\t.size " + ident + "," + std::to_string(4) + "\n";
     } else {
         int len = 1;
         for (int sub:*subs) {
             len *= sub;
         }
-        re += ".size " + ident + "," + std::to_string(len * 4) + "\n";
+        re += "\t.size " + ident + "," + std::to_string(len * 4) + "\n";
     }
     re += ident + ":\n";
     for (auto it:*value) {
-        re += ".word " + std::to_string(it) + "\n";
+        re += "\t.word " + std::to_string(it) + "\n";
     }
     /// TODO 有警告
     /// warning: no return statement in function returning non-void [-Wreturn-type]
@@ -165,24 +165,24 @@ std::string Arm7GlobalFunc::genString() {
         for (auto value: *funcInnerBlockAux->getValues()) {
             re += ".ascii \"" + value + "\"\n";
         }
-        re += ".align 2\n";
+        re += "\t.align 2\n";
     }
 
-    re += ".text\n";
-    re += ".align 2\n";
-    re += ".global " + funcName + "\n";
-    re += ".syntax unified\n";
-    re += ".arm\n";
-    re += ".fpu vfp\n";
-    re += ".type " + funcName + ", %function\n";
+    re += "\t.text\n";
+    re += "\t.align 2\n";
+    re += "\t.global " + funcName + "\n";
+    re += "\t.syntax unified\n";
+    re += "\t.arm\n";
+    re += "\t.fpu vfp\n";
+    re += "\t.type " + funcName + ", %function\n";
     re += funcName + ":\n";
     for (auto armBlock:*armBlocks) {
         re += armBlock->genString();
     }
 
-    re += "sub sp, fp, #8\n";
-    re += "@ sp needed\n";
-    re += "pop {r4,fp, pc}\n";
+    re += "\tsub sp, fp, #8\n";
+    re += "\t@ sp needed\n";
+    re += "\tpop {r4,fp, pc}\n";
     return re;
 }
 

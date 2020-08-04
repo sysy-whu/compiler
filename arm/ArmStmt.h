@@ -136,7 +136,7 @@ public:
             re = blockName + ":\n";
         }
         for (auto armStmt:*armStmts) {
-            re += armStmt->genString();
+            re += "\t"+armStmt->genString();
         }
         return re;
     }
