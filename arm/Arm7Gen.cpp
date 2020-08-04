@@ -787,7 +787,7 @@ ArmReg *Arm7Gen::genUnaryExp(UnaryExp *unaryExp, std::vector<ArmStmt *> *ArmStmt
                     ArmStmts->emplace_back(armStrStmt);
                 }
             }
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < exps->size() && i < 4; i++) {
                 auto *armRegParam = genAddExp(exps->at(i)->getAddExp(), ArmStmts);
                 if (armRegParam->getRegName() != "r" + std::to_string(i)) {
                     /// 释放寄存器并锁定不再分配
