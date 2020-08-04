@@ -111,7 +111,6 @@ static const int TYPE_INT = -2;
 static const int TYPE_INT_STAR = -1;
 static const int TYPE_VOID = -3;
 static const int TYPE_STR = -4;
-static const int TYPE_INT_BOOL = -5;
 
 // symbolTableType
 static const int SYMBOL_TABLE_EXTERN = -20;
@@ -208,24 +207,4 @@ static const int ARM_REG_LOCK_FALSE = 0;
 static const std::string FUNC_MINE_DIV_ZT = "div_zt";
 static const std::string FUNC_MINE_MOD_ZT = "mod_zt";
 
-// ARM_DAG Type
-enum ARM_DAG {
-    IMMEDIATE_DATA,
-
-    MOV, MOVEQ, MOVNE, MOVLE, MOVGE, MOVGT, MOVLT,
-    MOVW, MOVT,
-
-    ADD, SUB, MUL, DIV, MOD,
-
-    CMP,
-
-    LDR, STR,
-
-    B, BL, BX, BEQ,
-
-    PUSH, POP
-
-};
-
-typedef ARM_DAG ARM_TYPE;
 #endif //COMPILER_MYCONSTANTS_H

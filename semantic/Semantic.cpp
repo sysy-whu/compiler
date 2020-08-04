@@ -662,9 +662,9 @@ int Semantic::semanticLOrExp(LOrExp *lOrExp) {
     if (lOrExp->getLOrExp() == nullptr) {
         return semanticLAndExp(lOrExp->getLAndExp());
     } else {
-        if (semanticLOrExp(lOrExp->getLOrExp()) == TYPE_INT_BOOL &&
-            semanticLAndExp(lOrExp->getLAndExp()) == TYPE_INT_BOOL) {
-            return TYPE_INT_BOOL;
+        if (semanticLOrExp(lOrExp->getLOrExp()) == TYPE_INT &&
+            semanticLAndExp(lOrExp->getLAndExp()) == TYPE_INT) {
+            return TYPE_INT;
         } else {
             Error::errorSim("semanticLOrExp");
             exit(-1);
@@ -676,9 +676,9 @@ int Semantic::semanticLAndExp(LAndExp *lAndExp) {
     if (lAndExp->getLAndExp() == nullptr) {
         return semanticEqExp(lAndExp->getEqExp());
     } else {
-        if (semanticLAndExp(lAndExp->getLAndExp()) == TYPE_INT_BOOL &&
-            semanticEqExp(lAndExp->getEqExp()) == TYPE_INT_BOOL) {
-            return TYPE_INT_BOOL;
+        if (semanticLAndExp(lAndExp->getLAndExp()) == TYPE_INT &&
+            semanticEqExp(lAndExp->getEqExp()) == TYPE_INT) {
+            return TYPE_INT;
         } else {
             Error::errorSim("semanticLAndExp");
             exit(-1);
@@ -690,10 +690,10 @@ int Semantic::semanticEqExp(EqExp *eqExp) {
     if (eqExp->getOpType() == OP_NULL) {
         return semanticRelExp(eqExp->getRelExp());
     } else {
-        if (semanticEqExp(eqExp->getEqExp()) == TYPE_INT_BOOL &&
-            semanticRelExp(eqExp->getRelExp()) == TYPE_INT_BOOL) {
+        if (semanticEqExp(eqExp->getEqExp()) == TYPE_INT &&
+            semanticRelExp(eqExp->getRelExp()) == TYPE_INT) {
             if (eqExp->getOpType() == OP_BO_EQ || eqExp->getOpType() == OP_BO_NEQ) {
-                return TYPE_INT_BOOL;
+                return TYPE_INT;
             } else {
                 Error::errorSim("semanticEqExp opType");
                 exit(-1);
@@ -708,17 +708,17 @@ int Semantic::semanticEqExp(EqExp *eqExp) {
 int Semantic::semanticRelExp(RelExp *relExp) {
     if (relExp->getOpType() == OP_NULL) {
         if (semanticAddExp(relExp->getAddExp()) == TYPE_INT) {
-            return TYPE_INT_BOOL;
+            return TYPE_INT;
         } else {
             Error::errorSim("semanticRelExp addExpInner type");
             exit(-1);
         }
     } else {
-        if (semanticRelExp(relExp->getRelExp()) == TYPE_INT_BOOL &&
+        if (semanticRelExp(relExp->getRelExp()) == TYPE_INT &&
             semanticAddExp(relExp->getAddExp()) == TYPE_INT) {
             if (relExp->getOpType() == OP_BO_GT || relExp->getOpType() == OP_BO_GTE ||
                 relExp->getOpType() == OP_BO_LT || relExp->getOpType() == OP_BO_LTE) {
-                return TYPE_INT_BOOL;
+                return TYPE_INT;
             } else {
                 Error::errorSim("semanticRelExp op type");
                 exit(-1);
@@ -753,7 +753,8 @@ int Semantic::semanticMulExp(MulExp *mulExp) {
         return semanticUnaryExp(mulExp->getUnaryExp());
     } else {
         if (semanticMulExp(mulExp->getMulExp()) == TYPE_INT && semanticUnaryExp(mulExp->getUnaryExp()) == TYPE_INT) {
-            if (mulExp->getOpType() == OP_BO_MUL || mulExp->getOpType() == OP_BO_DIV) {
+            if (mulExp->getOpType() == OP_BO_MUL || mulExp->getOpType() == OP_BO_DIV ||
+                mulExp->getOpType() == OP_BO_REM) {
                 return TYPE_INT;
             } else {
                 Error::errorSim("semanticMulExp op type");

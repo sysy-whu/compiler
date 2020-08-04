@@ -41,16 +41,4 @@ int Util::handleParams(int argc, char **argv) {
         setOutputUrl(argv[3]);
         return PARAMS_PASS;
     }
-    exit(-1);
-
-    std::cout << argv[3] << "\t" << argv[4] << std::endl;
-//    if (_access(argv[4], 0) == 0 && _access(argv[4], 2) == 0) {
-//        setInputUrl(argv[4]);
-//        setOutputUrl(argv[3]);
-
-//        return PARAMS_PASS;
-//    } else {
-//        Error::errorInputFile();
-//        return PARAMS_FILE_WRONG;
-//    }
 }
