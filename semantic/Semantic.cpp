@@ -1,145 +1,275 @@
+#include <iostream>
 #include "Semantic.h"
 #include "../util/Error.h"
 
-///===-----------------------------------------------------------------------===///
-/// 构造方法
-///===-----------------------------------------------------------------------===///
 Semantic::Semantic() {
     Parse parse;
     parse.parseAST();
     ast = parse.getAST();
     std::cout << ast->getDecls()->size() << std::endl;
     symbolTables = new std::vector<SymbolTable *>();
+
+    levelNow = 0;
+    funcParamNow = nullptr;
+    capacity = (PUSH_NUM_DEFAULT - 1) * -4;
+//    symbolTableNow = nullptr;
 }
 
 ///===-----------------------------------------------------------------------===///
-/// 启动接口
+/// startSemantic 启动接口
 ///===-----------------------------------------------------------------------===///
+
 void Semantic::startSemantic() {
     /// 在这里无脑设置 sylib.h 声明函数
     setSyLib_H();
-    std::cout << "hello" << std::endl;
+    std::cout << "after setSyLib_H; begin semantic" << std::endl;
+
     auto *symbolsGlobal = new std::vector<Symbol *>();
-    auto *symbolTableGlobal = new SymbolTable(SYMBOL_TABLE_GLOBAL, symbolsGlobal);
+    auto *symbolTableGlobal = new SymbolTable(SYMBOL_TABLE_GLOBAL, SYMBOL_TABLE_GLOBAL_STR.c_str(), symbolsGlobal);
     symbolTables->emplace_back(symbolTableGlobal);
-    /// 处理ast
-    for (Decl *decl:*(ast->getDecls())) {
-        if (decl->getConstDecl() != nullptr) {
-            for (ConstDef *constDef: *decl->getConstDecl()->getConstDefs()) {
-                if (constDef->getConstExps()->empty()) {  // 常量变量
-                    ConstVar *constVar = semanticConstVar(constDef, decl->getConstDecl()->getBType());
-                    auto *symbol = new Symbol(nullptr, nullptr, constVar, nullptr, nullptr);
-                    symbolsGlobal->emplace_back(symbol);
-                } else {  // 常量数组
-                    ConstVarArray *constVarArray = semanticConstVarArray(constDef, decl->getConstDecl()->getBType());
-                    auto *symbol = new Symbol(nullptr, nullptr, nullptr, constVarArray, nullptr);
-                    symbolsGlobal->emplace_back(symbol);
-                }
-            } //  end constDefs
-        } else if (decl->getVarDecl() != nullptr) {
-            for (VarDef *varDef: *decl->getVarDecl()->getVarDefs()) {
-                if (varDef->getConstExps()->empty()) {
-                    Var *var = semanticVar(varDef, decl->getVarDecl()->getBType());
-                    auto *symbol = new Symbol(var, nullptr, nullptr, nullptr, nullptr);
-                    symbolsGlobal->emplace_back(symbol);
-                } else {
-                    VarArray *varArray = semanticVarArray(varDef, decl->getVarDecl()->getBType());
-                    auto *symbol = new Symbol(nullptr, varArray, nullptr, nullptr, nullptr);
-                    symbolsGlobal->emplace_back(symbol);
-                }
-            }  // end varDefs
-        } else if (decl->getFuncDef() != nullptr) {
-            Func *func = semanticFunc(decl->getFuncDef());
-            auto *symbol = new Symbol(nullptr, nullptr, nullptr, nullptr, func);
+    // 处理 ast
+    for (Decl *decl: *(ast->getDecls())) {
+        funcNameNow = GLOBAL_VAR_NO_FUNC;
+        if (decl->getVarDecl() != nullptr || decl->getConstDecl() != nullptr) {  // 变量
+            semanticArm7Var(decl, symbolsGlobal);
+        } else if (decl->getFuncDef() != nullptr) {  // 函数
+            Arm7Func *arm7Func = semanticArm7Func(decl->getFuncDef());
+            auto *symbol = new Symbol(nullptr, arm7Func);
             symbolsGlobal->emplace_back(symbol);
         } else {
             Error::errorSemanticDecl("Error Semantic", decl);
         }
-    }  // end ast;
+    }
 }
 
 ///===-----------------------------------------------------------------------===///
 /// 分析 ast 得到符号表相关内容
 ///===-----------------------------------------------------------------------===///
 
-Var *Semantic::semanticVar(VarDef *varDef, int varType) {
-//    int initState = varDef->getInitVal() == nullptr ? INIT_FALSE : INIT_TRUE;
-    if (varDef->getInitVal() != nullptr &&
-        semanticAddExp(varDef->getInitVal()->getExp()->getAddExp()) != varType) {
-        Error::errorSim("var init wrong when assign");
-        exit(-1);
+void Semantic::semanticArm7Var(Decl *decl, std::vector<Symbol *> *symbols) {
+    if (decl->getConstDecl() != nullptr) {
+        for (ConstDef *constDef: *decl->getConstDecl()->getConstDefs()) {
+            auto *values = new std::vector<int>();
+            Arm7Var *arm7Var;
+            if (constDef->getConstExps()->empty()) {  /// 常量变量
+                int constValue = calConstExp(constDef->getConstInitVal()->getConstExp());
+                values->push_back(constValue);
+                arm7Var = new Arm7Var(constDef->getIdent().c_str(), funcNameNow.c_str(),
+                                      decl->getConstDecl()->getBType(), levelNow,
+                                      CONST_TRUE, ARRAY_FALSE, nullptr, values);
+
+                arm7Var->setMemoryLoc(GLOBAL_VAR_POS);
+            } else {  /// 常量数组
+                auto *subs = new std::vector<int>();  /// 下标
+                int len = 1;  /// 元素总个数
+                for (ConstExp *constExp:*constDef->getConstExps()) {
+                    int sub = calConstExp(constExp);
+                    len *= sub;
+                    subs->push_back(sub);
+                }
+                values = calConstArrayInitVals(constDef->getConstInitVal(), subs);
+                arm7Var = new Arm7Var(constDef->getIdent().c_str(), funcNameNow.c_str(),
+                                      decl->getConstDecl()->getBType(), levelNow,
+                                      CONST_TRUE, ARRAY_TRUE, subs, values);
+
+                arm7Var->setMemoryLoc(GLOBAL_VAR_POS);
+            }
+            auto *symbol = new Symbol(arm7Var, nullptr);
+            symbols->emplace_back(symbol);
+        } //  end constDefs
+    } else if (decl->getVarDecl() != nullptr) {
+        for (VarDef *varDef: *decl->getVarDecl()->getVarDefs()) {
+            Arm7Var *arm7Var;
+            auto *values = new std::vector<int>();
+            if (varDef->getConstExps()->empty()) {
+                if (varDef->getInitVal() != nullptr) {
+                    if (semanticAddExp(varDef->getInitVal()->getExp()->getAddExp()) == decl->getVarDecl()->getBType()) {
+                        values->emplace_back(calAddExp(varDef->getInitVal()->getExp()->getAddExp()));
+                    } else {
+                        Error::errorSim("var init wrong when assign");
+                        exit(-1);
+                    }
+                } else {
+                    values->emplace_back(0);
+                }
+                arm7Var = new Arm7Var(varDef->getIdent().c_str(), funcNameNow.c_str(),
+                                      decl->getVarDecl()->getBType(), levelNow,
+                                      CONST_FALSE, ARRAY_FALSE, nullptr, values);
+
+                arm7Var->setMemoryLoc(GLOBAL_VAR_POS);
+            } else {
+                auto *subs = new std::vector<int>();  /// 下标
+                int len = 1;  /// 元素总个数
+                for (ConstExp *constExp:*varDef->getConstExps()) {
+                    int sub = calConstExp(constExp);
+                    len *= sub;
+                    subs->push_back(sub);
+                }
+
+                values = calVarArrayInitVals(varDef->getInitVal(), subs);
+                arm7Var = new Arm7Var(varDef->getIdent().c_str(), funcNameNow.c_str(),
+                                      decl->getVarDecl()->getBType(), levelNow,
+                                      CONST_FALSE, ARRAY_TRUE, subs, values);
+                arm7Var->setMemoryLoc(GLOBAL_VAR_POS);
+            }
+            auto *symbol = new Symbol(arm7Var, nullptr);
+            symbols->emplace_back(symbol);
+        }  // end varDefs
     }
-    Var *varRet = new Var(varDef->getIdent().c_str(), varType);
-    return varRet;
 }
 
-VarArray *Semantic::semanticVarArray(VarDef *varDef, int varType) {
-//    auto *initState = new std::vector<int>();
-    auto *subs = new std::vector<int>();
-    // 计算下标
-    for (ConstExp *constExp:*varDef->getConstExps()) {
-        subs->push_back(calConstExp(constExp));
-    }
-    // 核算初始值
-    if (varDef->getInitVal() != nullptr) {
-        semanticVarArrayInitVals(varDef->getInitVal(), subs);
-    }
+Arm7Func *Semantic::semanticArm7Func(FuncDef *funcDef) {
+    auto *params = new std::vector<Arm7Var *>();
+    funcNameNow = funcDef->getIdent();
+    levelNow++;
+    /// 因为每次分配空间时，capacity 都会提前减，这里应该是sp当前实际位置-4
+    capacity = (PUSH_NUM_DEFAULT - 1) * -4;
 
-    auto *varArray = new VarArray(varDef->getIdent().c_str(), varType, subs);
-    return varArray;
-}
-
-ConstVar *Semantic::semanticConstVar(ConstDef *constDef, int constType) {
-    int intRet = calConstExp(constDef->getConstInitVal()->getConstExp());
-    auto *constVarRet = new ConstVar(constDef->getIdent().c_str(), constType, intRet);
-    return constVarRet;
-}
-
-ConstVarArray *Semantic::semanticConstVarArray(ConstDef *constDef, int constType) {
-    auto *subs = new std::vector<int>();
-    for (ConstExp *constExp:*constDef->getConstExps()) {
-        subs->push_back(calConstExp(constExp));
-    }
-
-    std::vector<int> *values = calConstArrayInitVals(constDef->getConstInitVal(), subs);
-
-    auto *constVarArray =
-            new ConstVarArray(constDef->getIdent().c_str(), constType, values, subs);
-    return constVarArray;
-}
-
-Func *Semantic::semanticFunc(FuncDef *funcDef) {
-    auto *params = new std::vector<Symbol *>();
-    // 处理函数部分，后续返回加入符号表
     if (funcDef->getFuncFParams() != nullptr) {
-        for (FuncFParam *funcFParam:*funcDef->getFuncFParams()->getFuncFParams()) {
-            Symbol *symbol = nullptr;
+        for (int i = 0; i < funcDef->getFuncFParams()->getFuncFParams()->size(); i++) {
+            FuncFParam *funcFParam = funcDef->getFuncFParams()->getFuncFParams()->at(i);
+            Arm7Var *arm7Var;
             if (funcFParam->getBType() == TYPE_INT) {  // 变量
-                auto *var = new Var(funcFParam->getIdent().c_str(), funcFParam->getBType());
-                symbol = new Symbol(var, nullptr, nullptr, nullptr, nullptr);
+                arm7Var = new Arm7Var(funcFParam->getIdent().c_str(), funcNameNow.c_str(),
+                                      funcFParam->getBType(), levelNow,
+                                      CONST_FALSE, ARRAY_FALSE, nullptr, nullptr);
+
             } else if (funcFParam->getBType() == TYPE_INT_STAR) {  // 数组 （第一维为空）
                 auto *subs = new std::vector<int>();
                 for (Exp *exp: *funcFParam->getExps()) {
                     subs->push_back(calAddExp(exp->getAddExp()));
                 }
-                auto *varArray =
-                        new VarArray(funcFParam->getIdent().c_str(), funcFParam->getBType(), subs);
-                symbol = new Symbol(nullptr, varArray, nullptr, nullptr, nullptr);
+                arm7Var = new Arm7Var(funcFParam->getIdent().c_str(), funcNameNow.c_str(),
+                                      funcFParam->getBType(), levelNow,
+                                      CONST_FALSE, ARRAY_TRUE, subs, nullptr);
+            } else {
+                Error::errorSim("something wrong in semanticArm7Func funcFParam->getBType()");
+                exit(-1);
             }
-            params->emplace_back(symbol);
+            if (i >= 4) {
+                capacity -= 4;  /// 由于所存为引用变量，此处无论参数类型均分配四字节数
+                arm7Var->setMemoryLoc(capacity);
+            } else {
+                arm7Var->setMemoryLoc((i - 3) * 4);
+            }
+            params->emplace_back(arm7Var);
         }
     }
+    funcParamNow = params;
 
-    // 对函数 Block 语义检查
     semanticBlock(funcDef->getBlock(), funcDef->getFuncType(), params);
 
-    auto *func = new Func(funcDef->getIdent().c_str(), funcDef->getFuncType(), params);
-    return func;
+    levelNow--;
+    funcParamNow = nullptr;
+    auto *arm7Func = new Arm7Func(funcNameNow.c_str(), funcDef->getFuncType(), params);
+    arm7Func->setCapacity(capacity);
+    return arm7Func;
 }
 
 ///===-----------------------------------------------------------------------===///
 /// Stmt 语句
 ///===-----------------------------------------------------------------------===///
+
+void Semantic::semanticBlock(Block *block, int funcRetType, std::vector<Arm7Var *> *params) {
+    levelNow++;
+    auto *symbolsLocal = new std::vector<Symbol *>();
+    auto *symbolTableLocal = new SymbolTable(SYMBOL_TABLE_LOCAL, funcNameNow.c_str(), symbolsLocal);
+    symbolTables->emplace_back(symbolTableLocal);
+//    SymbolTable *symbolTableTmp = symbolTableNow;
+//    symbolTableNow = symbolTableLocal;
+
+    for (BlockItem *blockItem:*block->getBlockItems()) {
+        if (blockItem->getConstDecl() != nullptr || blockItem->getVarDecl() != nullptr) {
+            semanticArm7Var(blockItem, symbolsLocal);
+        } else if (blockItem->getStmt() != nullptr) {
+            semanticStmt(blockItem->getStmt(), funcRetType);
+        }
+    }
+    levelNow--;
+    symbolTables->pop_back();
+//    symbolTableNow = symbolTableTmp;
+}
+
+void Semantic::semanticArm7Var(BlockItem *blockItem, std::vector<Symbol *> *symbols) {
+    if (blockItem->getConstDecl() != nullptr) {
+        for (ConstDef *constDef: *blockItem->getConstDecl()->getConstDefs()) {
+            auto *values = new std::vector<int>();
+            Arm7Var *arm7Var;
+            if (constDef->getConstExps()->empty()) {  /// 常量变量
+                int constValue = calConstExp(constDef->getConstInitVal()->getConstExp());
+                values->push_back(constValue);
+                arm7Var = new Arm7Var(constDef->getIdent().c_str(), funcNameNow.c_str(),
+                                      blockItem->getConstDecl()->getBType(), levelNow,
+                                      CONST_TRUE, ARRAY_FALSE, nullptr, values);
+
+                capacity -= 4;
+                arm7Var->setMemoryLoc(capacity);
+                constDef->setBaseMemoryPos(capacity);
+//                constDef->setBaseMemoryPos(("[fp, #"+std::to_string(capacity)+"]").c_str());
+            } else {  /// 常量数组
+                auto *subs = new std::vector<int>();  /// 下标
+                int len = 1;  /// 元素总个数
+                for (ConstExp *constExp:*constDef->getConstExps()) {
+                    int sub = calConstExp(constExp);
+                    len *= sub;
+                    subs->push_back(sub);
+                }
+                values = calConstArrayInitVals(constDef->getConstInitVal(), subs);
+                arm7Var = new Arm7Var(constDef->getIdent().c_str(), funcNameNow.c_str(),
+                                      blockItem->getConstDecl()->getBType(), levelNow,
+                                      CONST_TRUE, ARRAY_TRUE, subs, values);
+
+                capacity -= len * 4;
+                arm7Var->setMemoryLoc(capacity);
+                constDef->setBaseMemoryPos(capacity);
+//                constDef->setBaseMemoryPos(("[fp, #"+std::to_string(capacity)+"]").c_str());
+            }
+            auto *symbol = new Symbol(arm7Var, nullptr);
+            symbols->emplace_back(symbol);
+        } //  end constDefs
+    } else if (blockItem->getVarDecl() != nullptr) {
+        for (VarDef *varDef: *blockItem->getVarDecl()->getVarDefs()) {
+            Arm7Var *arm7Var;
+            if (varDef->getConstExps()->empty()) {
+                int varDeclType = blockItem->getVarDecl()->getBType();
+                if (varDef->getInitVal() != nullptr &&
+                    semanticAddExp(varDef->getInitVal()->getExp()->getAddExp()) != varDeclType) {
+
+                    Error::errorSim("var init wrong when assign");
+                    exit(-1);
+                } else {
+                    arm7Var = new Arm7Var(varDef->getIdent().c_str(), funcNameNow.c_str(),
+                                          blockItem->getVarDecl()->getBType(), levelNow,
+                                          CONST_FALSE, ARRAY_FALSE, nullptr, nullptr);
+                }
+
+                capacity -= 4;
+                arm7Var->setMemoryLoc(capacity);
+                varDef->setBaseMemoryPos(capacity);
+//                varDef->setBaseMemoryPos(("[fp, #"+std::to_string(capacity)+"]").c_str());
+            } else {
+                auto *subs = new std::vector<int>();  /// 下标
+                int len = 1;  /// 元素总个数
+                for (ConstExp *constExp:*varDef->getConstExps()) {
+                    int sub = calConstExp(constExp);
+                    len *= sub;
+                    subs->push_back(sub);
+                }
+
+                semanticVarArrayInitVals(varDef->getInitVal(), subs);
+                arm7Var = new Arm7Var(varDef->getIdent().c_str(), funcNameNow.c_str(),
+                                      blockItem->getVarDecl()->getBType(), levelNow,
+                                      CONST_FALSE, ARRAY_TRUE, subs, nullptr, varDef->getInitVal());
+                capacity -= len * 4;
+                arm7Var->setMemoryLoc(capacity);
+                varDef->setBaseMemoryPos(capacity);
+//                varDef->setBaseMemoryPos(("[fp, #"+std::to_string(capacity)+"]").c_str());
+            }
+            auto *symbol = new Symbol(arm7Var, nullptr);
+            symbols->emplace_back(symbol);
+        }  // end varDefs
+    }
+}
 
 void Semantic::semanticStmt(Stmt *stmt, int funcRetType) {
     switch (stmt->getStmtType()) {
@@ -189,51 +319,6 @@ void Semantic::semanticStmt(Stmt *stmt, int funcRetType) {
     }
 }
 
-void Semantic::semanticBlock(Block *block, int funcRetType, std::vector<Symbol *> *paramSymbols) {
-    auto *symbolsLocal = new std::vector<Symbol *>();
-    if (paramSymbols != nullptr)
-        symbolsLocal->insert(symbolsLocal->end(), paramSymbols->begin(), paramSymbols->end());
-    auto *symbolTableLocal = new SymbolTable(SYMBOL_TABLE_GLOBAL, symbolsLocal);
-    symbolTables->emplace_back(symbolTableLocal);
-
-    for (BlockItem *blockItem:*block->getBlockItems()) {
-        if (blockItem->getConstDecl() != nullptr) {
-            for (ConstDef *constDef: *blockItem->getConstDecl()->getConstDefs()) {
-                if (constDef->getConstExps()->empty()) {  // 常量变量
-                    ConstVar *constVar = semanticConstVar(constDef, blockItem->getConstDecl()->getBType());
-                    auto *symbol = new Symbol(nullptr, nullptr, constVar, nullptr, nullptr);
-                    symbolsLocal->emplace_back(symbol);
-                } else {  // 常量数组
-                    ConstVarArray *constVarArray = semanticConstVarArray(constDef,
-                                                                         blockItem->getConstDecl()->getBType());
-                    auto *symbol = new Symbol(nullptr, nullptr, nullptr, constVarArray, nullptr);
-                    symbolsLocal->emplace_back(symbol);
-                }
-            } //  end constDefs
-        } else if (blockItem->getVarDecl() != nullptr) {
-            for (VarDef *varDef: *blockItem->getVarDecl()->getVarDefs()) {
-                if (varDef->getConstExps()->empty()) {
-                    Var *var = semanticVar(varDef, blockItem->getVarDecl()->getBType());
-                    auto *symbol = new Symbol(var, nullptr, nullptr, nullptr, nullptr);
-                    symbolsLocal->emplace_back(symbol);
-                } else {
-                    VarArray *varArray = semanticVarArray(varDef, blockItem->getVarDecl()->getBType());
-                    auto *symbol = new Symbol(nullptr, varArray, nullptr, nullptr, nullptr);
-                    symbolsLocal->emplace_back(symbol);
-                }
-            }  // end varDefs
-        } else if (blockItem->getStmt() != nullptr) {
-            semanticStmt(blockItem->getStmt(), funcRetType);
-        }
-    }
-    // delete & free
-    symbolTables->pop_back();
-//    symbolTables->erase(symbolTables->cend(), symbolTables->cend());
-//    symbolTableLocal->free();
-//    std::vector<Symbol *>().swap(*symbolsLocal);
-}
-
-
 ///===-----------------------------------------------------------------------===///
 /// Expr 表达式 CalConst
 /// @param one kind of Exp or initVal
@@ -279,6 +364,44 @@ std::vector<int> *Semantic::calConstArrayInitVals(ConstInitVal *constInitVal, st
         }
     } else if (valuesRet->size() > len) {
         Error::errorSim("ConstArray len error");
+    }
+    return valuesRet;
+}
+
+std::vector<int> *Semantic::calVarArrayInitVals(InitVal *initVal, std::vector<int> *subs) {
+    auto *valuesRet = new std::vector<int>();
+    int len = 1;  // 维度展开一维的长度
+    for (int i : *subs) {
+        len *= i;
+    }
+    if (initVal == nullptr || initVal->getInitVals()->empty()) {
+        for (int i = 0; i < len; i++) {
+            valuesRet->push_back(0);
+        }
+    } else {
+        for (InitVal *initValInner: *initVal->getInitVals()) {
+            if (initValInner->getExp() != nullptr) {  // 实值
+                int valueInner = calAddExp(initValInner->getExp()->getAddExp());
+                valuesRet->push_back(valueInner);
+            } else {  // 数组嵌套
+                int sub_first_len = 1;  // 子维展开一维的长度
+                for (int i = 1; i < subs->size(); i++) {
+                    sub_first_len *= subs->at(i);
+                }
+                if (valuesRet->size() % sub_first_len == 0) {  // 保证嵌套子维前，已有长度为子维整数倍
+                    int tmp = subs->at(0);  // 当前第一维度值
+                    subs->erase(subs->begin());
+                    std::vector<int> *subs_values_inner = calVarArrayInitVals(initValInner, subs);
+                    subs->insert(subs->begin(), tmp);
+                    valuesRet->insert(valuesRet->end(), subs_values_inner->begin(), subs_values_inner->end());  // 拼接
+                }
+            }
+        }
+    }
+    if (valuesRet->size() < len) {  // 长度不足补零
+        for (int i = 0; i < len - valuesRet->size(); i++) {
+            valuesRet->push_back(0);
+        }
     }
     return valuesRet;
 }
@@ -373,40 +496,106 @@ int Semantic::calPrimaryExp(PrimaryExp *primaryExp) {
 }
 
 int Semantic::calLVal(LVal *lVal) {
-    if (lVal->getExps()->empty()) {  // 符号表找常量
+    if (lVal->getExps()->empty()) {
+        /// 当前 block 找
+//        for (Symbol *symbol: *symbolTableNow->getSymbols()) {
+//            if (symbol->getArm7Var() != nullptr &&
+//                symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
+//                symbol->getArm7Var()->getIfArray() == ARRAY_FALSE &&
+//                symbol->getArm7Var()->getIfConst() == CONST_TRUE) {
+//
+//                return symbol->getArm7Var()->getValue()->at(0);
+//            }
+//        }
+
+        /// 符号表找常量
         for (int i = (int) symbolTables->size() - 1; i > 0; i--) {
-            for (Symbol *symbol:*symbolTables->at(i)->getSymbols()) {
-                if (symbol->getConstVarInner() != nullptr &&
-                    symbol->getConstVarInner()->getIdent() == lVal->getIdent())
-                    return symbol->getConstVarInner()->getValue();
+            if (symbolTables->at(i)->getFuncName() == funcNameNow ||
+                symbolTables->at(i)->getFuncName() == SYMBOL_TABLE_GLOBAL_STR) {
+
+                for (Symbol *symbol:*symbolTables->at(i)->getSymbols()) {
+                    if (symbol->getArm7Var() != nullptr &&
+                        symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
+                        symbol->getArm7Var()->getIfArray() == ARRAY_FALSE &&
+                        symbol->getArm7Var()->getIfConst() == CONST_TRUE) {
+                        lVal->setBaseMemoryPos(
+                                ("#" + std::to_string(symbol->getArm7Var()->getValue()->at(0))).c_str());
+                        lVal->setIntPos(symbol->getArm7Var()->getMemoryLoc());
+                        return symbol->getArm7Var()->getValue()->at(0);
+                    }
+                }
             }
         }
-    } else {  // 符号表找数组
+    } else {
         // 索引下标
         auto *subs = new std::vector<int>();
         for (Exp *exp:*lVal->getExps()) {
             subs->push_back(calAddExp(exp->getAddExp()));
         }
+
+        /// 当前 block 找
+//        for (Symbol *symbol: *symbolTableNow->getSymbols()) {
+//            if (symbol->getArm7Var() != nullptr &&
+//                symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
+//                symbol->getArm7Var()->getIfArray() == ARRAY_TRUE &&
+//                symbol->getArm7Var()->getIfConst() == CONST_TRUE) {
+//
+//
+//                if (subs->size() == symbol->getArm7Var()->getSubs()->size()) {
+//                    int pos = 0;  // 计算索引一维位置
+//                    for (int j = 0; j < subs->size(); j++) {
+//                        int subs_subs_len = 1;
+//                        for (int k = j + 1; k < subs->size(); k++) {
+//                            subs_subs_len *= symbol->getArm7Var()->getSubs()->at(k);
+//                        }
+//                        pos += subs->at(j) * subs_subs_len;
+//                    }
+//                    return symbol->getArm7Var()->getValue()->at(pos);
+//                } else {
+//                    Error::errorSim("error subs Semantic calLVal");
+//                    exit(-1);
+//                }  // end find and return
+//            }  // end find constArray ident
+//        }
+
+        /// 符号表找数组
         for (int i = (int) symbolTables->size() - 1; i > 0; i--) {
-            for (Symbol *symbol:*symbolTables->at(i)->getSymbols()) {
-                if (symbol->getConstVarArrayInner() != nullptr &&
-                    symbol->getConstVarArrayInner()->getIdent() == lVal->getIdent()) {
-                    if (subs->size() == symbol->getConstVarArrayInner()->getSubs()->size()) {
-                        int pos = 0;  // 计算索引一维位置
-                        for (int j = 0; j < subs->size(); j++) {
-                            int subs_subs_len = 1;
-                            for (int k = j + 1; k < subs->size(); k++) {
-                                subs_subs_len *= symbol->getConstVarArrayInner()->getSubs()->at(k);
-                            }
-                            pos += subs->at(j) * subs_subs_len;
+            if (symbolTables->at(i)->getFuncName() == funcNameNow ||
+                symbolTables->at(i)->getFuncName() == SYMBOL_TABLE_GLOBAL_STR) {
+                for (Symbol *symbol:*symbolTables->at(i)->getSymbols()) {
+                    if (symbol->getArm7Var() != nullptr &&
+                        symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
+                        symbol->getArm7Var()->getIfArray() == ARRAY_TRUE &&
+                        symbol->getArm7Var()->getIfConst() == CONST_TRUE) {
+
+                        lVal->setIntPos(symbol->getArm7Var()->getMemoryLoc());
+                        lVal->setSubs(subs);
+                        if (i == 1) {  // 全局变量
+                            lVal->setBaseMemoryPos(lVal->getIdent().c_str());
+                            lVal->setType(LVAL_ARRAY_GLOBAL_INT);
+                        } else {
+                            lVal->setBaseMemoryPos(
+                                    ("[fp, #" + std::to_string(symbol->getArm7Var()->getMemoryLoc()) + "]").c_str());
+                            lVal->setType(LVAL_ARRAY_LOCAL_INT);
                         }
-                        return symbol->getConstVarArrayInner()->getValue()->at(pos);
-                    } else {
-                        Error::errorSim("error subs Semantic calLVal");
-                        exit(-1);
-                    }
-                }  // end find constArray ident
-            }  // end one symbol-table iter
+
+                        if (subs->size() == symbol->getArm7Var()->getSubs()->size()) {
+                            int pos = 0;  // 计算索引一维位置
+                            for (int j = 0; j < subs->size(); j++) {
+                                int subs_subs_len = 1;
+                                for (int k = j + 1; k < subs->size(); k++) {
+                                    subs_subs_len *= symbol->getArm7Var()->getSubs()->at(k);
+                                }
+                                pos += subs->at(j) * subs_subs_len;
+                            }
+                            return symbol->getArm7Var()->getValue()->at(pos);
+                        } else {
+                            Error::errorSim("error subs Semantic calLVal");
+                            exit(-1);
+                        }  // end find and return
+                    }  // end find constArray ident
+                }  // end symbol-table iter
+            }  // end find in same func or global if judge
         }  // end all symbol-table except EXTERN
     }  // end find lVal
     Error::errorSim("undefined ident Semantic calLVal");
@@ -433,7 +622,9 @@ std::vector<int> *Semantic::semanticVarArrayInitVals(InitVal *initVal, std::vect
     } else {
         for (InitVal *initValInner : *initVal->getInitVals()) {
             if (initValInner->getExp() != nullptr) {  // 实值
-                valuesRet->push_back(0);
+                if (semanticAddExp(initValInner->getExp()->getAddExp()) == TYPE_INT) {
+                    valuesRet->push_back(0);
+                }
             } else {  // 数组嵌套
                 int sub_first_len = 1;  // 子维展开一维的长度
                 for (int i = 1; i < subs->size(); i++) {
@@ -461,6 +652,7 @@ std::vector<int> *Semantic::semanticVarArrayInitVals(InitVal *initVal, std::vect
     }
     return valuesRet;
 }
+
 
 int Semantic::semanticCondExp(Cond *cond) {
     return semanticLOrExp(cond->getLOrExp());
@@ -584,12 +776,12 @@ int Semantic::semanticUnaryExp(UnaryExp *unaryExp) {
         // 注意这里写死了 func 在符号表中的索引位置
         for (int i = 1; i >= 0; i--) {
             for (Symbol *symbol:*symbolTables->at(i)->getSymbols()) {
-                if (symbol->getFuncInner() != nullptr &&
-                    symbol->getFuncInner()->getIdent() == unaryExp->getIdent()) {
+                if (symbol->getArm7Func() != nullptr &&
+                    symbol->getArm7Func()->getIdent() == unaryExp->getIdent()) {
                     // 检查参数
-                    checkRParams(unaryExp->getFuncRParams(), symbol->getFuncInner());
+                    checkRParams(unaryExp->getFuncRParams(), symbol->getArm7Func());
                     // 返回函数返回值
-                    return symbol->getFuncInner()->getRetType();
+                    return symbol->getArm7Func()->getRetType();
                 } // 检查到函数名
             } // 某一 symbol table 遍历
         } // tables[1] tables[0] 遍历
@@ -610,87 +802,182 @@ int Semantic::semanticPrimaryExp(PrimaryExp *primaryExp) {
 
 int Semantic::semanticLVal(LVal *lVal) {
     if (lVal->getExps()->empty()) {  // 整型
-        for (int i = (int) symbolTables->size() - 1; i > 0; i--) {
-            for (Symbol *symbol:*symbolTables->at(i)->getSymbols()) {
-                if (symbol->getVarInner() != nullptr && symbol->getVarInner()->getIdent() == lVal->getIdent()) {
-                    return symbol->getVarInner()->getVarType();
-                } else if (symbol->getConstVarInner() != nullptr &&
-                           symbol->getConstVarInner()->getIdent() == lVal->getIdent()) {
-                    return symbol->getConstVarInner()->getVarType();
+        /// 当前 block 找
+//        for (Symbol *symbol: *symbolTableNow->getSymbols()) {
+//            if (symbol->getArm7Var() != nullptr &&
+//                symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
+//                symbol->getArm7Var()->getIfArray() == ARRAY_FALSE) {
+//
+//                if (symbol->getArm7Var()->getIfConst() == CONST_TRUE) {
+//                    lVal->setBaseMemoryPos(("#" + std::to_string(symbol->getArm7Var()->getValue()->at(0))).c_str());
+//                } else {
+//                    lVal->setBaseMemoryPos(
+//                            ("[fp, #" + std::to_string(symbol->getArm7Var()->getMemoryLoc()) + "]").c_str());
+//                }
+//
+//                return symbol->getArm7Var()->getVarType();
+//            }
+//        }
+        /// 函数里外部层次block找
+        for (int i = (int) symbolTables->size() - 1; i > 1; i--) {
+            if (symbolTables->at(i)->getFuncName() == funcNameNow) {
+                for (Symbol *symbol:*symbolTables->at(i)->getSymbols()) {
+                    if (symbol->getArm7Var() != nullptr &&
+                        symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
+                        symbol->getArm7Var()->getIfArray() == ARRAY_FALSE) {
+
+                        if (symbol->getArm7Var()->getIfConst() == CONST_TRUE) {
+                            lVal->setBaseMemoryPos(
+                                    ("#" + std::to_string(symbol->getArm7Var()->getValue()->at(0))).c_str());
+                            lVal->setIntPos(symbol->getArm7Var()->getMemoryLoc());
+                        } else {
+                            lVal->setBaseMemoryPos(
+                                    ("[fp, #" + std::to_string(symbol->getArm7Var()->getMemoryLoc()) + "]").c_str());
+                            lVal->setIntPos(symbol->getArm7Var()->getMemoryLoc());
+                        }
+
+                        return symbol->getArm7Var()->getVarType();
+                    }
                 }
             }
         }
+        /// 函数形参里找
+        for (Arm7Var *arm7Var: *funcParamNow) {
+            if (arm7Var->getIdent() == lVal->getIdent() &&
+                arm7Var->getIfArray() == ARRAY_FALSE) {
+
+                lVal->setBaseMemoryPos(("[fp, #" + std::to_string(arm7Var->getMemoryLoc()) + "]").c_str());
+                lVal->setIntPos(arm7Var->getMemoryLoc());
+                return arm7Var->getVarType();
+            }
+        }
+        /// 全局变量里找
+        for (Symbol *symbol:*symbolTables->at(1)->getSymbols()) {
+            if (symbol->getArm7Var() != nullptr &&
+                symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
+                symbol->getArm7Var()->getIfArray() == ARRAY_FALSE) {
+
+                if (symbol->getArm7Var()->getIfConst() == CONST_TRUE) {
+                    lVal->setBaseMemoryPos(("#" + std::to_string(symbol->getArm7Var()->getValue()->at(0))).c_str());
+                    lVal->setIntPos(symbol->getArm7Var()->getMemoryLoc());
+                } else {
+                    /// TODO 全部变量需要
+                    /// 	movw	r0, #:lower16: globalVarName
+                    /// 	movt	r0, #:upper16: globalVarName
+                    lVal->setBaseMemoryPos((std::to_string(symbol->getArm7Var()->getMemoryLoc()).c_str()));
+                    lVal->setIntPos(symbol->getArm7Var()->getMemoryLoc());
+
+                }
+                return symbol->getArm7Var()->getVarType();
+            }
+        }
+        /// 没找到
         Error::errorSim("no such var");
         exit(-1);
     } else {  // 整型数组
-        for (int i = (int) symbolTables->size() - 1; i > 0; i--) {
-            for (Symbol *symbol:*symbolTables->at(i)->getSymbols()) {
-                if (symbol->getVarArrayInner() != nullptr &&
-                    symbol->getVarArrayInner()->getIdent() == lVal->getIdent()) {
-                    checkExps(lVal->getExps(), "array sub not int");
-                    if (lVal->getExps()->size() == symbol->getVarArrayInner()->getSubs()->size()) {  // 索引到变量
-                        return symbol->getVarArrayInner()->getVarType();
-                    } else {  // 索引到数组
-//                        if (symbol->getVarArrayInner()->getVarType() == TYPE_INT)
-//                            return TYPE_INT_STAR;
-                        return TYPE_INT_STAR;
-                    }
-                } else if (symbol->getConstVarArrayInner() != nullptr &&
-                           symbol->getConstVarArrayInner()->getIdent() == lVal->getIdent()) {
-                    checkExps(lVal->getExps(), "const array sub not int");
-                    if (lVal->getExps()->size() == symbol->getConstVarArrayInner()->getSubs()->size()) { // 索引到变量
-                        return symbol->getConstVarArrayInner()->getVarType();
-                    } else {  // 索引到数组
-//                        if (symbol->getConstVarArrayInner()->getVarType() == TYPE_INT)
-//                            return TYPE_INT_STAR;
-                        return TYPE_INT_STAR;
+        checkExps(lVal->getExps(), "array sub not int");
+        /// 当前 block 找
+//        for (Symbol *symbol:*symbolTableNow->getSymbols()) {
+//            if (symbol->getArm7Var() != nullptr &&
+//                symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
+//                symbol->getArm7Var()->getIfArray() == ARRAY_TRUE) {
+//
+//                lVal->setBaseMemoryPos(LOCAL_ARRAY.c_str());
+//                if (lVal->getExps()->size() == symbol->getArm7Var()->getSubs()->size()) {
+//                    return symbol->getArm7Var()->getVarType();
+//                } else {
+//                    return TYPE_INT_STAR;
+//                }
+//            }
+//        }
+        /// 函数里外部层次block找
+        for (int i = (int) symbolTables->size() - 1; i > 1; i--) {
+            if (symbolTables->at(i)->getFuncName() == funcNameNow) {
+                for (Symbol *symbol:*symbolTables->at(i)->getSymbols()) {
+                    if (symbol->getArm7Var() != nullptr &&
+                        symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
+                        symbol->getArm7Var()->getIfArray() == ARRAY_TRUE) {
+                        /// 局部变量
+                        lVal->setSubs(symbol->getArm7Var()->getSubs());
+                        lVal->setBaseMemoryPos(
+                                ("[fp, #" + std::to_string(symbol->getArm7Var()->getMemoryLoc()) + "]").c_str());
+                        lVal->setIntPos(symbol->getArm7Var()->getMemoryLoc());
+                        lVal->setSubs(symbol->getArm7Var()->getSubs());
+                        if (lVal->getExps()->size() == symbol->getArm7Var()->getSubs()->size()) {
+                            lVal->setType(LVAL_ARRAY_LOCAL_INT);
+                            return symbol->getArm7Var()->getVarType();
+                        } else {
+                            lVal->setType(LVAL_ARRAY_LOCAL_INT_STAR);
+                            return TYPE_INT_STAR;
+                        }
                     }
                 }
-            }// 遍历 table symbol
-        }  // 遍历 tables
+            }
+        }
+        /// 函数形参里找
+        for (Arm7Var *arm7Var: *funcParamNow) {
+            if (arm7Var->getIdent() == lVal->getIdent() &&
+                arm7Var->getIfArray() == ARRAY_TRUE) {
+                /// 引用类型实参
+                lVal->setSubs(arm7Var->getSubs());
+                lVal->setBaseMemoryPos(("[fp, #" + std::to_string(arm7Var->getMemoryLoc()) + "]").c_str());
+                lVal->setIntPos(arm7Var->getMemoryLoc());
+                lVal->setSubs(arm7Var->getSubs());
+                if (lVal->getExps()->size() == arm7Var->getSubs()->size() + 1) {  // 形参不写第一维
+                    lVal->setType(LVAL_ARRAY_PARAM_INT);
+                    return arm7Var->getVarType();
+                } else {
+                    lVal->setType(LVAL_ARRAY_PARAM_INT_STAR);
+                    return TYPE_INT_STAR;
+                }
+            }
+        }
+        /// 全局变量里找
+        for (Symbol *symbol:*symbolTables->at(1)->getSymbols()) {
+            if (symbol->getArm7Var() != nullptr &&
+                symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
+                symbol->getArm7Var()->getIfArray() == ARRAY_TRUE) {
+                /// 全局变量
+                ///     全部变量实际上靠变量名索引
+                /// 	movw	r0, #:lower16: globalVarArrayName
+                /// 	movt	r0, #:upper16: globalVarArrayName
+                lVal->setSubs(symbol->getArm7Var()->getSubs());
+                lVal->setBaseMemoryPos(lVal->getIdent().c_str());
+                lVal->setIntPos(symbol->getArm7Var()->getMemoryLoc());
+                lVal->setSubs(symbol->getArm7Var()->getSubs());
+
+                if (lVal->getExps()->size() == symbol->getArm7Var()->getSubs()->size()) {
+                    lVal->setType(LVAL_ARRAY_GLOBAL_INT);
+                    return symbol->getArm7Var()->getVarType();
+                } else {
+                    lVal->setType(LVAL_ARRAY_GLOBAL_INT_STAR);
+                    return TYPE_INT_STAR;
+                }
+            }
+        }
+        /// 没找到
         Error::errorSim("no such array");
         exit(-1);
     }  // 整型、整型数组
 }
 
-/**
- * 检查数组下标
- * @param exps
- * @return exit(-1): Error
- */
-void Semantic::checkExps(std::vector<Exp *> *exps, const char *errMsg) {
-    for (Exp *exp: *exps) {
-        if (semanticAddExp(exp->getAddExp()) != TYPE_INT) {
-            Error::errorSim(errMsg);
-            exit(-1);
-        }
-    }
-}
-
-/**
- * 检查函数参数
- * @param funcRParams 实参
- * @param func 形参
- * @Return exit(-1) when wrong
- */
-void Semantic::checkRParams(FuncRParams *funcRParams, Func *func) {
-    if (funcRParams == nullptr && func->getParams()->empty()) {
+void Semantic::checkRParams(FuncRParams *funcRParams, Arm7Func *arm7Func) {
+    if ((funcRParams == nullptr || funcRParams->getExps()->empty()) &&
+        (arm7Func->getParams() == nullptr || arm7Func->getParams()->empty())) {
         return;
-    } else if (funcRParams->getExps()->size() == func->getParams()->size()) {
+    } else if (funcRParams->getExps()->size() == arm7Func->getParams()->size()) {
         // j 为索引遍历检查实参
         for (int j = 0; j < funcRParams->getExps()->size(); j++) {
             switch (semanticAddExp(funcRParams->getExps()->at(j)->getAddExp())) {
                 case TYPE_INT:
-                    if (func->getParams()->at(j)->getVarInner() != nullptr ||
-                        func->getParams()->at(j)->getConstVarInner() != nullptr) {
+                    if (arm7Func->getParams()->at(j)->getIfArray() == ARRAY_FALSE) {
                         break;
                     } else {
                         Error::errorSim("semanticUnaryExp func param int");
                         exit(-1);
                     }
                 case TYPE_INT_STAR:
-                    if (func->getParams()->at(j)->getVarArrayInner() != nullptr ||
-                        func->getParams()->at(j)->getConstVarArrayInner() != nullptr) {
+                    if (arm7Func->getParams()->at(j)->getIfArray() == ARRAY_TRUE) {
                         break;
                     } else {
                         Error::errorSim("semanticUnaryExp func param int star");
@@ -701,107 +988,128 @@ void Semantic::checkRParams(FuncRParams *funcRParams, Func *func) {
                     exit(-1);
             }
         }  // 检查各个实参类型
-    } else if (func->getIdent() != putFStr /*&& !funcRParams->getStrOut().empty()*/) {
+    } else if (arm7Func->getIdent() == putFStr) {
+//        if (semanticAddExp(funcRParams->getExps()->at(0)->getAddExp()) != TYPE_STR) {
+//            Error::errorSim("semanticUnaryExp func param puf TYPE_STR");
+//            exit(-1);
+//        }
+        for (auto &j : *funcRParams->getExps()) {
+            if (semanticAddExp(j->getAddExp()) != TYPE_INT) {
+                Error::errorSim("semanticUnaryExp func param puf TYPE_INT ...");
+                exit(-1);
+            }
+        }
+    } else {
+        //    } else if (arm7Func->getIdent() != putFStr /*&& !funcRParams->getStrOut().empty()*/) {
         Error::errorSim("semanticUnaryExp func param");
         exit(-1);
     }
 }
 
-///===-----------------------------------------------------------------------===///
-/// lib
-///===-----------------------------------------------------------------------===///
+void Semantic::checkExps(std::vector<Exp *> *exps, const char *errMsg) {
+    for (Exp *exp: *exps) {
+        if (semanticAddExp(exp->getAddExp()) != TYPE_INT) {
+            Error::errorSim(errMsg);
+            exit(-1);
+        }
+    }
+}
 
+
+///===-----------------------------------------------------------------------===///
+/// 静态库文件里面的函数
+///===-----------------------------------------------------------------------===///
 void Semantic::setSyLib_H() {
     auto *symbolsLib = new std::vector<Symbol *>();
     std::string avoidNULL = "nullptr";
 
     std::string getIntStr = "getint";
     // int getint()
-    auto *funcGetint = new Func(getIntStr.c_str(), TYPE_INT, nullptr);
-    auto *symbolGetInt = new Symbol(nullptr, nullptr, nullptr, nullptr, funcGetint);
+    auto *funcGetint = new Arm7Func(getIntStr.c_str(), TYPE_INT, nullptr);
+    auto *symbolGetInt = new Symbol(nullptr, funcGetint);
     symbolsLib->emplace_back(symbolGetInt);
 
     std::string getChStr = "getch";
     // int getch()
-    auto *funcGetCh = new Func(getChStr.c_str(), TYPE_INT, nullptr);
-    auto *symbolGetCh = new Symbol(nullptr, nullptr, nullptr, nullptr, funcGetCh);
+    auto *funcGetCh = new Arm7Func(getChStr.c_str(), TYPE_INT, nullptr);
+    auto *symbolGetCh = new Symbol(nullptr, funcGetCh);
     symbolsLib->emplace_back(symbolGetCh);
 
     std::string getArrayStr = "getarray";
-    auto *getArrayParams = new std::vector<Symbol *>();
+    auto *getArrayParams = new std::vector<Arm7Var *>();
     // int[]
     auto *getArrayVarArraySubs = new std::vector<int>();
-    auto *getArrayVarArrayParam = new VarArray(avoidNULL.c_str(), TYPE_INT, getArrayVarArraySubs);
-    auto *getArrayVarArraySymbol = new Symbol(nullptr, getArrayVarArrayParam, nullptr, nullptr, nullptr);
-    getArrayParams->emplace_back(getArrayVarArraySymbol);
+    auto *getArrayVarArrayParam = new Arm7Var(avoidNULL.c_str(), getArrayStr.c_str(), TYPE_INT, 1, CONST_FALSE,
+                                              ARRAY_TRUE, getArrayVarArraySubs, nullptr);
+    getArrayParams->emplace_back(getArrayVarArrayParam);
     // int getarray(int[])
-    auto *funcGetArray = new Func(getArrayStr.c_str(), TYPE_INT, getArrayParams);
-    auto *symbolGetArray = new Symbol(nullptr, nullptr, nullptr, nullptr, funcGetArray);
+    auto *funcGetArray = new Arm7Func(getArrayStr.c_str(), TYPE_INT, getArrayParams);
+    auto *symbolGetArray = new Symbol(nullptr, funcGetArray);
     symbolsLib->emplace_back(symbolGetArray);
 
     std::string putIntStr = "putint";
-    auto *putIntParams = new std::vector<Symbol *>();
+    auto *putIntParams = new std::vector<Arm7Var *>();
     // int
-    auto *putIntVarParam = new Var(avoidNULL.c_str(), TYPE_INT);
-    auto *putIntVarSymbol = new Symbol(putIntVarParam, nullptr, nullptr, nullptr, nullptr);
-    putIntParams->emplace_back(putIntVarSymbol);
+    auto *putIntVarParam =
+            new Arm7Var(avoidNULL.c_str(), putIntStr.c_str(), TYPE_INT, 1, CONST_FALSE, ARRAY_FALSE, nullptr, nullptr);
+    putIntParams->emplace_back(putIntVarParam);
     // void putint(int)
-    auto *funcPutInt = new Func(putIntStr.c_str(), TYPE_VOID, putIntParams);
-    auto *symbolPutInt = new Symbol(nullptr, nullptr, nullptr, nullptr, funcPutInt);
+    auto *funcPutInt = new Arm7Func(putIntStr.c_str(), TYPE_VOID, putIntParams);
+    auto *symbolPutInt = new Symbol(nullptr, funcPutInt);
     symbolsLib->emplace_back(symbolPutInt);
 
     std::string putChStr = "putch";
-    auto *putChParams = new std::vector<Symbol *>();
+    auto *putChParams = new std::vector<Arm7Var *>();
     // int
-    auto *putChVarParam = new Var(avoidNULL.c_str(), TYPE_INT);
-    auto *putChVarSymbol = new Symbol(putChVarParam, nullptr, nullptr, nullptr, nullptr);
-    putChParams->emplace_back(putChVarSymbol);
+    auto *putChVarParam =
+            new Arm7Var(avoidNULL.c_str(), putChStr.c_str(), TYPE_INT, 1, CONST_FALSE, CONST_FALSE, nullptr, nullptr);
+    putChParams->emplace_back(putChVarParam);
     // void putch(int)
-    auto *funcPutCh = new Func(putChStr.c_str(), TYPE_VOID, putChParams);
-    auto *symbolPutCh = new Symbol(nullptr, nullptr, nullptr, nullptr, funcPutCh);
+    auto *funcPutCh = new Arm7Func(putChStr.c_str(), TYPE_VOID, putChParams);
+    auto *symbolPutCh = new Symbol(nullptr, funcPutCh);
     symbolsLib->emplace_back(symbolPutCh);
 
     std::string putArrayStr = "putarray";
-    auto *putArrayParams = new std::vector<Symbol *>();
+    auto *putArrayParams = new std::vector<Arm7Var *>();
     // int
-    auto *putArrayVarParam = new Var(avoidNULL.c_str(), TYPE_INT);
-    auto *putArrayVarSymbol = new Symbol(putArrayVarParam, nullptr, nullptr, nullptr, nullptr);
-    putArrayParams->emplace_back(putArrayVarSymbol);
+    auto *putArrayVarParam =
+            new Arm7Var(avoidNULL.c_str(), putArrayStr.c_str(), TYPE_INT, 1, CONST_FALSE, ARRAY_TRUE, nullptr, nullptr);
+    putArrayParams->emplace_back(putArrayVarParam);
     // int[]
     auto *putArrayVarArraySubs = new std::vector<int>();
-    auto *putArrayVarArrayParam = new VarArray(avoidNULL.c_str(), TYPE_INT, putArrayVarArraySubs);
-    auto *putArrayVarArraySymbol = new Symbol(nullptr, putArrayVarArrayParam, nullptr, nullptr, nullptr);
-    putArrayParams->emplace_back(putArrayVarArraySymbol);
+    auto *putArrayVarArrayParam = new Arm7Var(avoidNULL.c_str(), putArrayStr.c_str(), TYPE_INT, 1, CONST_FALSE,
+                                              ARRAY_TRUE, putArrayVarArraySubs, nullptr);
+    putArrayParams->emplace_back(putArrayVarArrayParam);
     // void putarray(int, int[])
-    auto *funcPutArray = new Func(putArrayStr.c_str(), TYPE_VOID, putArrayParams);
-    auto *symbolPutArray = new Symbol(nullptr, nullptr, nullptr, nullptr, funcPutArray);
+    auto *funcPutArray = new Arm7Func(putArrayStr.c_str(), TYPE_VOID, putArrayParams);
+    auto *symbolPutArray = new Symbol(nullptr, funcPutArray);
     symbolsLib->emplace_back(symbolPutArray);
 
-
-    auto *putFParams = new std::vector<Symbol *>();
+    auto *putFParams = new std::vector<Arm7Var *>();
     // <格式串>
-    auto *putFStrParam = new Var(avoidNULL.c_str(), TYPE_STR);
-    auto *putFStrSymbol = new Symbol(putFStrParam, nullptr, nullptr, nullptr, nullptr);
-    putFParams->emplace_back(putFStrSymbol);
+    auto *putFStrParam =
+            new Arm7Var(avoidNULL.c_str(), putFStr.c_str(), TYPE_STR, 1, CONST_FALSE, ARRAY_FALSE, nullptr, nullptr);
+    putFParams->emplace_back(putFStrParam);
     // int... jump -> 写死判断
     // void putf(<格式串>, int, …)
-    auto *funcPutF = new Func(putFStr.c_str(), TYPE_VOID, putFParams);
-    auto *symbolPutF = new Symbol(nullptr, nullptr, nullptr, nullptr, funcPutF);
+    auto *funcPutF = new Arm7Func(putFStr.c_str(), TYPE_VOID, putFParams);
+    auto *symbolPutF = new Symbol(nullptr, funcPutF);
     symbolsLib->emplace_back(symbolPutF);
 
     std::string startTimeStr = "starttime";
+    auto *startTimeParams = new std::vector<Arm7Var *>();
     // void starttime()
-    auto *funcStartTime = new Func(startTimeStr.c_str(), TYPE_VOID, nullptr);
-    auto *symbolStartTime = new Symbol(nullptr, nullptr, nullptr, nullptr, funcStartTime);
+    auto *funcStartTime = new Arm7Func(startTimeStr.c_str(), TYPE_VOID, startTimeParams);
+    auto *symbolStartTime = new Symbol(nullptr, funcStartTime);
     symbolsLib->emplace_back(symbolStartTime);
 
     std::string stopTimeStr = "stoptime";
+    auto *stopTimeParams = new std::vector<Arm7Var *>();
     // void stoptime()
-    auto *funcStopTime = new Func(stopTimeStr.c_str(), TYPE_VOID, nullptr);
-    auto *symbolStopTime = new Symbol(nullptr, nullptr, nullptr, nullptr, funcStopTime);
+    auto *funcStopTime = new Arm7Func(stopTimeStr.c_str(), TYPE_VOID, stopTimeParams);
+    auto *symbolStopTime = new Symbol(nullptr, funcStopTime);
     symbolsLib->emplace_back(symbolStopTime);
 
-    auto *symbolLibTable = new SymbolTable(SYMBOL_TABLE_EXTERN, symbolsLib);
+    auto *symbolLibTable = new SymbolTable(SYMBOL_TABLE_EXTERN, SYMBOL_TABLE_EXTERN_STR.c_str(), symbolsLib);
     symbolTables->push_back(symbolLibTable);
 }
-

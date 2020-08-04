@@ -2,42 +2,49 @@
 #define COMPILER_SEMANTIC_H
 
 #include "SymbolTable.h"
-#include "../ir/IRGlobal.h"
+#include "../arm/ArmGlobal.h"
 #include "../parser/Parse.h"
 
 class Semantic {
 private:
-    /// 语法分析器返回结果
-    AST *ast = nullptr;
-    /// 符号表(未考虑多文件，但需要考虑静态链接头文件相应方法！)
+    /// 抽象语法树->语法分析器结果
+    AST *ast;
+    /// 符号表（加强版）
     std::vector<SymbolTable *> *symbolTables;
-    /// 可供返回的中间码
-    IRTree *irTree = nullptr;
+    /// 当前代码块 level 层次
+    int levelNow;
+    /// 当前函数名，用以变量查找
+    std::string funcNameNow;
+    /// 当前函数形参参数表，用以变量查找
+    std::vector<Arm7Var *> *funcParamNow;
+    /// 当前符号表，用以检查复杂 level 下的变量查找
+//    SymbolTable *symbolTableNow;
+    /// 局部变量内存分配用，semanticFunc 结束后，会赋给 Arm7Func
+    /// 0804 考虑到参数有#+DIGIT & #-DIGIT,不能使用正数了，要务必维持[sp, #'+/-DIGIT'] 样子
+    int capacity;
 
-
+    ///===-----------------------------------------------------------------------===///
+    /// 静态库文件里面的函数
+    ///===-----------------------------------------------------------------------===///
     void setSyLib_H();
 
     ///===-----------------------------------------------------------------------===///
     /// 分析 ast 得到符号表相关内容
     ///===-----------------------------------------------------------------------===///
-
-    Var *semanticVar(VarDef *varDef, int varType);
-
-    VarArray *semanticVarArray(VarDef *varDef, int varType);
-
-    ConstVar *semanticConstVar(ConstDef *constDef, int constType);
-
-    ConstVarArray *semanticConstVarArray(ConstDef *constDef, int constType);
-
-    Func *semanticFunc(FuncDef *funcDef);
+    /// 给全局变量地址分配用
+    void semanticArm7Var(Decl *decl, std::vector<Symbol *> *symbols);
+    /// 内含参数变量地址分配
+    Arm7Func *semanticArm7Func(FuncDef *funcDef);
 
     ///===-----------------------------------------------------------------------===///
     /// Stmt 语句
     ///===-----------------------------------------------------------------------===///
+    /// 给局部变量地址分配用
+    void semanticArm7Var(BlockItem *blockItem, std::vector<Symbol *> *symbols);
+
+    void semanticBlock(Block *block, int funcRetType, std::vector<Arm7Var *> *params);
 
     void semanticStmt(Stmt *stmt, int funcRetType);
-
-    void semanticBlock(Block *block, int funcRetType, std::vector<Symbol *> *paramSymbols);
 
     ///===-----------------------------------------------------------------------===///
     /// Expr 表达式 CalConst
@@ -46,6 +53,8 @@ private:
     ///===-----------------------------------------------------------------------===///
 
     std::vector<int> *calConstArrayInitVals(ConstInitVal *constInitVal, std::vector<int> *subs);
+
+    std::vector<int> *calVarArrayInitVals(InitVal *initVal, std::vector<int> *subs);
 
     int calConstExp(ConstExp *constExp);
 
@@ -87,16 +96,24 @@ private:
 
     int semanticLVal(LVal *lVal);
 
-    void checkRParams(FuncRParams *funcRParams, Func *func);
+    void checkRParams(FuncRParams *funcRParams, Arm7Func *arm7Func);
 
     void checkExps(std::vector<Exp *> *exps, const char *errMsg);
 
 public:
+    /// 构造方法
     Semantic();
+
+    ///===-----------------------------------------------------------------------===///
+    /// startSemantic 启动接口
+    ///===-----------------------------------------------------------------------===///
 
     void startSemantic();
 
-    IRTree *getIRTree() { return irTree; }
+    AST *getAST() { return ast; }
+
+    std::vector<SymbolTable *> *getSymbolTable() { return symbolTables; }
+
 };
 
 

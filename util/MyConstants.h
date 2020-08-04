@@ -107,22 +107,18 @@ static const int OP_UO_NOT = -114;
 static const int OP_NULL = -117;
 
 // data type
-static const std::string TYPE_INT_STR = "int";
-static const std::string TYPE_VOID_STR = "void";
-
 static const int TYPE_INT = -2;
 static const int TYPE_INT_STAR = -1;
 static const int TYPE_VOID = -3;
 static const int TYPE_STR = -4;
 static const int TYPE_INT_BOOL = -5;
 
-static const int DATA_IS_CONSTANT = 1;
-static const int DATA_NOT_CONSTANT = 0;
-
 // symbolTableType
 static const int SYMBOL_TABLE_EXTERN = -20;
 static const int SYMBOL_TABLE_GLOBAL = -21;
 static const int SYMBOL_TABLE_LOCAL = -22;
+static const std::string SYMBOL_TABLE_EXTERN_STR = "0EXTERN";
+static const std::string SYMBOL_TABLE_GLOBAL_STR = "0GLOBAL";
 
 // Stmt type
 static const int STMT_LVAL_ASSIGN = -31;
@@ -142,46 +138,6 @@ static const int STMT_RETURN = -39;
 // Extern func
 static const std::string putFStr = "putf";
 
-// DAGNode Type
-// 跳转
-static const int DAG_BR = -1;
-static const int DAG_RET = -2;
-// 声明
-static const int DAG_ALLOCA_i32 = -3;
-static const int DAG_GLOBAL_i32 = -4;
-static const int DAG_ALLOCA_i32_ARRAY = -5;
-static const int DAG_GLOBAL_i32_ARRAY = -6;
-static const int DAG_Con_ALLOCA_i32 = -7;
-static const int DAG_Con_GLOBAL_i32 = -8;
-static const int DAG_Con_ALLOCA_ARRAY_i32 = -9;
-static const int DAG_Con_GLOBAL_ARRAY_i32 = -10;
-// 存取数
-static const int DAG_LOAD = -11;
-static const int DAG_STORE = -12;
-static const int DAG_GETPTR = -13;
-// 函数调用
-static const int DAG_CALL = -14;
-// 数
-static const int DAG_IMMEDIATE_DATA = -15;
-static const int DAG_EXTERNAL_DATA = -16;
-// 保持与 ast 处 BO/UO 一样
-static const int DAG_ADD = OP_BO_ADD;
-static const int DAG_SUB = OP_BO_SUB;
-static const int DAG_MUL = OP_BO_MUL;
-static const int DAG_DIV = OP_BO_DIV;
-static const int DAG_REM = OP_BO_REM;
-
-static const int DAG_GT = OP_BO_GT;
-static const int DAG_LT = OP_BO_LT;
-static const int DAG_OR = OP_BO_OR;
-static const int DAG_EQ = OP_BO_EQ;
-static const int DAG_AND = OP_BO_AND;
-static const int DAG_NEQ = OP_BO_NEQ;
-static const int DAG_GTE = OP_BO_GTE;
-static const int DAG_LTE = OP_BO_LTE;
-
-static const int DAG_NOT = OP_UO_NOT;
-
 // ir like blockName entry
 static const std::string BLOCK_ENTRY = "entry";
 static const std::string REGISTER_GLOBAL = "@";
@@ -190,23 +146,84 @@ static const std::string REGISTER_REAL = "$";
 static const std::string OPD_NULL = "";
 static const int GLOBAL_DEFAULT_VALUE = 0;
 
+// symbolTale about
+
+static const int CONST_TRUE = 1;
+static const int CONST_FALSE = 0;
+
+static const int ARRAY_TRUE = 1;
+static const int ARRAY_FALSE = 0;
+
+
+static const std::string GLOBAL_VAR_NO_FUNC = "0NoFunc";
+static const int GLOBAL_VAR_POS = -1;
+static const int LOCAL_VAR_POS = -2;
+static const int PARAM_VAR_POS = -3;
+
+static const int LVAL_ARRAY_GLOBAL_INT = -200;
+static const int LVAL_ARRAY_GLOBAL_INT_STAR = -201;
+static const int LVAL_ARRAY_PARAM_INT = -202;
+static const int LVAL_ARRAY_PARAM_INT_STAR = -203;
+static const int LVAL_ARRAY_LOCAL_INT = -204;
+static const int LVAL_ARRAY_LOCAL_INT_STAR = -205;
+
+static const std::string LVAL_VAR_POS_DEFAULT = "#-1";
+
+/// push {fp, lr, r4}
+static const int PUSH_NUM_DEFAULT = 3;
+
+static const int ARM_STMT_STR = -1;
+static const int ARM_STMT_LDR = -2;
+static const int ARM_STMT_PUSH = -3;
+static const int ARM_STMT_POP = -4;
+
+static const int ARM_STMT_ADD = OP_BO_ADD;  // -101
+static const int ARM_STMT_SUB = OP_BO_SUB;  // -102
+static const int ARM_STMT_MUL = OP_BO_MUL;  // -103
+
+static const int ARM_STMT_RSB = -9;
+
+static const int ARM_STMT_MOV = -10;
+static const int ARM_STMT_MOVEQ = -11;
+static const int ARM_STMT_MOVNE = -12;
+static const int ARM_STMT_MOVLE = -13;
+static const int ARM_STMT_MOVGE = -14;
+static const int ARM_STMT_MOVGT = -15;
+static const int ARM_STMT_MOVLT = -16;
+static const int ARM_STMT_MOVW = -17;
+static const int ARM_STMT_MOVT = -18;
+
+static const int ARM_STMT_BL = -19;
+
+static const int ARM_STMT_B = -20;
+static const int ARM_STMT_CMP = -21;
+static const int ARM_STMT_BEQ = -22;
+static const int ARM_STMT_BNE = -23;
+
+
+static const int ARM_REG_LOCK_TRUE = 1;
+static const int ARM_REG_LOCK_FALSE = 0;
+
+/// 自定义库函数
+static const std::string FUNC_MINE_DIV_ZT = "div_zt";
+static const std::string FUNC_MINE_MOD_ZT = "mod_zt";
+
 // ARM_DAG Type
-enum ARM_DAG
-{
-  IMMEDIATE_DATA,
+enum ARM_DAG {
+    IMMEDIATE_DATA,
 
-  MOV, MOVEQ ,MOVNE, MOVLE, MOVGE, MOVGT, MOVLT,
-  MOVW,MOVT,
+    MOV, MOVEQ, MOVNE, MOVLE, MOVGE, MOVGT, MOVLT,
+    MOVW, MOVT,
 
-  ADD,SUB,MUL,DIV,MOD,
+    ADD, SUB, MUL, DIV, MOD,
 
-  CMP,
+    CMP,
 
-  LDR,STR,
+    LDR, STR,
 
-  B, BL, BX, BEQ,
+    B, BL, BX, BEQ,
 
-  PUSH, POP
+    PUSH, POP
 
 };
 

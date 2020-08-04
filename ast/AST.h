@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include "SourceLocation.h"
+#include "../util/MyConstants.h"
 
 /**
  * 声明 Decl -> ConstDecl | VarDecl | FuncDef
@@ -60,6 +61,15 @@ private:
 
     std::vector<Exp *> *exps;
 
+    /// 如 8 表 [fp, #-8]
+    std::string baseMemoryPos;
+
+    int intPos;
+
+    std::vector<int> *subs;
+
+    int type;
+
 public:
     /**
      * 左值表达式 LVal
@@ -68,7 +78,8 @@ public:
      * @param sourLocs _0: identLoc; [_Loc, ]_Loc, ... 数组各维度
      */
     LVal(const char *ident, std::vector<Exp *> *exps, std::list<SourceLocation *> *sourLocs) :
-            ident(ident), exps(exps), Locs(sourLocs) {};
+            ident(ident), exps(exps), Locs(sourLocs), baseMemoryPos(LVAL_VAR_POS_DEFAULT),
+            intPos(LOCAL_VAR_POS), subs(nullptr), type(LVAL_ARRAY_GLOBAL_INT) {};
 
     [[nodiscard]] const std::string &getIdent() const {
         return ident;
@@ -76,6 +87,38 @@ public:
 
     [[nodiscard]] std::vector<Exp *> *getExps() const {
         return exps;
+    }
+
+    int getIntPos() const {
+        return intPos;
+    }
+
+    void setIntPos(int intPos_) {
+        LVal::intPos = intPos_;
+    }
+
+    const std::string &getBaseMemoryPos() {
+        return baseMemoryPos;
+    }
+
+    void setBaseMemoryPos(const char *baseMemoryPos_) {
+        LVal::baseMemoryPos = baseMemoryPos_;
+    }
+
+    std::vector<int> *getSubs() const {
+        return subs;
+    }
+
+    void setSubs(std::vector<int> *subs_) {
+        LVal::subs = subs_;
+    }
+
+    int getType() const {
+        return type;
+    }
+
+    void setType(int type_) {
+        LVal::type = type_;
     }
 };
 
@@ -687,6 +730,11 @@ private:
 
     InitVal *initVal;
 
+//    /// 如 8 表 [fp, #-8]
+//    std::string baseMemoryPos;
+
+    int baseMemoryPos;
+
 public:
     /**
      * 变量定义 VarDef 构造方法
@@ -697,7 +745,8 @@ public:
      */
     VarDef(const char *ident, std::vector<ConstExp *> *constExps, InitVal *initVal,
            std::list<SourceLocation *> *sourLocs) :
-            ident(ident), constExps(constExps), initVal(initVal), Locs(sourLocs) {};
+            ident(ident), constExps(constExps), initVal(initVal), Locs(sourLocs),
+            /*baseMemoryPos(LVAL_VAR_POS_DEFAULT)*/ baseMemoryPos(LOCAL_VAR_POS) {};
 
     [[nodiscard]] const std::string &getIdent() const {
         return ident;
@@ -710,6 +759,22 @@ public:
     [[nodiscard]] InitVal *getInitVal() const {
         return initVal;
     }
+
+    int getBaseMemoryPos() const {
+        return baseMemoryPos;
+    }
+
+    void setBaseMemoryPos(int baseMemoryPos_) {
+        VarDef::baseMemoryPos = baseMemoryPos_;
+    }
+
+//    const std::string &getBaseMemoryPos() const {
+//        return baseMemoryPos;
+//    }
+//
+//    void setBaseMemoryPos(const char *baseMemoryPos_) {
+//        VarDef::baseMemoryPos = baseMemoryPos_;
+//    }
 };
 
 /**
@@ -779,6 +844,11 @@ private:
 
     ConstInitVal *constInitVal;
 
+//    /// 如 8 表 [fp, #-8]
+//    std::string baseMemoryPos;
+
+    int baseMemoryPos;
+
 public:
     /**
      * 常数定义 ConstDef 构造方法
@@ -789,7 +859,8 @@ public:
      */
     ConstDef(const char *ident, std::vector<ConstExp *> *constExps, ConstInitVal *constInitVal,
              std::list<SourceLocation *> *sourLocs) :
-            ident(ident), constExps(constExps), constInitVal(constInitVal), Locs(sourLocs) {};
+            ident(ident), constExps(constExps), constInitVal(constInitVal), Locs(sourLocs),
+            /*baseMemoryPos(LVAL_VAR_POS_DEFAULT)*/baseMemoryPos(LOCAL_VAR_POS) {};
 
     [[nodiscard]] const std::string &getIdent() const {
         return ident;
@@ -802,6 +873,22 @@ public:
     [[nodiscard]]  ConstInitVal *getConstInitVal() const {
         return constInitVal;
     }
+
+    int getBaseMemoryPos() const {
+        return baseMemoryPos;
+    }
+
+    void setBaseMemoryPos(int baseMemoryPos_) {
+        ConstDef::baseMemoryPos = baseMemoryPos_;
+    }
+
+//    const std::string &getBaseMemoryPos() const {
+//        return baseMemoryPos;
+//    }
+//
+//    void setBaseMemoryPos(const char *baseMemoryPos_) {
+//        ConstDef::baseMemoryPos = baseMemoryPos_;
+//    }
 };
 
 /**
