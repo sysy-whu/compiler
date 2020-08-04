@@ -94,15 +94,8 @@ void Arm7Gen::genArm7Func(FuncDef *funcDef, std::vector<ArmBlock *> *armBlocks) 
         }
     }
 
-    genBlock(funcDef->getBlock(), armBlocks, blockEntry, armStmts);
-
-    /// 考虑到如下固定格式结尾无需计算，保留在 output 时输出到文件
-    /// sub	sp, fp, #4
-    /// @ sp needed
-    /// pop	{fp, pc}
-    /// .size	whileFunc, .-whileFunc
-    /// .align	2
-
+    auto *genedBlock = genBlock(funcDef->getBlock(), armBlocks, blockEntry, armStmts);
+    armRegManager->freeAllArmReg(genedBlock->getArmStmts());
     levelNow--;
 }
 
@@ -831,11 +824,11 @@ ArmReg *Arm7Gen::genUnaryExp(UnaryExp *unaryExp, std::vector<ArmStmt *> *ArmStmt
                 if (armRegParam->getRegName() != "r" + std::to_string(i + putFIntAux)) {
                     /// 释放寄存器并锁定不再分配
                     armRegManager->freeOneArmReg(i + putFIntAux, ArmStmts);
-                    armRegParam->setIfLock(ARM_REG_LOCK_TRUE);
                     /// mov  rI   aParam
                     auto *armMovStmt = new ArmStmt(ARM_STMT_MOV, ("r" + std::to_string(i + putFIntAux)).c_str(),
                                                    armRegParam->getRegName().c_str());
                     ArmStmts->emplace_back(armMovStmt);
+                    armRegManager->getArmRegs()->at(i)->setIfLock(ARM_REG_LOCK_TRUE);
                 }
                 armRegParam->setIfLock(ARM_REG_LOCK_TRUE);
             }
