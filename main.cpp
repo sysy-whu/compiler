@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
     arm7Gen.startGen(semantic.getAST(), semantic.getSymbolTable());
 
 
-
+    std::cout << arm7Gen.genArmTree()->genString() << std::endl;
     // 移步 semantic 构造方法
     //    Parse parse;
     //    parse.parseAST();

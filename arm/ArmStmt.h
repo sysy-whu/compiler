@@ -60,8 +60,10 @@ private:
                 return "sub";
             case ARM_STMT_MUL:
                 return "mul";
-//            case ARM_STMT_MOVE:
-//                return "move";
+            case ARM_STMT_RSB:
+                return "rsb";
+            case ARM_STMT_MOV:
+                return "mov";
             case ARM_STMT_MOVEQ:
                 return "moveq";
             case ARM_STMT_MOVNE:
@@ -78,7 +80,16 @@ private:
                 return "movw";
             case ARM_STMT_MOVT:
                 return "movt";
-
+            case ARM_STMT_BL:
+                return "bl";
+            case ARM_STMT_B:
+                return "b";
+            case ARM_STMT_CMP:
+                return "cmp";
+            case ARM_STMT_BEQ:
+                return "beq";
+            case ARM_STMT_BNE:
+                return "bne";
         }
         return "";
     }

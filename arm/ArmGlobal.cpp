@@ -53,21 +53,17 @@ std::string Arm7GlobalVar::genString() {
 std::string Arm7GlobalFunc::genString() {
     // todo Arm7GlobalFunc 的输出方法
     std::string re = ".global " + funcName + "\n";
-    re += ".global " + funcName + "\n";
     re += ".type " + funcName + ",%function\n";
+    re += funcName + ":\n";
     for (auto armBlock:*armBlocks) {
         re += armBlock->genString();
     }
-        /// sub	sp, fp, #4
-    /// @ sp needed
-    /// pop	{fp, pc}
-    /// .size	whileFunc, .-whileFunc
-    /// .align	2
-    re += "sub	sp, fp, #4";
-    re += "@ sp needed";
-    re += "pop	{fp, pc}";
-    re += ".size	whileFunc, .-whileFunc";
-    re += ".align	2";
+
+    re += "sub	sp, fp, #4\n";
+    re += "@ sp needed\n";
+    re += "pop	{fp, pc}\n";
+    re += ".size	whileFunc, .-whileFunc\n";
+    re += ".align	2\n";
     return re;
 }
 
