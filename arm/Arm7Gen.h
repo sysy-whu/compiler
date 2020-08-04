@@ -90,8 +90,6 @@ private:
     /// 表达式 不计算 生成代码
     ///===-----------------------------------------------------------------------===///
 
-    std::vector<Exp *> *genVarArrayInitVals(InitVal *initVal, std::vector<int> *subs, std::vector<ArmStmt *> *ArmStmts);
-
     const char *genCondExp(Cond *cond, std::vector<ArmStmt *> *ArmStmts);
 
     const char *genLOrExp(LOrExp *lOrExp, std::vector<ArmStmt *> *ArmStmts);

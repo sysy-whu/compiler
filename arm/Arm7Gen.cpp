@@ -335,22 +335,99 @@ const char *Arm7Gen::genStmt(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, A
 
 const char *Arm7Gen::genStmtAuxIf(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
                                   std::vector<ArmStmt *> *lastBlockStmts) {
+//    const char *ifCondRet = genCondExp(stmt->getCond(), lastBlockStmts, stepName);
+//
+//    auto *irBodyStmts = new std::vector<IRStmt *>();
+//    auto *irBodyPreLocs = new std::set<std::string>();
+//    irBodyPreLocs->insert(lastBlock->getBlockName());
+//    int bodyStep = stepName++;
+//    auto *bodyBlock = new IRLocalBlock((REGISTER_LOCAL + std::to_string(bodyStep)).c_str(), irBodyStmts,
+//                                       irBodyPreLocs);
+//    basicBlocks->emplace_back(bodyBlock);
+//
+//    genStmt(stmt->getStmtBrBody(), basicBlocks, lastBlock, lastBlockStmts, stepName);
+//
+//    if (stmt->getElseBody() != nullptr) {
+//        auto *irElseStmts = new std::vector<IRStmt *>();
+//        auto *irElsePreLocs = new std::set<std::string>();
+//        irElsePreLocs->insert(lastBlock->getBlockName());
+//        int elseStep = stepName++;
+//        auto *elseBlock = new IRLocalBlock((REGISTER_LOCAL + std::to_string(elseStep)).c_str(), irElseStmts,
+//                                           irElsePreLocs);
+//        basicBlocks->emplace_back(elseBlock);
+//
+//        genStmt(stmt->getElseBody(), basicBlocks, lastBlock, lastBlockStmts, stepName);
+//
+//        // lastBlockStmts (原if之前的语句) 添加最后跳转 br
+//        auto *elseStepArray = new std::vector<std::string>();
+//        elseStepArray->emplace_back(REGISTER_LOCAL + std::to_string(elseStep));
+//        auto *irBrCondStmt = new IRStmt(DAG_BR, ifCondRet, (REGISTER_LOCAL + std::to_string(bodyStep)).c_str(),
+//                                        elseStepArray);
+//        lastBlockStmts->emplace_back(irBrCondStmt);
+//
+//        // if {...} else {...} 各自最后一句添加跳转
+//        auto *afterEndStepStr = new std::string(REGISTER_LOCAL + std::to_string(++stepName));
+//        auto *irIfBodyStmt = new IRStmt(DAG_BR, afterEndStepStr->c_str());
+//        irBodyStmts->emplace_back(irIfBodyStmt);
+//        auto *irIfElseBodyStmt = new IRStmt(DAG_BR, afterEndStepStr->c_str());
+//        irElseStmts->emplace_back(irIfElseBodyStmt);
+//        return afterEndStepStr->c_str();
+//    } else {
+//        // lastBlockStmts (原if之前的语句) 添加最后跳转 br
+//        stepName++;
+//        auto *afterIfStepArray = new std::vector<std::string>();
+//        afterIfStepArray->emplace_back(REGISTER_LOCAL + std::to_string(stepName));
+//        auto *irBrCondStmt = new IRStmt(DAG_BR, ifCondRet, (REGISTER_LOCAL + std::to_string(bodyStep)).c_str(),
+//                                        afterIfStepArray);
+//        lastBlockStmts->emplace_back(irBrCondStmt);
+//
+//        // if {...} 最后一句添加跳转
+//        auto *afterEndStepStr = new std::string(REGISTER_LOCAL + std::to_string(++stepName));
+//        auto *irIfBodyStmt = new IRStmt(DAG_BR, afterEndStepStr->c_str());
+//        irBodyStmts->emplace_back(irIfBodyStmt);
+//        return afterEndStepStr->c_str();
+//    }
     return nullptr;
 }
 
 const char *Arm7Gen::genStmtAuxWhile(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
                                      std::vector<ArmStmt *> *lastBlockStmts) {
+//    auto *irCondStmts = new std::vector<IRStmt *>();
+//    auto *irCondPreLocs = new std::set<std::string>();
+//    irCondPreLocs->insert(lastBlock->getBlockName());
+//    int condStep = stepName++;
+//    auto *condBlock = new IRLocalBlock((REGISTER_LOCAL + std::to_string(condStep)).c_str(), irCondStmts, irCondPreLocs);
+//    basicBlocks->emplace_back(condBlock);
+//    whilePos->push_back(condBlock->getBlockName());
+//
+//    const char *ifCondRet = genCondExp(stmt->getCond(), lastBlockStmts, stepName);
+//
+//    auto *irBodyStmts = new std::vector<IRStmt *>();
+//    auto *irBodyPreLocs = new std::set<std::string>();
+//    irBodyPreLocs->insert(condBlock->getBlockName());
+//    int bodyStep = stepName++;
+//    auto *bodyBlock = new IRLocalBlock((REGISTER_LOCAL + std::to_string(bodyStep)).c_str(), irBodyStmts, irBodyPreLocs);
+//    basicBlocks->emplace_back(bodyBlock);
+//    auto *afterEndStepStr = new std::string("tmp");
+//    whileEndPos->push_back(*afterEndStepStr);
+//
+//    genStmt(stmt->getStmtBrBody(), basicBlocks, bodyBlock, irBodyStmts, stepName);
+//
+//    afterEndStepStr = new std::string(REGISTER_LOCAL + std::to_string(++stepName));
+//    auto *bodyStepArray = new std::vector<std::string>();
+//    bodyStepArray->emplace_back(afterEndStepStr->c_str());
+//    auto *irWhileCondStmt = new IRStmt(DAG_BR, ifCondRet, bodyBlock->getBlockName().c_str(), bodyStepArray);
+//    irCondStmts->emplace_back(irWhileCondStmt);
+//
+//    whilePos->pop_back();
+//    whileEndPos->pop_back();
+//    return afterEndStepStr->c_str();
     return nullptr;
 }
 
 ///===-----------------------------------------------------------------------===///
 /// 表达式 不计算 生成代码
 ///===-----------------------------------------------------------------------===///
-
-std::vector<Exp *> *Arm7Gen::genVarArrayInitVals(InitVal *initVal, std::vector<int> *subs,
-                                                 std::vector<ArmStmt *> *ArmStmts) {
-    return nullptr;
-}
 
 const char *Arm7Gen::genCondExp(Cond *cond, std::vector<ArmStmt *> *ArmStmts) {
     return nullptr;
