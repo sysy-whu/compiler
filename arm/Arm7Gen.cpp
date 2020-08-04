@@ -937,6 +937,17 @@ ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts, int ifGet
                 auto *armMulStmt = new ArmStmt(ARM_STMT_MUL, armRegRet->getRegName().c_str(),
                                                armRegLenRem->getRegName().c_str(), armRegRet->getRegName().c_str());
                 ArmStmts->emplace_back(armMulStmt);
+            }else{
+                /// mov  rFree  subLenRem
+                auto *armRegLenRem = armRegManager->getFreeArmReg(ArmStmts);
+                auto *armLenMovStmt = new ArmStmt(ARM_STMT_MOV, armRegLenRem->getRegName().c_str(),("#4"));
+                ArmStmts->emplace_back(armLenMovStmt);
+                armRegRet->setIfLock(ARM_REG_LOCK_FALSE);
+                /// mul rRegRet rRegRet rFree
+                armRegRet->setArm7Var(nullptr);
+                auto *armMulStmt = new ArmStmt(ARM_STMT_MUL, armRegRet->getRegName().c_str(),
+                                               armRegLenRem->getRegName().c_str(), armRegRet->getRegName().c_str());
+                ArmStmts->emplace_back(armMulStmt);
             }
             /// add rRegRet rRegRet rLVal
             auto *armAddStmt = new ArmStmt(ARM_STMT_ADD, armRegLVal->getRegName().c_str(),
