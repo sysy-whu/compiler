@@ -66,7 +66,7 @@ void Arm7Gen::genArm7Func(FuncDef *funcDef, std::vector<ArmBlock *> *armBlocks) 
             /// sub	sp, sp, #DIGIT_CAPACITY
             auto *armStmtPush = new ArmStmt(ARM_STMT_PUSH, "{r4, fp, lr}");
             auto *armStmtAdd = new ArmStmt(ARM_STMT_ADD, "fp", "sp",
-                                           ("#" + std::to_string(PUSH_NUM_DEFAULT * 4-4)).c_str());
+                                           ("#" + std::to_string(PUSH_NUM_DEFAULT * 4 - 4)).c_str());
             /// 此句负数 capacity 转正
             auto *armStmtSub = new ArmStmt(ARM_STMT_SUB, "sp", "sp",
                                            ("#" + std::to_string(0 - symbol->getArm7Func()->getCapacity())).c_str());
@@ -159,7 +159,7 @@ void Arm7Gen::genVarArray(VarDef *varDef, std::vector<ArmStmt *> *armStmts) {
     // arm 相关
     auto *armAssignStmts = new std::vector<ArmStmt *>();
     for (int i = 0; i < len; i++) {
-        int subPosNow = varDef->getBaseMemoryPos() - i * 4;
+        int subPosNow = varDef->getBaseMemoryPos() + i * 4;
         if (values->at(i)->getAddExp() == nullptr) {
             ///	mov	rX, #CONST_VALUE
             ///	str	rX, [fp, #-LOC]
@@ -203,7 +203,7 @@ void Arm7Gen::genConstVarArray(ConstDef *constDef, std::vector<ArmStmt *> *armSt
     // arm
     ArmReg *armReg = armRegManager->getFreeArmReg(armStmts);
     for (int i = 0; i < len; i++) {
-        int subPosNow = constDef->getBaseMemoryPos() - i * 4;
+        int subPosNow = constDef->getBaseMemoryPos() + i * 4;
         ///	mov	rX, #SUB_VALUE
         ///	str	rX, [fp, #-LOC]
         auto *armStmtMove = new ArmStmt(ARM_STMT_MOV, armReg->getRegName().c_str(),
@@ -619,7 +619,7 @@ ArmReg *Arm7Gen::genRelExp(RelExp *relExp, std::vector<ArmStmt *> *ArmStmts) {
         auto *addRet = genAddExp(relExp->getAddExp(), ArmStmts);
         addRet->setIfLock(ARM_REG_LOCK_TRUE);
         // 比较relRet和addRet
-        ArmStmts->emplace_back(new ArmStmt(ARM_STMT_CMP,  addRet->getRegName().c_str(), relRet->getRegName().c_str()));
+        ArmStmts->emplace_back(new ArmStmt(ARM_STMT_CMP, addRet->getRegName().c_str(), relRet->getRegName().c_str()));
         relRet->setIfLock(ARM_REG_LOCK_FALSE);
         addRet->setIfLock(ARM_REG_LOCK_FALSE);
         auto *armRegFree = armRegManager->getFreeArmReg(ArmStmts);
@@ -847,7 +847,7 @@ ArmReg *Arm7Gen::genPrimaryExp(PrimaryExp *primaryExp, std::vector<ArmStmt *> *A
 ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts, int ifGetPos) {
     if (lVal->getExps()->empty()) {  // 整型
         if (lVal->getBaseMemoryPos() == ("[fp, #" + std::to_string(GLOBAL_VAR_POS) + "]") ||
-            lVal->getBaseMemoryPos() == std::to_string(GLOBAL_VAR_POS) || lVal->getIntPos()==GLOBAL_VAR_POS) {
+            lVal->getBaseMemoryPos() == std::to_string(GLOBAL_VAR_POS) || lVal->getIntPos() == GLOBAL_VAR_POS) {
             /// movw	rX, #:lower16:gR
             /// movt	rX, #:upper16:gR
             auto *armStrReg = armRegManager->getFreeArmReg(ArmStmts);
@@ -916,7 +916,7 @@ ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts, int ifGet
             auto *armRegRet = genAddExp(lVal->getExps()->at(i)->getAddExp(), ArmStmts);
             int subLenRem = 1;
             for (int j = i + 1; j < lVal->getSubs()->size(); j++) {
-                subLenRem *= j;
+                subLenRem *= lVal->getSubs()->at(j);
             }
 
             if (subLenRem != 1) {
@@ -933,7 +933,7 @@ ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts, int ifGet
                 ArmStmts->emplace_back(armMulStmt);
             }
             /// add rRegRet rRegRet rLVal
-            auto *armAddStmt = new ArmStmt(ARM_STMT_ADD, armRegRet->getRegName().c_str(),
+            auto *armAddStmt = new ArmStmt(ARM_STMT_ADD, armRegLVal->getRegName().c_str(),
                                            armRegRet->getRegName().c_str(), armRegLVal->getRegName().c_str());
             ArmStmts->emplace_back(armAddStmt);
 
@@ -965,6 +965,7 @@ ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts, int ifGet
                 Error::errorSim("wrong when gen at LVal Array");
                 exit(-1);
         }
+        armRegLVal->setIfLock(ARM_REG_LOCK_FALSE);
         return armRegLVal;
     }
 }
