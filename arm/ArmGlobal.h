@@ -191,6 +191,8 @@ public:
     void setPushLen(int pushLen_);
 
     [[nodiscard]] std::vector<FuncInnerBlockAux *> *getBlockAuxs() const;
+
+    void setBlockAuxs(std::vector<FuncInnerBlockAux *> *blockAuxs);
 };
 
 #endif //COMPILER_ARMGLOBAL_H

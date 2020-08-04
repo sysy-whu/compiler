@@ -188,3 +188,7 @@ std::vector<FuncInnerBlockAux *> *Arm7GlobalFunc::getBlockAuxs() const {
     return blockAuxs;
 }
 
+void Arm7GlobalFunc::setBlockAuxs(std::vector<FuncInnerBlockAux *> *blockAuxs_) {
+    Arm7GlobalFunc::blockAuxs = blockAuxs_;
+}
+

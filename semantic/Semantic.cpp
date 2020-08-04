@@ -1012,19 +1012,19 @@ void Semantic::setSyLib_H() {
     auto *symbolsLib = new std::vector<Symbol *>();
     std::string avoidNULL = "nullptr";
 
-    std::string getIntStr = "getint";
+
     // int getint()
     auto *funcGetint = new Arm7Func(getIntStr.c_str(), TYPE_INT, nullptr);
     auto *symbolGetInt = new Symbol(nullptr, funcGetint);
     symbolsLib->emplace_back(symbolGetInt);
 
-    std::string getChStr = "getch";
+
     // int getch()
     auto *funcGetCh = new Arm7Func(getChStr.c_str(), TYPE_INT, nullptr);
     auto *symbolGetCh = new Symbol(nullptr, funcGetCh);
     symbolsLib->emplace_back(symbolGetCh);
 
-    std::string getArrayStr = "getarray";
+
     auto *getArrayParams = new std::vector<Arm7Var *>();
     // int[]
     auto *getArrayVarArraySubs = new std::vector<int>();
@@ -1036,7 +1036,7 @@ void Semantic::setSyLib_H() {
     auto *symbolGetArray = new Symbol(nullptr, funcGetArray);
     symbolsLib->emplace_back(symbolGetArray);
 
-    std::string putIntStr = "putint";
+
     auto *putIntParams = new std::vector<Arm7Var *>();
     // int
     auto *putIntVarParam =
@@ -1047,7 +1047,7 @@ void Semantic::setSyLib_H() {
     auto *symbolPutInt = new Symbol(nullptr, funcPutInt);
     symbolsLib->emplace_back(symbolPutInt);
 
-    std::string putChStr = "putch";
+
     auto *putChParams = new std::vector<Arm7Var *>();
     // int
     auto *putChVarParam =
@@ -1058,7 +1058,7 @@ void Semantic::setSyLib_H() {
     auto *symbolPutCh = new Symbol(nullptr, funcPutCh);
     symbolsLib->emplace_back(symbolPutCh);
 
-    std::string putArrayStr = "putarray";
+
     auto *putArrayParams = new std::vector<Arm7Var *>();
     // int
     auto *putArrayVarParam =
@@ -1085,14 +1085,14 @@ void Semantic::setSyLib_H() {
     auto *symbolPutF = new Symbol(nullptr, funcPutF);
     symbolsLib->emplace_back(symbolPutF);
 
-    std::string startTimeStr = "starttime";
+
     auto *startTimeParams = new std::vector<Arm7Var *>();
     // void starttime()
     auto *funcStartTime = new Arm7Func(startTimeStr.c_str(), TYPE_VOID, startTimeParams);
     auto *symbolStartTime = new Symbol(nullptr, funcStartTime);
     symbolsLib->emplace_back(symbolStartTime);
 
-    std::string stopTimeStr = "stoptime";
+
     auto *stopTimeParams = new std::vector<Arm7Var *>();
     // void stoptime()
     auto *funcStopTime = new Arm7Func(stopTimeStr.c_str(), TYPE_VOID, stopTimeParams);

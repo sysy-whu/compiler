@@ -134,8 +134,6 @@ static const int STMT_RETURN = -39;
 //static const int INIT_FALSE = -1;
 //static const int INIT_TRUE = -2;
 
-// Extern func
-static const std::string putFStr = "putf";
 
 // ir like blockName entry
 static const std::string BLOCK_ENTRY = "entry";
@@ -203,8 +201,22 @@ static const int ARM_STMT_BNE = -23;
 static const int ARM_REG_LOCK_TRUE = 1;
 static const int ARM_REG_LOCK_FALSE = 0;
 
+static const int STR_ASCII_TYPE = -255;
+
 /// 自定义库函数
 static const std::string FUNC_MINE_DIV_ZT = "div_zt";
 static const std::string FUNC_MINE_MOD_ZT = "mod_zt";
+
+// Extern func
+static const std::string putFStr = "putf";
+static const std::string stopTimeStr = "stoptime";
+static const std::string startTimeStr = "starttime";
+static const std::string putArrayStr = "putarray";
+static const std::string putChStr = "putch";
+static const std::string putIntStr = "putint";
+static const std::string getArrayStr = "getarray";
+static const std::string getChStr = "getch";
+static const std::string getIntStr = "getint";
+
 
 #endif //COMPILER_MYCONSTANTS_H

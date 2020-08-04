@@ -33,11 +33,14 @@ void Arm7Gen::startGen(AST *ast_, std::vector<SymbolTable *> *symbolTables_) {
 
     for (Decl *decl:*(ast->getDecls())) {
         if (decl->getFuncDef() != nullptr) {
+            auto *blockAuxs_ = new std::vector<FuncInnerBlockAux *>();
+            blockAuxs = blockAuxs_;
+
             auto *armBlocks = new std::vector<ArmBlock *>();
             genArm7Func(decl->getFuncDef(), armBlocks);
 
-            auto *arm7GlobalFunc =
-                    new Arm7GlobalFunc(decl->getFuncDef()->getIdent().c_str(), armBlocks);
+            auto *arm7GlobalFunc = new Arm7GlobalFunc(decl->getFuncDef()->getIdent().c_str(), armBlocks);
+            arm7GlobalFunc->setBlockAuxs(blockAuxs);
             auto *armGlobal = new ArmGlobal(nullptr, arm7GlobalFunc);
             armGlobals->emplace_back(armGlobal);
         }
@@ -53,6 +56,7 @@ void Arm7Gen::startGen(AST *ast_, std::vector<SymbolTable *> *symbolTables_) {
 void Arm7Gen::genArm7Func(FuncDef *funcDef, std::vector<ArmBlock *> *armBlocks) {
     funcNameNow = funcDef->getIdent();
     levelNow++;
+
 
     auto *armStmts = new std::vector<ArmStmt *>();
     auto *blockEntry = new ArmBlock(BLOCK_ENTRY.c_str(), armStmts);
@@ -316,6 +320,8 @@ const char *Arm7Gen::genStmt(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, A
                     /// mov r0 rX
                     auto *armMov0Stmt = new ArmStmt(ARM_STMT_MOV, "r0", armRegRet->getRegName().c_str());
                     lastBlockStmts->emplace_back(armMov0Stmt);
+                } else {
+
                 }
                 /// TODO 留给输出文件
                 ///	  nop
@@ -789,15 +795,21 @@ ArmReg *Arm7Gen::genUnaryExp(UnaryExp *unaryExp, std::vector<ArmStmt *> *ArmStmt
         /// 函数调用 有参数
         /// 万法归宗之 LVal 永存真实地址->则无论参数数组还是局部数组,永远先ldr再add好了
         /// 注意此处要求，局部数组声明时。
+
         if (unaryExp->getFuncRParams() != nullptr) {
             auto *exps = unaryExp->getFuncRParams()->getExps();
-            if (exps->size() >= 4) {
+            /// putf 不存第一个 str
+            int putFIntAux = 0;
+            if (unaryExp->getIdent() == putFStr) {
+                putFIntAux = 1;
+            }
+            if (exps->size() >= 4 - putFIntAux) {
                 /// sub sp sp #exps->size()*4-16
                 auto *armSPStmt = new ArmStmt(ARM_STMT_SUB, "sp", "sp",
                                               ("#" + std::to_string(exps->size() * 4 - 16)).c_str());
                 ArmStmts->emplace_back(armSPStmt);
 
-                for (int i = 4; i < exps->size(); i++) {
+                for (int i = 4 - putFIntAux; i < exps->size(); i++) {
                     auto *armRagParam = genAddExp(exps->at(i)->getAddExp(), ArmStmts);
                     /// str  rX  [sp, #i*4-12]
                     auto *armStrStmt = new ArmStmt(ARM_STMT_STR, armRagParam->getRegName().c_str(),
@@ -805,18 +817,36 @@ ArmReg *Arm7Gen::genUnaryExp(UnaryExp *unaryExp, std::vector<ArmStmt *> *ArmStmt
                     ArmStmts->emplace_back(armStrStmt);
                 }
             }
-            for (int i = 0; i < exps->size() && i < 4; i++) {
+            for (int i = 0; i < exps->size() && i < 4 - putFIntAux; i++) {
                 auto *armRegParam = genAddExp(exps->at(i)->getAddExp(), ArmStmts);
-                if (armRegParam->getRegName() != "r" + std::to_string(i)) {
+                if (armRegParam->getRegName() != "r" + std::to_string(i + putFIntAux)) {
                     /// 释放寄存器并锁定不再分配
-                    armRegManager->freeOneArmReg(i, ArmStmts);
+                    armRegManager->freeOneArmReg(i + putFIntAux, ArmStmts);
                     armRegParam->setIfLock(ARM_REG_LOCK_TRUE);
                     /// mov  rI   aParam
-                    auto *armMovStmt = new ArmStmt(ARM_STMT_MOV, ("r" + std::to_string(i)).c_str(),
+                    auto *armMovStmt = new ArmStmt(ARM_STMT_MOV, ("r" + std::to_string(i + putFIntAux)).c_str(),
                                                    armRegParam->getRegName().c_str());
                     ArmStmts->emplace_back(armMovStmt);
                 }
             }
+            /// 处理 putF 的 Str
+            if (putFIntAux == 1) {
+                /// 释放寄存器 0
+                armRegManager->freeOneArmReg(0, ArmStmts);
+                auto *strBlockName = new std::string(".L" + std::to_string(blockName++));
+                auto *strValues = new std::vector<std::string>();
+                strValues->emplace_back(unaryExp->getFuncRParams()->getStrOut());
+                auto *blockAux = new FuncInnerBlockAux(strBlockName->c_str(), strValues, STR_ASCII_TYPE);
+                blockAuxs->emplace_back(blockAux);
+
+                /// movw	r0, #:lower16:.LX
+                /// movt	r0, #:upper16:.LX
+                auto *armLMovWStmt = new ArmStmt(ARM_STMT_MOVW, "r0", ("#:lower16:" + *strBlockName).c_str());
+                auto *armLMovTStmt = new ArmStmt(ARM_STMT_MOVT, "r0", ("#:upper16:" + *strBlockName).c_str());
+                ArmStmts->emplace_back(armLMovWStmt);
+                ArmStmts->emplace_back(armLMovTStmt);
+            }
+            /// 释放寄存器锁定
             for (int i = 0; i < 4; i++) {
                 armRegManager->getArmRegs()->at(i)->setIfLock(ARM_REG_LOCK_FALSE);
             }
@@ -937,10 +967,10 @@ ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts, int ifGet
                 auto *armMulStmt = new ArmStmt(ARM_STMT_MUL, armRegRet->getRegName().c_str(),
                                                armRegLenRem->getRegName().c_str(), armRegRet->getRegName().c_str());
                 ArmStmts->emplace_back(armMulStmt);
-            }else{
+            } else {
                 /// mov  rFree  subLenRem
                 auto *armRegLenRem = armRegManager->getFreeArmReg(ArmStmts);
-                auto *armLenMovStmt = new ArmStmt(ARM_STMT_MOV, armRegLenRem->getRegName().c_str(),("#4"));
+                auto *armLenMovStmt = new ArmStmt(ARM_STMT_MOV, armRegLenRem->getRegName().c_str(), ("#4"));
                 ArmStmts->emplace_back(armLenMovStmt);
                 armRegRet->setIfLock(ARM_REG_LOCK_FALSE);
                 /// mul rRegRet rRegRet rFree
