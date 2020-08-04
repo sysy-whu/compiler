@@ -734,7 +734,10 @@ int Semantic::semanticAddExp(AddExp *addExp) {
     if (addExp->getOpType() == OP_NULL) {
         return semanticMulExp(addExp->getMulExp());
     } else {
-        if (semanticAddExp(addExp->getAddExp()) == TYPE_INT && semanticMulExp(addExp->getMulExp()) == TYPE_INT) {
+        int a = semanticAddExp(addExp->getAddExp());
+        int b = semanticMulExp(addExp->getMulExp());
+        if (semanticAddExp(addExp->getAddExp()) == TYPE_INT &&
+            semanticMulExp(addExp->getMulExp()) == TYPE_INT) {
             if (addExp->getOpType() == OP_BO_ADD || addExp->getOpType() == OP_BO_SUB) {
                 return TYPE_INT;
             } else {
@@ -801,32 +804,88 @@ int Semantic::semanticPrimaryExp(PrimaryExp *primaryExp) {
     }
 }
 
-int Semantic::semanticLVal(LVal *lVal) {
-    if (lVal->getExps()->empty()) {  // 整型
-        /// 当前 block 找
-//        for (Symbol *symbol: *symbolTableNow->getSymbols()) {
-//            if (symbol->getArm7Var() != nullptr &&
-//                symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
-//                symbol->getArm7Var()->getIfArray() == ARRAY_FALSE) {
-//
-//                if (symbol->getArm7Var()->getIfConst() == CONST_TRUE) {
-//                    lVal->setBaseMemoryPos(("#" + std::to_string(symbol->getArm7Var()->getValue()->at(0))).c_str());
-//                } else {
-//                    lVal->setBaseMemoryPos(
-//                            ("[fp, #" + std::to_string(symbol->getArm7Var()->getMemoryLoc()) + "]").c_str());
-//                }
-//
-//                return symbol->getArm7Var()->getVarType();
-//            }
-//        }
-        /// 函数里外部层次block找
-        for (int i = (int) symbolTables->size() - 1; i > 1; i--) {
-            if (symbolTables->at(i)->getFuncName() == funcNameNow) {
-                for (Symbol *symbol:*symbolTables->at(i)->getSymbols()) {
-                    if (symbol->getArm7Var() != nullptr &&
-                        symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
-                        symbol->getArm7Var()->getIfArray() == ARRAY_FALSE) {
+int Semantic::semanticLValIntStarAux(LVal *lVal) {
+    checkExps(lVal->getExps(), "array sub not int");
 
+    /// 函数里外部层次block找
+    for (int i = (int) symbolTables->size() - 1; i > 1; i--) {
+        if (symbolTables->at(i)->getFuncName() == funcNameNow) {
+            for (Symbol *symbol:*symbolTables->at(i)->getSymbols()) {
+                if (symbol->getArm7Var() != nullptr &&
+                    symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
+                    symbol->getArm7Var()->getIfArray() == ARRAY_TRUE) {
+                    /// 局部变量
+                    lVal->setSubs(symbol->getArm7Var()->getSubs());
+                    lVal->setBaseMemoryPos(
+                            ("[fp, #" + std::to_string(symbol->getArm7Var()->getMemoryLoc()) + "]").c_str());
+                    lVal->setIntPos(symbol->getArm7Var()->getMemoryLoc());
+                    lVal->setSubs(symbol->getArm7Var()->getSubs());
+                    if (lVal->getExps()->size() == symbol->getArm7Var()->getSubs()->size()) {
+                        lVal->setType(LVAL_ARRAY_LOCAL_INT);
+                        return TYPE_INT;
+                    } else {
+                        lVal->setType(LVAL_ARRAY_LOCAL_INT_STAR);
+                        return TYPE_INT_STAR;
+                    }
+                }
+            }
+        }
+    }
+    /// 函数形参里找
+    for (Arm7Var *arm7Var: *funcParamNow) {
+        if (arm7Var->getIdent() == lVal->getIdent() &&
+            arm7Var->getIfArray() == ARRAY_TRUE) {
+            /// 引用类型实参
+            lVal->setSubs(arm7Var->getSubs());
+            lVal->setBaseMemoryPos(("[fp, #" + std::to_string(arm7Var->getMemoryLoc()) + "]").c_str());
+            lVal->setIntPos(arm7Var->getMemoryLoc());
+            lVal->setSubs(arm7Var->getSubs());
+
+            if (lVal->getExps()->size() == arm7Var->getSubs()->size() + 1) {  // 形参不写第一维
+                lVal->setType(LVAL_ARRAY_PARAM_INT);
+                return TYPE_INT;
+            } else {
+                lVal->setType(LVAL_ARRAY_PARAM_INT_STAR);
+                return TYPE_INT_STAR;
+            }
+        }
+    }
+    /// 全局变量里找
+    for (Symbol *symbol:*symbolTables->at(1)->getSymbols()) {
+        if (symbol->getArm7Var() != nullptr &&
+            symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
+            symbol->getArm7Var()->getIfArray() == ARRAY_TRUE) {
+            /// 全局变量
+            ///     全部变量实际上靠变量名索引
+            /// 	movw	r0, #:lower16: globalVarArrayName
+            /// 	movt	r0, #:upper16: globalVarArrayName
+            lVal->setSubs(symbol->getArm7Var()->getSubs());
+            lVal->setBaseMemoryPos(lVal->getIdent().c_str());
+            lVal->setIntPos(symbol->getArm7Var()->getMemoryLoc());
+            lVal->setSubs(symbol->getArm7Var()->getSubs());
+
+            if (lVal->getExps()->size() == symbol->getArm7Var()->getSubs()->size()) {
+                lVal->setType(LVAL_ARRAY_GLOBAL_INT);
+                return TYPE_INT;
+            } else {
+                lVal->setType(LVAL_ARRAY_GLOBAL_INT_STAR);
+                return TYPE_INT_STAR;
+            }
+        }
+    }
+    /// 没找到
+    Error::errorSim("no such array");
+    exit(-1);
+}
+
+int Semantic::semanticLValIntAux(LVal *lVal) {
+    /// 函数里外部层次block找
+    for (int i = (int) symbolTables->size() - 1; i > 1; i--) {
+        if (symbolTables->at(i)->getFuncName() == funcNameNow) {
+            for (Symbol *symbol:*symbolTables->at(i)->getSymbols()) {
+                if (symbol->getArm7Var() != nullptr &&
+                    symbol->getArm7Var()->getIdent() == lVal->getIdent()) {
+                    if (symbol->getArm7Var()->getIfArray() == ARRAY_FALSE) {
                         if (symbol->getArm7Var()->getIfConst() == CONST_TRUE) {
                             lVal->setBaseMemoryPos(
                                     ("#" + std::to_string(symbol->getArm7Var()->getValue()->at(0))).c_str());
@@ -836,28 +895,31 @@ int Semantic::semanticLVal(LVal *lVal) {
                                     ("[fp, #" + std::to_string(symbol->getArm7Var()->getMemoryLoc()) + "]").c_str());
                             lVal->setIntPos(symbol->getArm7Var()->getMemoryLoc());
                         }
-
-                        return symbol->getArm7Var()->getVarType();
+                        return TYPE_INT;
+                    } else {
+                        return semanticLValIntStarAux(lVal);
                     }
                 }
             }
         }
-        /// 函数形参里找
-        for (Arm7Var *arm7Var: *funcParamNow) {
-            if (arm7Var->getIdent() == lVal->getIdent() &&
-                arm7Var->getIfArray() == ARRAY_FALSE) {
-
+    }
+    /// 函数形参里找
+    for (Arm7Var *arm7Var: *funcParamNow) {
+        if (arm7Var->getIdent() == lVal->getIdent()) {
+            if (arm7Var->getIfArray() == ARRAY_FALSE) {
                 lVal->setBaseMemoryPos(("[fp, #" + std::to_string(arm7Var->getMemoryLoc()) + "]").c_str());
                 lVal->setIntPos(arm7Var->getMemoryLoc());
-                return arm7Var->getVarType();
+                return TYPE_INT;
+            } else {
+                return semanticLValIntStarAux(lVal);
             }
         }
-        /// 全局变量里找
-        for (Symbol *symbol:*symbolTables->at(1)->getSymbols()) {
-            if (symbol->getArm7Var() != nullptr &&
-                symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
-                symbol->getArm7Var()->getIfArray() == ARRAY_FALSE) {
-
+    }
+    /// 全局变量里找
+    for (Symbol *symbol:*symbolTables->at(1)->getSymbols()) {
+        if (symbol->getArm7Var() != nullptr &&
+            symbol->getArm7Var()->getIdent() == lVal->getIdent()) {
+            if (symbol->getArm7Var()->getIfArray() == ARRAY_FALSE) {
                 if (symbol->getArm7Var()->getIfConst() == CONST_TRUE) {
                     lVal->setBaseMemoryPos(("#" + std::to_string(symbol->getArm7Var()->getValue()->at(0))).c_str());
                     lVal->setIntPos(symbol->getArm7Var()->getMemoryLoc());
@@ -870,95 +932,20 @@ int Semantic::semanticLVal(LVal *lVal) {
 
                 }
                 return symbol->getArm7Var()->getVarType();
+            } else {
+                return semanticLValIntStarAux(lVal);
             }
         }
-        /// 没找到
-        Error::errorSim("no such var");
-        exit(-1);
-    } else {  // 整型数组
-        checkExps(lVal->getExps(), "array sub not int");
-        /// 当前 block 找
-//        for (Symbol *symbol:*symbolTableNow->getSymbols()) {
-//            if (symbol->getArm7Var() != nullptr &&
-//                symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
-//                symbol->getArm7Var()->getIfArray() == ARRAY_TRUE) {
-//
-//                lVal->setBaseMemoryPos(LOCAL_ARRAY.c_str());
-//                if (lVal->getExps()->size() == symbol->getArm7Var()->getSubs()->size()) {
-//                    return symbol->getArm7Var()->getVarType();
-//                } else {
-//                    return TYPE_INT_STAR;
-//                }
-//            }
-//        }
-        /// 函数里外部层次block找
-        for (int i = (int) symbolTables->size() - 1; i > 1; i--) {
-            if (symbolTables->at(i)->getFuncName() == funcNameNow) {
-                for (Symbol *symbol:*symbolTables->at(i)->getSymbols()) {
-                    if (symbol->getArm7Var() != nullptr &&
-                        symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
-                        symbol->getArm7Var()->getIfArray() == ARRAY_TRUE) {
-                        /// 局部变量
-                        lVal->setSubs(symbol->getArm7Var()->getSubs());
-                        lVal->setBaseMemoryPos(
-                                ("[fp, #" + std::to_string(symbol->getArm7Var()->getMemoryLoc()) + "]").c_str());
-                        lVal->setIntPos(symbol->getArm7Var()->getMemoryLoc());
-                        lVal->setSubs(symbol->getArm7Var()->getSubs());
-                        if (lVal->getExps()->size() == symbol->getArm7Var()->getSubs()->size()) {
-                            lVal->setType(LVAL_ARRAY_LOCAL_INT);
-                            return symbol->getArm7Var()->getVarType();
-                        } else {
-                            lVal->setType(LVAL_ARRAY_LOCAL_INT_STAR);
-                            return TYPE_INT_STAR;
-                        }
-                    }
-                }
-            }
-        }
-        /// 函数形参里找
-        for (Arm7Var *arm7Var: *funcParamNow) {
-            if (arm7Var->getIdent() == lVal->getIdent() &&
-                arm7Var->getIfArray() == ARRAY_TRUE) {
-                /// 引用类型实参
-                lVal->setSubs(arm7Var->getSubs());
-                lVal->setBaseMemoryPos(("[fp, #" + std::to_string(arm7Var->getMemoryLoc()) + "]").c_str());
-                lVal->setIntPos(arm7Var->getMemoryLoc());
-                lVal->setSubs(arm7Var->getSubs());
-                if (lVal->getExps()->size() == arm7Var->getSubs()->size() + 1) {  // 形参不写第一维
-                    lVal->setType(LVAL_ARRAY_PARAM_INT);
-                    return arm7Var->getVarType();
-                } else {
-                    lVal->setType(LVAL_ARRAY_PARAM_INT_STAR);
-                    return TYPE_INT_STAR;
-                }
-            }
-        }
-        /// 全局变量里找
-        for (Symbol *symbol:*symbolTables->at(1)->getSymbols()) {
-            if (symbol->getArm7Var() != nullptr &&
-                symbol->getArm7Var()->getIdent() == lVal->getIdent() &&
-                symbol->getArm7Var()->getIfArray() == ARRAY_TRUE) {
-                /// 全局变量
-                ///     全部变量实际上靠变量名索引
-                /// 	movw	r0, #:lower16: globalVarArrayName
-                /// 	movt	r0, #:upper16: globalVarArrayName
-                lVal->setSubs(symbol->getArm7Var()->getSubs());
-                lVal->setBaseMemoryPos(lVal->getIdent().c_str());
-                lVal->setIntPos(symbol->getArm7Var()->getMemoryLoc());
-                lVal->setSubs(symbol->getArm7Var()->getSubs());
+    }
+    return -1024;
+}
 
-                if (lVal->getExps()->size() == symbol->getArm7Var()->getSubs()->size()) {
-                    lVal->setType(LVAL_ARRAY_GLOBAL_INT);
-                    return symbol->getArm7Var()->getVarType();
-                } else {
-                    lVal->setType(LVAL_ARRAY_GLOBAL_INT_STAR);
-                    return TYPE_INT_STAR;
-                }
-            }
-        }
-        /// 没找到
-        Error::errorSim("no such array");
-        exit(-1);
+int Semantic::semanticLVal(LVal *lVal) {
+    // 也有可能是数组
+    if (lVal->getExps()->empty()) {  // 整型
+        return semanticLValIntAux(lVal);
+    } else {  // 整型数组
+        return semanticLValIntStarAux(lVal);
     }  // 整型、整型数组
 }
 
@@ -969,6 +956,7 @@ void Semantic::checkRParams(FuncRParams *funcRParams, Arm7Func *arm7Func) {
     } else if (funcRParams->getExps()->size() == arm7Func->getParams()->size()) {
         // j 为索引遍历检查实参
         for (int j = 0; j < funcRParams->getExps()->size(); j++) {
+            int a = semanticAddExp(funcRParams->getExps()->at(j)->getAddExp());
             switch (semanticAddExp(funcRParams->getExps()->at(j)->getAddExp())) {
                 case TYPE_INT:
                     if (arm7Func->getParams()->at(j)->getIfArray() == ARRAY_FALSE) {

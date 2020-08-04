@@ -96,6 +96,10 @@ private:
 
     int semanticLVal(LVal *lVal);
 
+    int semanticLValIntAux(LVal *lVal);
+
+    int semanticLValIntStarAux(LVal *lVal);
+
     void checkRParams(FuncRParams *funcRParams, Arm7Func *arm7Func);
 
     void checkExps(std::vector<Exp *> *exps, const char *errMsg);
