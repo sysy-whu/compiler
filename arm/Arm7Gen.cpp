@@ -430,22 +430,91 @@ const char *Arm7Gen::genStmtAuxWhile(Stmt *stmt, std::vector<ArmBlock *> *basicB
 ///===-----------------------------------------------------------------------===///
 
 const char *Arm7Gen::genCondExp(Cond *cond, std::vector<ArmStmt *> *ArmStmts) {
-    return nullptr;
+    return genLOrExp(cond->getLOrExp(), ArmStmts);
 }
 
 const char *Arm7Gen::genLOrExp(LOrExp *lOrExp, std::vector<ArmStmt *> *ArmStmts) {
+    if (lOrExp->getLOrExp() == nullptr) {
+        return genLAndExp(lOrExp->getLAndExp(), ArmStmts);
+    } else {
+        // todo genLOrExp
+        const char *lOrRet = genLOrExp(lOrExp->getLOrExp(), ArmStmts);
+        const char *lAndRet = genLAndExp(lOrExp->getLAndExp(), ArmStmts);
+
+        // todo ||需要新增block，这里目前无法实现
+    }
     return nullptr;
 }
 
 const char *Arm7Gen::genLAndExp(LAndExp *lAndExp, std::vector<ArmStmt *> *ArmStmts) {
+    if (lAndExp->getLAndExp() == nullptr) {
+        return genEqExp(lAndExp->getEqExp(), ArmStmts);
+    } else {
+        // todo genLAndExp
+        const char *lAndRet = genLAndExp(lAndExp->getLAndExp(), ArmStmts);
+        const char *eqRet = genEqExp(lAndExp->getEqExp(), ArmStmts);
+        // todo 寄存器如何获得？
+        char *reg = "";
+        // todo &&需要新增block，这里目前无法实现
+    }
     return nullptr;
 }
 
 const char *Arm7Gen::genEqExp(EqExp *eqExp, std::vector<ArmStmt *> *ArmStmts) {
+    if (eqExp->getOpType() == OP_NULL) {
+        return genRelExp(eqExp->getRelExp(), ArmStmts);
+    } else {
+        const char *eqRet = genEqExp(eqExp->getEqExp(), ArmStmts);
+        const char *relRet = genRelExp(eqExp->getRelExp(), ArmStmts);
+        // 比较eqRet和eqRet
+        ArmStmts->emplace_back(new ArmStmt(ARM_STMT_CMP, eqRet, relRet));
+        // todo 寄存器如何获得？
+        char *reg = "";
+        switch (eqExp->getOpType()) {
+            case OP_BO_EQ:
+                ArmStmts->emplace_back(new ArmStmt(ARM_STMT_MOVEQ, reg, "#1"));
+                ArmStmts->emplace_back(new ArmStmt(ARM_STMT_MOVNE, reg, "#0"));
+                break;
+            case OP_BO_NEQ:
+                ArmStmts->emplace_back(new ArmStmt(ARM_STMT_MOVNE, reg, "#1"));
+                ArmStmts->emplace_back(new ArmStmt(ARM_STMT_MOVEQ, reg, "#0"));
+                break;
+        }
+        return reg;
+    }
     return nullptr;
 }
 
 const char *Arm7Gen::genRelExp(RelExp *relExp, std::vector<ArmStmt *> *ArmStmts) {
+    if (relExp->getOpType() == OP_NULL) {
+        return genAddExp(relExp->getAddExp(), ArmStmts)->getRegName().c_str();
+    } else {
+        const char *relRet = genRelExp(relExp->getRelExp(), ArmStmts);
+        const char *addRet = genAddExp(relExp->getAddExp(), ArmStmts)->getRegName().c_str();
+        // 比较relRet和addRet
+        ArmStmts->emplace_back(new ArmStmt(ARM_STMT_CMP, relRet, addRet));
+        // todo 寄存器如何获得？
+        char *reg = "";
+        switch (relExp->getOpType()) {
+            case OP_BO_LT:
+                ArmStmts->emplace_back(new ArmStmt(ARM_STMT_MOVLT, reg, "#1"));
+                ArmStmts->emplace_back(new ArmStmt(ARM_STMT_MOVGE, reg, "#0"));
+                break;
+            case OP_BO_GT:
+                ArmStmts->emplace_back(new ArmStmt(ARM_STMT_MOVGT, reg, "#1"));
+                ArmStmts->emplace_back(new ArmStmt(ARM_STMT_MOVLE, reg, "#0"));
+                break;
+            case OP_BO_LTE:
+                ArmStmts->emplace_back(new ArmStmt(ARM_STMT_MOVLE, reg, "#1"));
+                ArmStmts->emplace_back(new ArmStmt(ARM_STMT_MOVGT, reg, "#0"));
+                break;
+            case OP_BO_GTE:
+                ArmStmts->emplace_back(new ArmStmt(ARM_STMT_MOVGE, reg, "#1"));
+                ArmStmts->emplace_back(new ArmStmt(ARM_STMT_MOVLT, reg, "#0"));
+                break;
+        }
+        return reg;
+    }
     return nullptr;
 }
 
