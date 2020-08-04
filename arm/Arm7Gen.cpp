@@ -885,8 +885,8 @@ ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts, int ifGet
         /// 获得不同情况下数组的位置（内存地址）
         switch (lVal->getType()) {
             case LVAL_ARRAY_LOCAL_INT: {
-                /// sub rF fp #Loc
-                auto *armSubStmt = new ArmStmt(ARM_STMT_SUB, armRegLVal->getRegName().c_str(),
+                /// add rF fp #Loc
+                auto *armSubStmt = new ArmStmt(ARM_STMT_ADD, armRegLVal->getRegName().c_str(),
                                                "fp", ("#" + std::to_string(lVal->getIntPos())).c_str());
                 ArmStmts->emplace_back(armSubStmt);
                 break;
