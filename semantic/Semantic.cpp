@@ -622,7 +622,7 @@ std::vector<int> *Semantic::semanticVarArrayInitVals(InitVal *initVal, std::vect
     } else {
         for (InitVal *initValInner : *initVal->getInitVals()) {
             if (initValInner->getExp() != nullptr) {  // 实值
-                if (semanticAddExp(initValInner->getExp()->getAddExp()) == TYPE_INT){
+                if (semanticAddExp(initValInner->getExp()->getAddExp()) == TYPE_INT) {
                     valuesRet->push_back(0);
                 }
             } else {  // 数组嵌套
@@ -962,7 +962,8 @@ int Semantic::semanticLVal(LVal *lVal) {
 }
 
 void Semantic::checkRParams(FuncRParams *funcRParams, Arm7Func *arm7Func) {
-    if (funcRParams == nullptr && arm7Func->getParams()->empty()) {
+    if ((funcRParams == nullptr || funcRParams->getExps()->empty()) &&
+        (arm7Func->getParams() == nullptr || arm7Func->getParams()->empty())) {
         return;
     } else if (funcRParams->getExps()->size() == arm7Func->getParams()->size()) {
         // j 为索引遍历检查实参

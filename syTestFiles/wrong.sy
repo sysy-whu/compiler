@@ -1,11 +1,12 @@
-int a;
+ int a;
 int b;
 int main(){
-	b=0;
-	a=3;
-	while(a>0){
-		b = b+a;
-		a = a-1;
+	a = getint();
+	b = getint();
+	if ( a && b ) {
+		return 1;
 	}
-	return b;
+	else {
+		return 0;
+	}
 }
