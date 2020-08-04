@@ -46,7 +46,11 @@ ArmReg *ArmRegManager::getArmRegByArmVar(Arm7Var *arm7Var, std::vector<ArmStmt *
         if (armReg->getArm7Var() == arm7Var)
             return armReg;
     }
-    return getFreeArmReg(armStmts);
+    auto *armRegRet = getFreeArmReg(armStmts);
+    auto *armLdr = new ArmStmt(ARM_STMT_LDR, armRegRet->getRegName().c_str(),
+                               ("[fp, #" + std::to_string(arm7Var->getMemoryLoc()) + "]").c_str());
+    armStmts->emplace_back(armLdr);
+    return armRegRet;
 }
 
 
@@ -58,7 +62,11 @@ ArmReg *ArmRegManager::getArmRegByNamePos(const char *name, int memoryLoc, std::
             armReg->getArm7Var()->getMemoryLoc() == memoryLoc)
             return armReg;
     }
-    return getFreeArmReg(armStmts);
+    auto *armRegRet = getFreeArmReg(armStmts);
+    auto *armLdr = new ArmStmt(ARM_STMT_LDR, armRegRet->getRegName().c_str(),
+                               ("[fp, #" + std::to_string(memoryLoc) + "]").c_str());
+    armStmts->emplace_back(armLdr);
+    return armRegRet;
 }
 
 
