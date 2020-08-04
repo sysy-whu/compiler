@@ -58,16 +58,12 @@ std::string Arm7GlobalFunc::genString() {
     for (auto armBlock:*armBlocks) {
         re += armBlock->genString();
     }
-        /// sub	sp, fp, #4
-    /// @ sp needed
-    /// pop	{fp, pc}
-    /// .size	whileFunc, .-whileFunc
-    /// .align	2
-    re += "sub	sp, fp, #4";
-    re += "@ sp needed";
-    re += "pop	{fp, pc}";
-    re += ".size	whileFunc, .-whileFunc";
-    re += ".align	2";
+
+    re += "sub	sp, fp, #4\n";
+    re += "@ sp needed\n";
+    re += "pop	{fp, pc}\n";
+    re += ".size	whileFunc, .-whileFunc\n";
+    re += ".align	2\n";
     return re;
 }
 
