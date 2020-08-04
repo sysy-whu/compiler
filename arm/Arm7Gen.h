@@ -91,13 +91,13 @@ private:
     ///===-----------------------------------------------------------------------===///
 
     ArmReg *genCondExp(Cond *cond, std::vector<ArmBlock *> *basicBlocks,
-                       ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName);
+                       ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts,const char *newBlockName);
 
     ArmReg *genLOrExp(LOrExp *lOrExp, std::vector<ArmBlock *> *basicBlocks,
-                      ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName);
+                      ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts, const char *newBlockName);
 
     ArmReg *genLAndExp(LAndExp *lAndExp, std::vector<ArmBlock *> *basicBlocks,
-                       ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName);
+                       ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts,const char *newBlockName);
 
     ArmReg *genEqExp(EqExp *eqExp, std::vector<ArmStmt *> *ArmStmts);
 

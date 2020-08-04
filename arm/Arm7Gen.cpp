@@ -336,33 +336,49 @@ const char *Arm7Gen::genStmt(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, A
 
 const char *Arm7Gen::genStmtAuxIf(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
                                   std::vector<ArmStmt *> *lastBlockStmts) {
-    auto *newBlockName = new std::string (lastBlock->getBlockName());
-    auto *armRegCond = genCondExp(stmt->getCond(), basicBlocks, lastBlock, lastBlockStmts,*newBlockName);
 
-    /// .L_NEW_BLOCK_NAME
+    auto *armRegCond = genCondExp(stmt->getCond(), basicBlocks, lastBlock, lastBlockStmts,
+                                  lastBlock->getBlockName().c_str());
+
+    auto *bodyBlockName = new std::string(".L" + std::to_string(blockName++));
+    auto *endBlockName = new std::string(".L" + std::to_string(blockName++));
     /// cmp armRegCOnd #0
     /// bNE  .LBodyBlock
-
+    auto *armCmp0Stmt = new ArmStmt(ARM_STMT_CMP, armRegCond->getRegName().c_str(), "#0");
+    auto *armBBodyStmt = new ArmStmt(ARM_STMT_B, bodyBlockName->c_str());
+    lastBlockStmts->emplace_back(armCmp0Stmt);
+    lastBlockStmts->emplace_back(armBBodyStmt);
 
     /// 分配 .LEnd blockName
     /// 可能有的 else块语句们
     /// b.LEnd
+    if(stmt->getElseBody() != nullptr){
+        genStmt(stmt->getElseBody(), basicBlocks, lastBlock, lastBlockStmts);
+    }
+    auto armBEndStmt = new ArmStmt(ARM_STMT_B, endBlockName->c_str());
+    lastBlockStmts->emplace_back(armBEndStmt);
 
     /// 分配 .LBodyBlock blockName
     /// .LBodyBlock 标签代码块
     /// body 语句们
     /// b  .LEnd
+    auto *armBodyStmts = new std::vector<ArmStmt *>();
+    auto *armBodyBlock = new ArmBlock(bodyBlockName->c_str(), armBodyStmts);
+    basicBlocks->emplace_back(armBodyBlock);
+
+    genStmt(stmt->getStmtBrBody(), basicBlocks, armBodyBlock, armBodyStmts);
+    auto *armBCondStmt = new ArmStmt(ARM_STMT_B, endBlockName->c_str());
+    armBodyStmts->emplace_back(armBCondStmt);
 
     /// 返回 .LEnd BlockName
-
-    return nullptr;
+    return endBlockName->c_str();
 }
 
 const char *Arm7Gen::genStmtAuxWhile(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
                                      std::vector<ArmStmt *> *lastBlockStmts) {
     /// 分配 .L whileCondBlockName
     /// whilePos.pushBack(.L whileCondBlockName)
-    auto *newBlockCondName = new std::string (".L"+std::to_string(blockName++));
+    auto *newBlockCondName = new std::string(".L" + std::to_string(blockName++));
     whilePos->emplace_back(*newBlockCondName);
     auto *armCondStmts = new std::vector<ArmStmt *>();
     auto *armCondBlock = new ArmBlock(newBlockCondName->c_str(), armCondStmts);
@@ -370,10 +386,10 @@ const char *Arm7Gen::genStmtAuxWhile(Stmt *stmt, std::vector<ArmBlock *> *basicB
 
     /// 分配 .L whileEndBlockName
     /// whileEndPos.poshBAck(.L whileEndBlockName)
-    auto *newBlockEndName = new std::string (".L"+std::to_string(blockName++););
+    auto *newBlockEndName = new std::string(".L" + std::to_string(blockName++););
     whilePos->emplace_back(*newBlockEndName);
 
-    auto *armRegCond = genCondExp(stmt->getCond(), basicBlocks, armCondBlock, armCondStmts,*newBlockCondName);
+    auto *armRegCond = genCondExp(stmt->getCond(), basicBlocks, armCondBlock, armCondStmts, *newBlockCondName);
 
     /// 在.L whileCondBlockName 代码块内
     ///    cmp armRegCond #0
@@ -400,77 +416,119 @@ const char *Arm7Gen::genStmtAuxWhile(Stmt *stmt, std::vector<ArmBlock *> *basicB
 /// 表达式 不计算 生成代码
 ///===-----------------------------------------------------------------------===///
 
-ArmReg *Arm7Gen::genCondExp(Cond *cond,  std::vector<ArmBlock *> *basicBlocks,
-                            ArmBlock *lastBlock,std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName) {
+ArmReg *Arm7Gen::genCondExp(Cond *cond, std::vector<ArmBlock *> *basicBlocks,
+                            ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts, const char *newBlockName) {
     return genLOrExp(cond->getLOrExp(), basicBlocks, lastBlock, lastBlockStmts, newBlockName);
 }
 
-ArmReg *Arm7Gen::genLOrExp(LOrExp *lOrExp,  std::vector<ArmBlock *> *basicBlocks,
-                           ArmBlock *lastBlock,std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName) {
+ArmReg *Arm7Gen::genLOrExp(LOrExp *lOrExp, std::vector<ArmBlock *> *basicBlocks,
+                           ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts, const char *newBlockName) {
     if (lOrExp->getLOrExp() == nullptr) {
-        return genLAndExp(lOrExp->getLAndExp(),basicBlocks, lastBlock, lastBlockStmts, newBlockName);
+        return genLAndExp(lOrExp->getLAndExp(), basicBlocks, lastBlock, lastBlockStmts, newBlockName);
     } else {
         // todo ||需要新增block，这里目前无法实现
         auto *lAndRet = genLAndExp(lOrExp->getLAndExp(), basicBlocks, lastBlock, lastBlockStmts, newBlockName);
-        if(lastBlock->getBlockName() != newBlockName){
+        if (lastBlock->getBlockName() != newBlockName) {
             auto *armNewStmts = new std::vector<ArmStmt *>();
             auto *newBlock = new ArmBlock(newBlockName.c_str(), armNewStmts);
             basicBlocks->emplace_back(newBlock);
             lastBlock = newBlock;
             lastBlockStmts = armNewStmts;
         }
+
         /// cmp lAndRet #0
         /// bne  .L_True
+        std::string trueBlock1 = ".L" + std::to_string(blockName++);
+        lastBlockStmts->emplace_back(new ArmStmt(ARM_STMT_CMP, lAndRet->getRegName().c_str(), "#0"));
+        lastBlockStmts->emplace_back(new ArmStmt(ARM_STMT_BNE, trueBlock1.c_str()));
 
         auto *lOrRet = genLOrExp(lOrExp->getLOrExp(), basicBlocks, lastBlock, lastBlockStmts, newBlockName);
-        if(lastBlock->getBlockName() != newBlockName){
+        if (lastBlock->getBlockName() != newBlockName) {
             auto *armNewStmts = new std::vector<ArmStmt *>();
-            auto *newBlock = new ArmBlock(newBlockName.c_str(), armNewStmts);
+            auto *newBlock = new ArmBlock(newBlockName, armNewStmts);
             basicBlocks->emplace_back(newBlock);
             lastBlock = newBlock;
             lastBlockStmts = armNewStmts;
         }
-        /// cmp lAndRet #0
+        /// cmp lOrRet #0
         /// bne  .L_True
+        lastBlockStmts->emplace_back(new ArmStmt(ARM_STMT_CMP, lOrRet->getRegName().c_str(), "#0"));
+        lastBlockStmts->emplace_back(new ArmStmt(ARM_STMT_BNE, trueBlock1.c_str()));
 
         /// distribute new blockName which means the end of total LandExp
-        newBlockName = ".L"+std::to_string(blockName++);
+        auto *endBlockName = new std::string(".L" + std::to_string(blockName++));
+        newBlockName = endBlockName->c_str();
         auto *armRegRet = armRegManager->getFreeArmReg(lastBlockStmts);
 
         /// mov aFreeReg #0
         /// b  newBlockName
+        auto *armMovFalseStmt = new ArmStmt(ARM_STMT_MOV, armRegRet->getRegName().c_str(), "#0");
+        auto *armBEndBlockStmt = new ArmStmt(ARM_STMT_B, endBlockName->c_str());
+        lastBlockStmts->emplace_back(armMovFalseStmt);
+        lastBlockStmts->emplace_back(armBEndBlockStmt);
 
         /// block->.L_True
         /// mov aFreeReg #1
         /// b  newBlockName
+        auto *armTrueStmts = new std::vector<ArmStmt *>();
+        auto *armTrueBlock = new ArmBlock(endBlockName->c_str(), armTrueStmts);
+        basicBlocks->emplace_back(armTrueBlock);
+
+        auto *armMovTrueStmt = new ArmStmt(ARM_STMT_MOV, armRegRet->getRegName().c_str(), "#1");
+        auto *armTrueBEndBlockStmt = new ArmStmt(ARM_STMT_B, endBlockName->c_str());
+        lastBlockStmts->emplace_back(armMovTrueStmt);
+        lastBlockStmts->emplace_back(armTrueBEndBlockStmt);
 
         return armRegRet;
     }
 }
 
-ArmReg *Arm7Gen::genLAndExp(LAndExp *lAndExp,  std::vector<ArmBlock *> *basicBlocks,
-                            ArmBlock *lastBlock,std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName) {
+ArmReg *Arm7Gen::genLAndExp(LAndExp *lAndExp, std::vector<ArmBlock *> *basicBlocks,
+                            ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts, const char *newBlockName) {
     if (lAndExp->getLAndExp() == nullptr) {
         return genEqExp(lAndExp->getEqExp(), lastBlockStmts);
     } else {
         auto *eqRet = genEqExp(lAndExp->getEqExp(), lastBlockStmts);
+        auto *ifFalseBlockName = new std::string(".L" + std::to_string(blockName++));
+
         /// cmp eqRet #0
         /// be  .L_FALSE
+        auto *armEqCmp0Stmt = new ArmStmt(ARM_STMT_CMP, eqRet->getRegName().c_str(), "#0");
+        auto *armEqBEStmt = new ArmStmt(ARM_STMT_BEQ, ifFalseBlockName->c_str());
+        lastBlockStmts->emplace_back(armEqCmp0Stmt);
+        lastBlockStmts->emplace_back(armEqBEStmt);
 
-        auto *lAndRet = genLAndExp(lAndExp->getLAndExp(),basicBlocks, lastBlock, lastBlockStmts, newBlockName);
+        auto *lAndRet = genLAndExp(lAndExp->getLAndExp(), basicBlocks, lastBlock, lastBlockStmts, newBlockName);
         /// cmp lAndRet #0
         /// be  .L_FALSE
+        auto *armLAndCmp0Stmt = new ArmStmt(ARM_STMT_CMP, eqRet->getRegName().c_str(), "#0");
+        auto *armLAndBEStmt = new ArmStmt(ARM_STMT_BEQ, ifFalseBlockName->c_str());
+        lastBlockStmts->emplace_back(armLAndCmp0Stmt);
+        lastBlockStmts->emplace_back(armLAndBEStmt);
 
         /// distribute new blockName which means the end of total LandExp
-        newBlockName = ".L"+std::to_string(blockName++);
+        auto *endBlockName = new std::string(".L" + std::to_string(blockName++));
+        newBlockName = endBlockName->c_str();
         auto *armRegRet = armRegManager->getFreeArmReg(lastBlockStmts);
 
         /// mov aFreeReg #1
         /// b  newBlockName
+        auto *armMovTrueStmt = new ArmStmt(ARM_STMT_MOV, armRegRet->getRegName().c_str(), "#1");
+        auto *armBEndBlockStmt = new ArmStmt(ARM_STMT_B, endBlockName->c_str());
+        lastBlockStmts->emplace_back(armMovTrueStmt);
+        lastBlockStmts->emplace_back(armBEndBlockStmt);
 
         /// block->.L_FALSE
         /// mov aFreeReg #0
         /// b  newBlockName
+        auto *armFalseStmts = new std::vector<ArmStmt *>();
+        auto *armFalseBlock = new ArmBlock(endBlockName->c_str(), armFalseStmts);
+        basicBlocks->emplace_back(armFalseBlock);
+
+        auto *armMovFalseStmt = new ArmStmt(ARM_STMT_MOV, armRegRet->getRegName().c_str(), "#0");
+        auto *armFalseBEndBlockStmt = new ArmStmt(ARM_STMT_B, endBlockName->c_str());
+        lastBlockStmts->emplace_back(armMovFalseStmt);
+        lastBlockStmts->emplace_back(armFalseBEndBlockStmt);
 
         return armRegRet;
     }
