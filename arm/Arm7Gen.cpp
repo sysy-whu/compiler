@@ -396,7 +396,7 @@ const char *Arm7Gen::genStmtAuxWhile(Stmt *stmt, std::vector<ArmBlock *> *basicB
     /// 分配 .L whileEndBlockName
     /// whileEndPos.poshBAck(.L whileEndBlockName)
     auto *newBlockEndName = new std::string(".L" + std::to_string(blockName++));
-    whilePos->emplace_back(*newBlockEndName);
+    whileEndPos->emplace_back(*newBlockEndName);
 
     auto *armRegCond = genCondExp(stmt->getCond(), basicBlocks, armCondBlock, armCondStmts, newBlockCondName->c_str());
 
