@@ -34,8 +34,7 @@ int Util::handleParams(int argc, char **argv) {
         Error::errorInputFile();
         return PARAMS_FILE_WRONG;
     }else{
-        _file.close();
-        std::cout << argv[3] << "\t" << argv[4] << std::endl;
+//        std::cout << argv[3] << "\t" << argv[4] << "\n"<<std::endl;
 //        std::cout << outputUrl << "\t" << inputUrl << std::endl;
         setInputUrl(argv[4]);
         setOutputUrl(argv[3]);
