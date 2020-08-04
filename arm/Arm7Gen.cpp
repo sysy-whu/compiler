@@ -190,7 +190,7 @@ void Arm7Gen::genConstVarArray(ConstDef *constDef, std::vector<ArmStmt *> *armSt
         subs->push_back(sub);
     }
 
-// value 相关
+    // value 相关
     auto *values = new std::vector<int>();
     if (constDef->getConstInitVal() != nullptr) {
         values = calConstArrayInitVals(constDef->getConstInitVal(), subs);
@@ -252,6 +252,7 @@ const char *Arm7Gen::genBlock(Block *block, std::vector<ArmBlock *> *basicBlocks
             if (strcmp(newBlockName, tmpBlock->getBlockName().c_str()) != 0) {  // 返回得知当前 basicBlock 有变化
                 auto *newStmts = new std::vector<ArmStmt *>();
                 auto *newBlock = new ArmBlock(newBlockName, newStmts);
+                basicBlocks->emplace_back(newBlock);
                 tmpBlock = newBlock;
                 tmpArmStmts = newStmts;
             }
@@ -348,19 +349,19 @@ const char *Arm7Gen::genStmtAuxIf(Stmt *stmt, std::vector<ArmBlock *> *basicBloc
 
     auto *armRegCond = genCondExp(stmt->getCond(), basicBlocks, lastBlock, lastBlockStmts,
                                   lastBlock->getBlockName().c_str());
-
+    /// 分配 .L_BODY blockName
     auto *bodyBlockName = new std::string(".L" + std::to_string(blockName++));
-    auto *endBlockName = new std::string(".L" + std::to_string(blockName++));
     /// cmp armRegCOnd #0
     /// bNE  .LBodyBlock
     auto *armCmp0Stmt = new ArmStmt(ARM_STMT_CMP, armRegCond->getRegName().c_str(), "#0");
-    auto *armBBodyStmt = new ArmStmt(ARM_STMT_B, bodyBlockName->c_str());
+    auto *armBBodyStmt = new ArmStmt(ARM_STMT_BNE, bodyBlockName->c_str());
     lastBlockStmts->emplace_back(armCmp0Stmt);
     lastBlockStmts->emplace_back(armBBodyStmt);
 
-    /// 分配 .LEnd blockName
+    /// 分配 .L_End blockName
     /// 可能有的 else块语句们
     /// b.LEnd
+    auto *endBlockName = new std::string(".L" + std::to_string(blockName++));
     if (stmt->getElseBody() != nullptr) {
         genStmt(stmt->getElseBody(), basicBlocks, lastBlock, lastBlockStmts);
     }
