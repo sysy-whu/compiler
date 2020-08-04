@@ -66,7 +66,7 @@ void Arm7Gen::genArm7Func(FuncDef *funcDef, std::vector<ArmBlock *> *armBlocks) 
             /// sub	sp, sp, #DIGIT_CAPACITY
             auto *armStmtPush = new ArmStmt(ARM_STMT_PUSH, "{r4, fp, lr}");
             auto *armStmtAdd = new ArmStmt(ARM_STMT_ADD, "fp", "sp",
-                                           ("#" + std::to_string(PUSH_NUM_DEFAULT * 4)).c_str());
+                                           ("#" + std::to_string(PUSH_NUM_DEFAULT * 4-4)).c_str());
             /// 此句负数 capacity 转正
             auto *armStmtSub = new ArmStmt(ARM_STMT_SUB, "sp", "sp",
                                            ("#" + std::to_string(0 - symbol->getArm7Func()->getCapacity())).c_str());
@@ -590,9 +590,11 @@ ArmReg *Arm7Gen::genEqExp(EqExp *eqExp, std::vector<ArmStmt *> *ArmStmts) {
         return genRelExp(eqExp->getRelExp(), ArmStmts);
     } else {
         auto *eqRet = genEqExp(eqExp->getEqExp(), ArmStmts);
+        eqRet->setIfLock(ARM_REG_LOCK_TRUE);
         auto *relRet = genRelExp(eqExp->getRelExp(), ArmStmts);
         // 比较eqRet和eqRet
         ArmStmts->emplace_back(new ArmStmt(ARM_STMT_CMP, eqRet->getRegName().c_str(), relRet->getRegName().c_str()));
+        eqRet->setIfLock(ARM_REG_LOCK_FALSE);
         auto *armRegFree = armRegManager->getFreeArmReg(ArmStmts);
         switch (eqExp->getOpType()) {
             case OP_BO_EQ:
@@ -613,10 +615,13 @@ ArmReg *Arm7Gen::genRelExp(RelExp *relExp, std::vector<ArmStmt *> *ArmStmts) {
         return genAddExp(relExp->getAddExp(), ArmStmts);
     } else {
         auto *relRet = genRelExp(relExp->getRelExp(), ArmStmts);
+        relRet->setIfLock(ARM_REG_LOCK_TRUE);
         auto *addRet = genAddExp(relExp->getAddExp(), ArmStmts);
+        addRet->setIfLock(ARM_REG_LOCK_TRUE);
         // 比较relRet和addRet
         ArmStmts->emplace_back(new ArmStmt(ARM_STMT_CMP, relRet->getRegName().c_str(), addRet->getRegName().c_str()));
-
+        relRet->setIfLock(ARM_REG_LOCK_FALSE);
+        addRet->setIfLock(ARM_REG_LOCK_FALSE);
         auto *armRegFree = armRegManager->getFreeArmReg(ArmStmts);
         switch (relExp->getOpType()) {
             case OP_BO_LT:
@@ -636,6 +641,7 @@ ArmReg *Arm7Gen::genRelExp(RelExp *relExp, std::vector<ArmStmt *> *ArmStmts) {
                 ArmStmts->emplace_back(new ArmStmt(ARM_STMT_MOVLT, armRegFree->getRegName().c_str(), "#0"));
                 break;
         }
+
         return armRegFree;
     }
 }
