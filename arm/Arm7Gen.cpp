@@ -11,7 +11,7 @@ Arm7Gen::Arm7Gen() {
     levelNow = 0;
     armRegManager = new ArmRegManager();
     /// TODO 我不知自什么始
-    blockName = 0;
+    blockName = 9;
 }
 
 void Arm7Gen::startGen(AST *ast_, std::vector<SymbolTable *> *symbolTables_) {
