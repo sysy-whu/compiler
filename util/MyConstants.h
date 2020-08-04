@@ -192,8 +192,10 @@ static const int ARM_STMT_MOVW = -17;
 static const int ARM_STMT_MOVT = -18;
 
 static const int ARM_STMT_BL = -19;
+
 static const int ARM_STMT_B = -20;
 static const int ARM_STMT_CMP = -21;
+static const int ARM_STMT_BEQ = -22;
 
 
 static const int ARM_REG_LOCK_TRUE = 1;

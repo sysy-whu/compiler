@@ -90,15 +90,18 @@ private:
     /// 表达式 不计算 生成代码
     ///===-----------------------------------------------------------------------===///
 
-    const char *genCondExp(Cond *cond, std::vector<ArmStmt *> *ArmStmts);
+    ArmReg *genCondExp(Cond *cond, std::vector<ArmBlock *> *basicBlocks,
+                       ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName);
 
-    const char *genLOrExp(LOrExp *lOrExp, std::vector<ArmStmt *> *ArmStmts);
+    ArmReg *genLOrExp(LOrExp *lOrExp, std::vector<ArmBlock *> *basicBlocks,
+                      ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName);
 
-    const char *genLAndExp(LAndExp *lAndExp, std::vector<ArmStmt *> *ArmStmts);
+    ArmReg *genLAndExp(LAndExp *lAndExp, std::vector<ArmBlock *> *basicBlocks,
+                       ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName);
 
-    const char *genEqExp(EqExp *eqExp, std::vector<ArmStmt *> *ArmStmts);
+    ArmReg *genEqExp(EqExp *eqExp, std::vector<ArmStmt *> *ArmStmts);
 
-    const char *genRelExp(RelExp *relExp, std::vector<ArmStmt *> *ArmStmts);
+    ArmReg *genRelExp(RelExp *relExp, std::vector<ArmStmt *> *ArmStmts);
 
     ArmReg *genAddExp(AddExp *addExp, std::vector<ArmStmt *> *ArmStmts);
 
