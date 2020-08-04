@@ -847,7 +847,7 @@ ArmReg *Arm7Gen::genPrimaryExp(PrimaryExp *primaryExp, std::vector<ArmStmt *> *A
 ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts, int ifGetPos) {
     if (lVal->getExps()->empty()) {  // 整型
         if (lVal->getBaseMemoryPos() == ("[fp, #" + std::to_string(GLOBAL_VAR_POS) + "]") ||
-            lVal->getBaseMemoryPos() == std::to_string(GLOBAL_VAR_POS)) {
+            lVal->getBaseMemoryPos() == std::to_string(GLOBAL_VAR_POS) || lVal->getIntPos()==GLOBAL_VAR_POS) {
             /// movw	rX, #:lower16:gR
             /// movt	rX, #:upper16:gR
             auto *armStrReg = armRegManager->getFreeArmReg(ArmStmts);
