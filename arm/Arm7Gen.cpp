@@ -410,9 +410,11 @@ const char *Arm7Gen::genStmtAuxWhile(Stmt *stmt, std::vector<ArmBlock *> *basicB
     ///    b .L whileCondBlockName
     auto *armCondCmpStmt = new ArmStmt(ARM_STMT_CMP, armRegCond->getRegName().c_str(), "#0");
     auto *armBEqStmt = new ArmStmt(ARM_STMT_BEQ, newBlockEndName->c_str());
+    armCondStmts->emplace_back(armCondCmpStmt);
     armCondStmts->emplace_back(armBEqStmt);
 
     genStmt(stmt->getStmtBrBody(), basicBlocks, armCondBlock, armCondStmts);
+    /// TODO 不应该加到 whileCond 的最后一句；因为其内部可能有新的代码块
     auto *armBCondStmt = new ArmStmt(ARM_STMT_B, newBlockCondName->c_str());
     armCondStmts->emplace_back(armBCondStmt);
 
@@ -824,6 +826,7 @@ ArmReg *Arm7Gen::genUnaryExp(UnaryExp *unaryExp, std::vector<ArmStmt *> *ArmStmt
                                                    armRegParam->getRegName().c_str());
                     ArmStmts->emplace_back(armMovStmt);
                 }
+                armRegParam->setIfLock(ARM_REG_LOCK_TRUE);
             }
             /// 处理 putF 的 Str
             if (putFIntAux == 1) {
