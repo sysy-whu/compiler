@@ -65,7 +65,8 @@ void Arm7Gen::genArm7Func(FuncDef *funcDef, std::vector<ArmBlock *> *armBlocks) 
             /// add	fp, sp, #PUSH_NUM_DEFUALT * 4
             /// sub	sp, sp, #DIGIT_CAPACITY
             auto *armStmtPush = new ArmStmt(ARM_STMT_PUSH, "{r4, fp, lr}");
-            auto *armStmtAdd = new ArmStmt(ARM_STMT_ADD, "sp", ("#" + std::to_string(PUSH_NUM_DEFAULT * 4)).c_str());
+            auto *armStmtAdd = new ArmStmt(ARM_STMT_ADD, "fp", "sp",
+                                           ("#" + std::to_string(PUSH_NUM_DEFAULT * 4)).c_str());
             /// 此句负数 capacity 转正
             auto *armStmtSub = new ArmStmt(ARM_STMT_SUB, "sp", "sp",
                                            ("#" + std::to_string(0 - symbol->getArm7Func()->getCapacity())).c_str());
