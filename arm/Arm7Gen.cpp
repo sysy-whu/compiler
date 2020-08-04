@@ -419,7 +419,7 @@ ArmBlock *Arm7Gen::genStmtAuxWhile(Stmt *stmt, std::vector<ArmBlock *> *basicBlo
 
     auto *unsureBlock = genStmt(stmt->getStmtBrBody(), basicBlocks, armCondBlock, armCondStmts);
     /// TODO 不应该加到 whileCond 的最后一句；因为其内部可能有新的代码块
-    auto *armBCondStmt = new ArmStmt(ARM_STMT_B, unsureBlock->getBlockName().c_str());
+    auto *armBCondStmt = new ArmStmt(ARM_STMT_B, newBlockCondName->c_str());
     unsureBlock->getArmStmts()->emplace_back(armBCondStmt);
 
     /// whilePos.pop_back()
