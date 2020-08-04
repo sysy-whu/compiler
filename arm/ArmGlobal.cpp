@@ -161,7 +161,7 @@ std::string Arm7GlobalFunc::genString() {
     std::string re;
     // todo 遍历 blockAuxs 输出字符串常量
     for (auto funcInnerBlockAux:*blockAuxs) {
-        re += funcName + ":\n";
+        re += funcInnerBlockAux->getBlockName() + ":\n";
         for (auto value: *funcInnerBlockAux->getValues()) {
             re += ".ascii \"" + value + "\"\n";
         }
