@@ -56,18 +56,18 @@ private:
     /// 语句、语句块
     ///===-----------------------------------------------------------------------===///
 
-    const char *genBlock(Block *block, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
+    ArmBlock *genBlock(Block *block, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
                          std::vector<ArmStmt *> *lastBlockStmts);
 
-    const char *genStmt(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
+    ArmBlock *genStmt(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
                         std::vector<ArmStmt *> *lastBlockStmts);
 
     void addArmRetStmts(std::vector<ArmStmt *> *ArmStmts);
 
-    const char *genStmtAuxIf(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
+    ArmBlock *genStmtAuxIf(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
                              std::vector<ArmStmt *> *lastBlockStmts);
 
-    const char *genStmtAuxWhile(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
+    ArmBlock *genStmtAuxWhile(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
                                 std::vector<ArmStmt *> *lastBlockStmts);
 
     ///===-----------------------------------------------------------------------===///

@@ -104,65 +104,6 @@ mod_zt:
 	bx	lr
 	.text
 	.align 2
-	.global ifJ
-	.syntax unified
-	.arm
-	.fpu vfp
-	.type ifJ, %function
-ifJ:
-	push {r4, fp, lr}
-	add fp,sp,#8
-	sub sp,sp,#16
-	mov r0,#5
-	str r0,[fp, #-12]
-	mov r0,#6
-	str r0,[fp, #-16]
-	mov r0,#3
-	ldr r1,[fp, #-12]
-	cmp r1,r0
-	movgt r0,#1
-	movle r0,#0
-	cmp r0,#0
-	bne .L9
-	b .L10
-.L9:
-	ldr r0,[fp, #-12]
-	push {r0 }
-	mov r0,#3
-	pop {r1 }
-	add r1,r1,r0
-	str r1,[fp, #-12]
-
-	mov r0,#4
-	ldr r1,[fp, #-16]
-	cmp r1,r0
-	movgt r0,#1
-	movle r0,#0
-	cmp r0,#0
-	bne .L11
-	b .L12
-	b .L10
-.L11:
-	ldr r0,[fp, #-16]
-	push {r0 }
-	mov r0,#4
-	pop {r1 }
-	add r1,r1,r0
-	str r1,[fp, #-16]
-	b .L12
-.L12:
-	ldr r0,[fp, #-12]
-	push {r0 }
-	ldr r0,[fp, #-16]
-	pop {r1 }
-	add r1,r1,r0
-	str r1,[fp, #-12]
-.L10:
-	sub sp, fp, #8
-	@ sp needed
-	pop {r4,fp, pc}
-	.text
-	.align 2
 	.global main
 	.syntax unified
 	.arm
@@ -174,14 +115,14 @@ main:
 	sub sp,sp,#12
 	mov r0,#1
 	str r0,[fp, #-12]
-.L13:
+.L9:
 	mov r0,#5
 	ldr r1,[fp, #-12]
 	cmp r1,r0
 	movlt r0,#1
 	movge r0,#0
 	cmp r0,#0
-	beq .L14
+	beq .L10
 	ldr r0,[fp, #-12]
 	push {r0 }
 	mov r0,#1
@@ -194,27 +135,26 @@ main:
 	movgt r0,#1
 	movle r0,#0
 	cmp r0,#0
-	bne .L15
-	b .L16
-	b .L13
-.L15:
-	mov r0,#9
-	str r0,[fp, #-12]
-	b .L14
-	mov r0,#8
-	str r0,[fp, #-12]
-	b .L16
-.L16:
+	bne .L11
+.L9:
+	ldr r0,[fp, #-12]
+	sub sp,fp,#8
+	pop {r4, fp, pc}
+.L12:
 	ldr r0,[fp, #-12]
 	push {r0 }
 	mov r0,#1
 	pop {r1 }
 	add r1,r1,r0
 	str r1,[fp, #-12]
-.L14:
-	ldr r0,[fp, #-12]
-	sub sp,fp,#8
-	pop {r4, fp, pc}
+	b .L12
+.L11:
+	mov r0,#9
+	str r0,[fp, #-12]
+	b .L10
+	mov r0,#8
+	str r0,[fp, #-12]
+	b .L11
 	sub sp, fp, #8
 	@ sp needed
 	pop {r4,fp, pc}
