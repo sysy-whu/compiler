@@ -402,7 +402,7 @@ ArmBlock *Arm7Gen::genStmtAuxWhile(Stmt *stmt, std::vector<ArmBlock *> *basicBlo
     auto *newBlockEndName = new std::string(".L" + std::to_string(blockName++));
     whileEndPos->emplace_back(*newBlockEndName);
     auto *armBlockEndStmts = new std::vector<ArmStmt *>();
-    auto *armBlockEndBlock = new ArmBlock(newBlockCondName->c_str(), armBlockEndStmts);
+    auto *armBlockEndBlock = new ArmBlock(newBlockEndName->c_str(), armBlockEndStmts);
     basicBlocks->emplace_back(armBlockEndBlock);
 
     auto *armRegCond = genCondExp(stmt->getCond(), basicBlocks, armCondBlock, armCondStmts, newBlockCondName->c_str());
