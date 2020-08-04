@@ -25,9 +25,9 @@ std::string Arm7GlobalVar::genString() {
     // todo Arm7GlobalVar的输出方法
     std::string re = ".text\n";
     re += ".global " + ident + "\n";
-    re += ".data";
+    re += ".data\n";
     re += ".align 2\n";
-    re += ".type " + ident + ", %object";
+    re += ".type " + ident + ", %object\n";
     /// TODO
     /// 这里的 .size 肯定有误;
     /// 1、ArmGlobal.h Line:80 Arm7GlobalVar 构造函数说明有歧义（已完善）
@@ -66,9 +66,9 @@ std::string Arm7GlobalFunc::genString() {
         re += armBlock->genString();
     }
 
-    re += "sub	sp, fp, #8\n";
+    re += "sub sp, fp, #8\n";
     re += "@ sp needed\n";
-    re += "pop	{r4,fp, pc}\n";
+    re += "pop {r4,fp, pc}\n";
     return re;
 }
 
