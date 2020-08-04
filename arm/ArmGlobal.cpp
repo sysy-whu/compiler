@@ -148,7 +148,7 @@ std::string Arm7GlobalVar::genString() {
     }
     re += ident + ":\n";
     for (auto it:*value) {
-        re += ".word " + std::to_string(it)+"\n";
+        re += ".word " + std::to_string(it) + "\n";
     }
     /// TODO 有警告
     /// warning: no return statement in function returning non-void [-Wreturn-type]
@@ -157,8 +157,17 @@ std::string Arm7GlobalVar::genString() {
 
 
 std::string Arm7GlobalFunc::genString() {
-    // todo Arm7GlobalFunc 的输出方法
-    std::string re = ".text\n";
+    std::string re;
+    // todo 遍历 blockAuxs 输出字符串常量
+    for (auto funcInnerBlockAux:*blockAuxs) {
+        re += funcName + ":\n";
+        for (auto value: *funcInnerBlockAux->getValues()) {
+            re += ".ascii \"" + value + "\"\n";
+        }
+        re += ".align 2\n";
+    }
+
+    re += ".text\n";
     re += ".align 2\n";
     re += ".global " + funcName + "\n";
     re += ".syntax unified\n";
