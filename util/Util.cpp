@@ -36,7 +36,7 @@ int Util::handleParams(int argc, char **argv) {
     }else{
         _file.close();
         std::cout << argv[3] << "\t" << argv[4] << std::endl;
-        std::cout << outputUrl << "\t" << inputUrl << std::endl;
+//        std::cout << outputUrl << "\t" << inputUrl << std::endl;
         setInputUrl(argv[4]);
         setOutputUrl(argv[3]);
         return PARAMS_PASS;
