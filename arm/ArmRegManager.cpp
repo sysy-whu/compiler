@@ -6,7 +6,7 @@ int ArmRegManager::newestNum = 0;
 ArmRegManager::ArmRegManager() {
     ArmRegManager::armRegs = new std::vector<ArmReg *>();
     for (int i = 0; i < 10; i++) {
-        auto *armReg = new ArmReg(("R" + std::to_string(i)).c_str(), nullptr, 0);
+        auto *armReg = new ArmReg(("r" + std::to_string(i)).c_str(), nullptr, 0);
         armRegs->emplace_back(armReg);
         armReg->setNewNum(++newestNum);
     }

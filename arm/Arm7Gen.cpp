@@ -99,7 +99,6 @@ void Arm7Gen::genArm7Func(FuncDef *funcDef, std::vector<ArmBlock *> *armBlocks) 
     /// .size	whileFunc, .-whileFunc
     /// .align	2
 
-    funcNameNow = nullptr;
     levelNow--;
 }
 
@@ -145,34 +144,67 @@ void Arm7Gen::genVarArray(VarDef *varDef, std::vector<ArmStmt *> *armStmts) {
         subs->push_back(sub);
     }
 
-    // value arm 相关
+//    // value arm 相关
+//    if (varDef->getInitVal() != nullptr) {
+//        for (int i = 0; i < len;) {
+//            int subPosNow = varDef->getBaseMemoryPos() + i;
+//            ///	str rRX, [fp, #SUB_LOC]
+//            auto *rReg = genAddExp(varDef->getInitVal()->getExp()->getAddExp(), armStmts);
+//            auto *armSTRStmt = new ArmStmt(ARM_STMT_STR, rReg->getRegName().c_str(),
+//                                           ("[fp, #" + std::to_string(subPosNow) + "]").c_str());
+//            armStmts->emplace_back(armSTRStmt);
+//            i += 4;
+//        }
+//    } else {
+//        ArmReg *armReg = armRegManager->getFreeArmReg(armStmts);
+//        ///	mov	rX, #GLOBAL_DEFAULT_VALUE <--> 0
+//        auto *armStmtMove = new ArmStmt(ARM_STMT_MOV, armReg->getRegName().c_str(),
+//                                        ("#" + std::to_string(GLOBAL_DEFAULT_VALUE)).c_str());
+//        armStmts->emplace_back(armStmtMove);
+//        for (int i = 0; i < 4 * len;) {
+//            int subPosNow = varDef->getBaseMemoryPos() + i;
+//            ///	str	rX, [fp, #SUB_LOC]
+//            auto *armStmtStr = new ArmStmt(ARM_STMT_STR, armReg->getRegName().c_str(),
+//                                           ("[fp, #" + std::to_string(subPosNow) + "]").c_str());
+//            armStmts->emplace_back(armStmtStr);
+//            i += 4;
+//        }
+//    }
+
+// value 相关
+    auto *values = new std::vector<Exp *>();
     if (varDef->getInitVal() != nullptr) {
-        for (int i = 0; i < len;) {
-            int subPosNow = varDef->getBaseMemoryPos() + i;
-            ///	str rRX, [fp, #SUB_LOC]
+        values = genVarArrayInitVals(varDef->getInitVal(), subs);
+    } else {
+        for (int i = 0; i < len; i++) {
+            // addExp null 表 DEFAULT_VALUE
+            auto *exp = new Exp(nullptr);
+            values->push_back(exp);
+        }
+    }
+
+    // arm 相关
+    auto *armAssignStmts = new std::vector<ArmStmt *>();
+    for (int i = 0; i < len; i++) {
+        int subPosNow = varDef->getBaseMemoryPos() - i * 4;
+        if (values->at(i)->getAddExp() == nullptr) {
+            ///	mov	rX, #CONST_VALUE
+            ///	str	rX, [fp, #-LOC]
+            ArmReg *armReg = armRegManager->getFreeArmReg(armStmts);
+            auto *armStmtMove = new ArmStmt(ARM_STMT_MOV, armReg->getRegName().c_str(),
+                                            ("#" + std::to_string(GLOBAL_DEFAULT_VALUE)).c_str());
+            auto *armStmtStr = new ArmStmt(ARM_STMT_STR, armReg->getRegName().c_str(),
+                                           ("[fp, #" + std::to_string(subPosNow) + "]").c_str());
+            armAssignStmts->emplace_back(armStmtMove);
+            armAssignStmts->emplace_back(armStmtStr);
+        } else {
+            ///	str rRX, [fp, #-LOC]
             auto *rReg = genAddExp(varDef->getInitVal()->getExp()->getAddExp(), armStmts);
             auto *armSTRStmt = new ArmStmt(ARM_STMT_STR, rReg->getRegName().c_str(),
                                            ("[fp, #" + std::to_string(subPosNow) + "]").c_str());
             armStmts->emplace_back(armSTRStmt);
-            i += 4;
-        }
-    } else {
-        ArmReg *armReg = armRegManager->getFreeArmReg(armStmts);
-        ///	mov	rX, #GLOBAL_DEFAULT_VALUE <--> 0
-        auto *armStmtMove = new ArmStmt(ARM_STMT_MOV, armReg->getRegName().c_str(),
-                                        ("#" + std::to_string(GLOBAL_DEFAULT_VALUE)).c_str());
-        armStmts->emplace_back(armStmtMove);
-        for (int i = 0; i < 4 * len;) {
-            int subPosNow = varDef->getBaseMemoryPos() + i;
-            ///	str	rX, [fp, #SUB_LOC]
-            auto *armStmtStr = new ArmStmt(ARM_STMT_STR, armReg->getRegName().c_str(),
-                                           ("[fp, #" + std::to_string(subPosNow) + "]").c_str());
-            armStmts->emplace_back(armStmtStr);
-            i += 4;
         }
     }
-
-
 }
 
 void Arm7Gen::genConstVarArray(ConstDef *constDef, std::vector<ArmStmt *> *armStmts) {
@@ -185,36 +217,59 @@ void Arm7Gen::genConstVarArray(ConstDef *constDef, std::vector<ArmStmt *> *armSt
         subs->push_back(sub);
     }
 
-    // value arm 相关
+//    // value arm 相关
+//    if (constDef->getConstInitVal() != nullptr) {
+//        auto *values = calConstArrayInitVals(constDef->getConstInitVal(), subs);
+//        ArmReg *armReg = armRegManager->getFreeArmReg(armStmts);
+//        for (int i = 0; i < 4 * len;) {
+//            int subPosNow = constDef->getBaseMemoryPos() + i;
+//            ///	mov	rX, #SUB_VALUE
+//            ///	str	rX, [fp, #SUB_LOC]
+//            auto *armStmtMove = new ArmStmt(ARM_STMT_MOV, armReg->getRegName().c_str(),
+//                                            ("#" + std::to_string(values->at(i))).c_str());
+//            auto *armStmtStr = new ArmStmt(ARM_STMT_STR, armReg->getRegName().c_str(),
+//                                           ("[fp, #" + std::to_string(subPosNow) + "]").c_str());
+//            armStmts->emplace_back(armStmtMove);
+//            armStmts->emplace_back(armStmtStr);
+//            i += 4;
+//        }
+//    } else {
+//        ArmReg *armReg = armRegManager->getFreeArmReg(armStmts);
+//        ///	mov	rX, #GLOBAL_DEFAULT_VALUE <--> 0
+//        auto *armStmtMove = new ArmStmt(ARM_STMT_MOV, armReg->getRegName().c_str(),
+//                                        ("#" + std::to_string(GLOBAL_DEFAULT_VALUE)).c_str());
+//        armStmts->emplace_back(armStmtMove);
+//        for (int i = 0; i < 4 * len;) {
+//            int subPosNow = constDef->getBaseMemoryPos() + i;
+//            ///	str	rX, [fp, #SUB_LOC]
+//            auto *armStmtStr = new ArmStmt(ARM_STMT_STR, armReg->getRegName().c_str(),
+//                                           ("[fp, #" + std::to_string(subPosNow) + "]").c_str());
+//            armStmts->emplace_back(armStmtStr);
+//            i += 4;
+//        }
+//    }
+// value 相关
+    auto *values = new std::vector<int>();
     if (constDef->getConstInitVal() != nullptr) {
-        auto *values = calConstArrayInitVals(constDef->getConstInitVal(), subs);
-        ArmReg *armReg = armRegManager->getFreeArmReg(armStmts);
-        for (int i = 0; i < 4 * len;) {
-            int subPosNow = constDef->getBaseMemoryPos() + i;
-            ///	mov	rX, #SUB_VALUE
-            ///	str	rX, [fp, #SUB_LOC]
-            auto *armStmtMove = new ArmStmt(ARM_STMT_MOV, armReg->getRegName().c_str(),
-                                            ("#" + std::to_string(values->at(i))).c_str());
-            auto *armStmtStr = new ArmStmt(ARM_STMT_STR, armReg->getRegName().c_str(),
-                                           ("[fp, #" + std::to_string(subPosNow) + "]").c_str());
-            armStmts->emplace_back(armStmtMove);
-            armStmts->emplace_back(armStmtStr);
-            i += 4;
-        }
+        values = calConstArrayInitVals(constDef->getConstInitVal(), subs);
     } else {
-        ArmReg *armReg = armRegManager->getFreeArmReg(armStmts);
-        ///	mov	rX, #GLOBAL_DEFAULT_VALUE <--> 0
-        auto *armStmtMove = new ArmStmt(ARM_STMT_MOV, armReg->getRegName().c_str(),
-                                        ("#" + std::to_string(GLOBAL_DEFAULT_VALUE)).c_str());
-        armStmts->emplace_back(armStmtMove);
-        for (int i = 0; i < 4 * len;) {
-            int subPosNow = constDef->getBaseMemoryPos() + i;
-            ///	str	rX, [fp, #SUB_LOC]
-            auto *armStmtStr = new ArmStmt(ARM_STMT_STR, armReg->getRegName().c_str(),
-                                           ("[fp, #" + std::to_string(subPosNow) + "]").c_str());
-            armStmts->emplace_back(armStmtStr);
-            i += 4;
+        for (int i = 0; i < len; i++) {
+            values->push_back(GLOBAL_DEFAULT_VALUE);
         }
+    }
+
+    // arm
+    ArmReg *armReg = armRegManager->getFreeArmReg(armStmts);
+    for (int i = 0; i < len; i++) {
+        int subPosNow = constDef->getBaseMemoryPos() - i * 4;
+        ///	mov	rX, #SUB_VALUE
+        ///	str	rX, [fp, #-LOC]
+        auto *armStmtMove = new ArmStmt(ARM_STMT_MOV, armReg->getRegName().c_str(),
+                                        ("#" + std::to_string(values->at(i))).c_str());
+        auto *armStmtStr = new ArmStmt(ARM_STMT_STR, armReg->getRegName().c_str(),
+                                       ("[fp, #" + std::to_string(subPosNow) + "]").c_str());
+        armStmts->emplace_back(armStmtMove);
+        armStmts->emplace_back(armStmtStr);
     }
 }
 
@@ -336,8 +391,8 @@ const char *Arm7Gen::genStmt(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, A
 
 const char *Arm7Gen::genStmtAuxIf(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
                                   std::vector<ArmStmt *> *lastBlockStmts) {
-    auto *newBlockName = new std::string (lastBlock->getBlockName());
-    auto *armRegCond = genCondExp(stmt->getCond(), basicBlocks, lastBlock, lastBlockStmts,*newBlockName);
+    auto *newBlockName = new std::string(lastBlock->getBlockName());
+    auto *armRegCond = genCondExp(stmt->getCond(), basicBlocks, lastBlock, lastBlockStmts, *newBlockName);
 
     /// .L_NEW_BLOCK_NAME
     /// cmp armRegCOnd #0
@@ -362,7 +417,7 @@ const char *Arm7Gen::genStmtAuxWhile(Stmt *stmt, std::vector<ArmBlock *> *basicB
                                      std::vector<ArmStmt *> *lastBlockStmts) {
     /// 分配 .L whileCondBlockName
     /// whilePos.pushBack(.L whileCondBlockName)
-    auto *newBlockCondName = new std::string (".L"+std::to_string(blockName++));
+    auto *newBlockCondName = new std::string(".L" + std::to_string(blockName++));
     whilePos->emplace_back(*newBlockCondName);
     auto *armCondStmts = new std::vector<ArmStmt *>();
     auto *armCondBlock = new ArmBlock(newBlockCondName->c_str(), armCondStmts);
@@ -370,10 +425,10 @@ const char *Arm7Gen::genStmtAuxWhile(Stmt *stmt, std::vector<ArmBlock *> *basicB
 
     /// 分配 .L whileEndBlockName
     /// whileEndPos.poshBAck(.L whileEndBlockName)
-    auto *newBlockEndName = new std::string (".L"+std::to_string(blockName++););
+    auto *newBlockEndName = new std::string(".L" + std::to_string(blockName++));
     whilePos->emplace_back(*newBlockEndName);
 
-    auto *armRegCond = genCondExp(stmt->getCond(), basicBlocks, armCondBlock, armCondStmts,*newBlockCondName);
+    auto *armRegCond = genCondExp(stmt->getCond(), basicBlocks, armCondBlock, armCondStmts, *newBlockCondName);
 
     /// 在.L whileCondBlockName 代码块内
     ///    cmp armRegCond #0
@@ -400,19 +455,63 @@ const char *Arm7Gen::genStmtAuxWhile(Stmt *stmt, std::vector<ArmBlock *> *basicB
 /// 表达式 不计算 生成代码
 ///===-----------------------------------------------------------------------===///
 
-ArmReg *Arm7Gen::genCondExp(Cond *cond,  std::vector<ArmBlock *> *basicBlocks,
-                            ArmBlock *lastBlock,std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName) {
+
+std::vector<Exp *> *Arm7Gen::genVarArrayInitVals(InitVal *initVal, std::vector<int> *subs) {
+    auto *valuesRet = new std::vector<Exp *>();
+    int len = 1;  // 维度展开一维的长度
+    for (int i : *subs) {
+        len *= i;
+    }
+    // 所有值用零填充
+    if (initVal->getInitVals()->empty()) {  // {}
+        for (int i = 0; i < len; i++) {
+            // addExp null 表 DEFAULT_VALUE
+            auto *exp = new Exp(nullptr);
+            valuesRet->emplace_back(exp);
+        }
+
+    } else {
+        for (InitVal *initValInner : *initVal->getInitVals()) {
+            if (initValInner->getExp() != nullptr) {  // 实值
+                valuesRet->emplace_back(initValInner->getExp());
+            } else {  // 数组嵌套
+                int sub_first_len = 1;  // 子维展开一维的长度
+                for (int i = 1; i < subs->size(); i++) {
+                    sub_first_len *= subs->at(i);
+                }
+                if (valuesRet->size() % sub_first_len == 0) {  // 保证嵌套子维前，已有长度为子维整数倍
+                    int tmp = subs->at(0);  // 当前第一维度值
+                    subs->erase(subs->begin());
+                    std::vector<Exp *> *subs_values_inner = genVarArrayInitVals(initValInner, subs);
+                    subs->insert(subs->begin(), tmp);
+                    valuesRet->insert(valuesRet->end(), subs_values_inner->begin(), subs_values_inner->end());  // 拼接
+                }
+            }
+        }
+    }
+    if (valuesRet->size() < len) {  // 长度不足补零
+        for (int i = 0; i < len - valuesRet->size(); i++) {
+            // addExp null 表 DEFAULT_VALUE
+            auto *exp = new Exp(nullptr);
+            valuesRet->emplace_back(exp);
+        }
+    }
+    return valuesRet;
+}
+
+ArmReg *Arm7Gen::genCondExp(Cond *cond, std::vector<ArmBlock *> *basicBlocks,
+                            ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName) {
     return genLOrExp(cond->getLOrExp(), basicBlocks, lastBlock, lastBlockStmts, newBlockName);
 }
 
-ArmReg *Arm7Gen::genLOrExp(LOrExp *lOrExp,  std::vector<ArmBlock *> *basicBlocks,
-                           ArmBlock *lastBlock,std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName) {
+ArmReg *Arm7Gen::genLOrExp(LOrExp *lOrExp, std::vector<ArmBlock *> *basicBlocks,
+                           ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName) {
     if (lOrExp->getLOrExp() == nullptr) {
-        return genLAndExp(lOrExp->getLAndExp(),basicBlocks, lastBlock, lastBlockStmts, newBlockName);
+        return genLAndExp(lOrExp->getLAndExp(), basicBlocks, lastBlock, lastBlockStmts, newBlockName);
     } else {
         // todo ||需要新增block，这里目前无法实现
         auto *lAndRet = genLAndExp(lOrExp->getLAndExp(), basicBlocks, lastBlock, lastBlockStmts, newBlockName);
-        if(lastBlock->getBlockName() != newBlockName){
+        if (lastBlock->getBlockName() != newBlockName) {
             auto *armNewStmts = new std::vector<ArmStmt *>();
             auto *newBlock = new ArmBlock(newBlockName.c_str(), armNewStmts);
             basicBlocks->emplace_back(newBlock);
@@ -423,7 +522,7 @@ ArmReg *Arm7Gen::genLOrExp(LOrExp *lOrExp,  std::vector<ArmBlock *> *basicBlocks
         /// bne  .L_True
 
         auto *lOrRet = genLOrExp(lOrExp->getLOrExp(), basicBlocks, lastBlock, lastBlockStmts, newBlockName);
-        if(lastBlock->getBlockName() != newBlockName){
+        if (lastBlock->getBlockName() != newBlockName) {
             auto *armNewStmts = new std::vector<ArmStmt *>();
             auto *newBlock = new ArmBlock(newBlockName.c_str(), armNewStmts);
             basicBlocks->emplace_back(newBlock);
@@ -434,7 +533,7 @@ ArmReg *Arm7Gen::genLOrExp(LOrExp *lOrExp,  std::vector<ArmBlock *> *basicBlocks
         /// bne  .L_True
 
         /// distribute new blockName which means the end of total LandExp
-        newBlockName = ".L"+std::to_string(blockName++);
+        newBlockName = ".L" + std::to_string(blockName++);
         auto *armRegRet = armRegManager->getFreeArmReg(lastBlockStmts);
 
         /// mov aFreeReg #0
@@ -448,8 +547,8 @@ ArmReg *Arm7Gen::genLOrExp(LOrExp *lOrExp,  std::vector<ArmBlock *> *basicBlocks
     }
 }
 
-ArmReg *Arm7Gen::genLAndExp(LAndExp *lAndExp,  std::vector<ArmBlock *> *basicBlocks,
-                            ArmBlock *lastBlock,std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName) {
+ArmReg *Arm7Gen::genLAndExp(LAndExp *lAndExp, std::vector<ArmBlock *> *basicBlocks,
+                            ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName) {
     if (lAndExp->getLAndExp() == nullptr) {
         return genEqExp(lAndExp->getEqExp(), lastBlockStmts);
     } else {
@@ -457,12 +556,12 @@ ArmReg *Arm7Gen::genLAndExp(LAndExp *lAndExp,  std::vector<ArmBlock *> *basicBlo
         /// cmp eqRet #0
         /// be  .L_FALSE
 
-        auto *lAndRet = genLAndExp(lAndExp->getLAndExp(),basicBlocks, lastBlock, lastBlockStmts, newBlockName);
+        auto *lAndRet = genLAndExp(lAndExp->getLAndExp(), basicBlocks, lastBlock, lastBlockStmts, newBlockName);
         /// cmp lAndRet #0
         /// be  .L_FALSE
 
         /// distribute new blockName which means the end of total LandExp
-        newBlockName = ".L"+std::to_string(blockName++);
+        newBlockName = ".L" + std::to_string(blockName++);
         auto *armRegRet = armRegManager->getFreeArmReg(lastBlockStmts);
 
         /// mov aFreeReg #1

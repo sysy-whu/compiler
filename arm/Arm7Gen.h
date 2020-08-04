@@ -90,6 +90,8 @@ private:
     /// 表达式 不计算 生成代码
     ///===-----------------------------------------------------------------------===///
 
+    std::vector<Exp *> *genVarArrayInitVals(InitVal *initVal, std::vector<int> *subs);
+
     ArmReg *genCondExp(Cond *cond, std::vector<ArmBlock *> *basicBlocks,
                        ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName);
 
@@ -123,6 +125,8 @@ public:
      * @param symbolTables_ 符号表，只有两个元素：libFuncs、global; 生成 arm 时仅维护常量
      */
     void startGen(AST *ast_, std::vector<SymbolTable *> *symbolTables_);
+
+    Arm7Tree *genArmTree() { return armTree; }
 };
 
 
