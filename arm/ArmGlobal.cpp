@@ -2,7 +2,7 @@
 
 
 std::string Arm7Tree::genString() {
-    std::string re = "";
+    std::string re = ".arch armv7-a\n";
     for (auto armGlobal: *armGlobals) {
         re += armGlobal->genString();
     }
@@ -12,7 +12,7 @@ std::string Arm7Tree::genString() {
 std::string ArmGlobal::genString() {
     // todo ArmGlobal 的输出方法
     if (arm7GlobalVar != nullptr) {
-        return "";
+        return arm7GlobalVar->genString();
     }
     if (arm7GlobalFunc != nullptr) {
         return arm7GlobalFunc->genString();
@@ -23,7 +23,9 @@ std::string ArmGlobal::genString() {
 
 std::string Arm7GlobalVar::genString() {
     // todo Arm7GlobalVar的输出方法
-    std::string re = ".global " + ident + "\n";
+    std::string re = ".text\n";
+    re += ".global " + ident + "\n";
+    re += ".data";
     re += ".align 2\n";
     re += ".type " + ident + ", %object";
     /// TODO
@@ -40,9 +42,9 @@ std::string Arm7GlobalVar::genString() {
         }
         re += ".size " + ident + "," + std::to_string(len * 4) + "\n";
     }
-    re += "." + ident + "\n";
+    re += ident + ":\n";
     for (auto it:*value) {
-        re += ".word " + std::to_string(value->at(0));
+        re += ".word " + std::to_string(value->at(0))+"\n";
     }
     /// TODO 有警告
     /// warning: no return statement in function returning non-void [-Wreturn-type]
@@ -52,18 +54,21 @@ std::string Arm7GlobalVar::genString() {
 
 std::string Arm7GlobalFunc::genString() {
     // todo Arm7GlobalFunc 的输出方法
-    std::string re = ".global " + funcName + "\n";
-    re += ".type " + funcName + ",%function\n";
+    std::string re = ".text\n";
+    re += ".align 2\n";
+    re += ".global " + funcName + "\n";
+    re += ".syntax unified\n";
+    re += ".arm\n";
+    re += ".fpu vfp\n";
+    re += ".type " + funcName + ", %function\n";
     re += funcName + ":\n";
     for (auto armBlock:*armBlocks) {
         re += armBlock->genString();
     }
 
-    re += "sub	sp, fp, #4\n";
+    re += "sub	sp, fp, #8\n";
     re += "@ sp needed\n";
-    re += "pop	{fp, pc}\n";
-    re += ".size	whileFunc, .-whileFunc\n";
-    re += ".align	2\n";
+    re += "pop	{r4,fp, pc}\n";
     return re;
 }
 

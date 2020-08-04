@@ -96,7 +96,13 @@ private:
 
 public:
     std::string genString() {
-        return opType2String() + " " + opd1 + " " + opd2 + " " + opd3 + "\n";
+        if (opd2.empty() && opd3.empty()) {
+            return opType2String() + " " + opd1 + "\n";
+        } else if (opd3.empty()) {
+            return opType2String() + " " + opd1 + "," + opd2 + "\n";
+        } else {
+            return opType2String() + " " + opd1 + "," + opd2 + "," + opd3 + "\n";
+        }
     }
 };
 
