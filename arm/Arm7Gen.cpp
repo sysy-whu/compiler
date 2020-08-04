@@ -95,8 +95,7 @@ void Arm7Gen::genArm7Func(FuncDef *funcDef, std::vector<ArmBlock *> *armBlocks) 
     }
 
     genBlock(funcDef->getBlock(), armBlocks, blockEntry, armStmts);
-    addArmRetStmts(armStmts);
-    armRegManager->freeAllArmReg(armStmts);
+
     /// 考虑到如下固定格式结尾无需计算，保留在 output 时输出到文件
     /// sub	sp, fp, #4
     /// @ sp needed
