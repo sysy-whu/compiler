@@ -1,4 +1,5 @@
 #include <iostream>
+#include<fstream>
 
 #include "util/Util.h"
 #include "util/MyConstants.h"
@@ -28,6 +29,9 @@ int main(int argc, char **argv) {
     // 移步 parse 构造方法
     //    Lex lex;
     //    test(lex);
+
+    std::ofstream output(Util::getOutputUrl());
+    output<< arm7Gen.genArmTree()->genString() << std::endl;
 
     std::cout << "quit" << std::endl;
     return 0;

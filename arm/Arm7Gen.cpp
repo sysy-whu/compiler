@@ -619,7 +619,7 @@ ArmReg *Arm7Gen::genRelExp(RelExp *relExp, std::vector<ArmStmt *> *ArmStmts) {
         auto *addRet = genAddExp(relExp->getAddExp(), ArmStmts);
         addRet->setIfLock(ARM_REG_LOCK_TRUE);
         // 比较relRet和addRet
-        ArmStmts->emplace_back(new ArmStmt(ARM_STMT_CMP, relRet->getRegName().c_str(), addRet->getRegName().c_str()));
+        ArmStmts->emplace_back(new ArmStmt(ARM_STMT_CMP,  addRet->getRegName().c_str(), relRet->getRegName().c_str()));
         relRet->setIfLock(ARM_REG_LOCK_FALSE);
         addRet->setIfLock(ARM_REG_LOCK_FALSE);
         auto *armRegFree = armRegManager->getFreeArmReg(ArmStmts);
