@@ -856,7 +856,7 @@ ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts, int ifGet
             auto *armLMovWStmt = new ArmStmt(ARM_STMT_MOVW, armStrReg->getRegName().c_str(),
                                              ("#:lower16:" + lVal->getIdent()).c_str());
             auto *armLMovTStmt = new ArmStmt(ARM_STMT_MOVT, armStrReg->getRegName().c_str(),
-                                             ("#:lower16:" + lVal->getIdent()).c_str());
+                                             ("#:upper16:" + lVal->getIdent()).c_str());
             ArmStmts->emplace_back(armLMovWStmt);
             ArmStmts->emplace_back(armLMovTStmt);
             if (ifGetPos == 0) {
@@ -873,9 +873,13 @@ ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts, int ifGet
         }
     } else {  // 数组
         /// 数组起点地址
-        ArmReg *armRegLVal;
-        armRegLVal = armRegManager->getArmRegByNamePos(lVal->getIdent().c_str(), lVal->getIntPos(),
-                                                       ArmStmts);
+//        ArmReg *armRegLVal = nullptr;
+//        if (lVal->getType() != LVAL_ARRAY_GLOBAL_INT && lVal->getType() != LVAL_ARRAY_GLOBAL_INT_STAR) {
+//            armRegLVal = armRegManager->getArmRegByNamePos(lVal->getIdent().c_str(), lVal->getIntPos(),
+//                                                           ArmStmts);
+//        }
+
+        ArmReg *armRegLVal = armRegManager->getFreeArmReg(ArmStmts);
         armRegLVal->setIfLock(ARM_REG_LOCK_TRUE);
         armRegLVal->setArm7Var(nullptr);
         /// 获得不同情况下数组的位置（内存地址）
@@ -904,7 +908,7 @@ ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts, int ifGet
                                                  ("#:lower16:" + lVal->getIdent()).c_str());
                 ArmStmts->emplace_back(armLMovWStmt);
                 auto *armLMovTStmt = new ArmStmt(ARM_STMT_MOVT, armRegLVal->getRegName().c_str(),
-                                                 ("#:lower16:" + lVal->getIdent()).c_str());
+                                                 ("#:upper16:" + lVal->getIdent()).c_str());
                 ArmStmts->emplace_back(armLMovTStmt);
                 break;
             }
