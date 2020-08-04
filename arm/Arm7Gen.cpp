@@ -403,7 +403,7 @@ ArmBlock *Arm7Gen::genStmtAuxWhile(Stmt *stmt, std::vector<ArmBlock *> *basicBlo
     whileEndPos->emplace_back(*newBlockEndName);
     auto *armBlockEndStmts = new std::vector<ArmStmt *>();
     auto *armBlockEndBlock = new ArmBlock(newBlockEndName->c_str(), armBlockEndStmts);
-    basicBlocks->emplace_back(armBlockEndBlock);
+
 
     auto *armRegCond = genCondExp(stmt->getCond(), basicBlocks, armCondBlock, armCondStmts, newBlockCondName->c_str());
 
@@ -422,6 +422,7 @@ ArmBlock *Arm7Gen::genStmtAuxWhile(Stmt *stmt, std::vector<ArmBlock *> *basicBlo
     auto *armBCondStmt = new ArmStmt(ARM_STMT_B, newBlockCondName->c_str());
     unsureBlock->getArmStmts()->emplace_back(armBCondStmt);
 
+    basicBlocks->emplace_back(armBlockEndBlock);
     /// whilePos.pop_back()
     /// whileEndPos.popBack()
     whilePos->pop_back();
