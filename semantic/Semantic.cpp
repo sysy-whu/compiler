@@ -79,7 +79,7 @@ void Semantic::semanticArm7Var(Decl *decl, std::vector<Symbol *> *symbols) {
         for (VarDef *varDef: *decl->getVarDecl()->getVarDefs()) {
             Arm7Var *arm7Var;
             auto *values = new std::vector<int>();
-            if (varDef->getConstExps()->empty()) {
+            if (varDef->getConstExps()->empty()) {   /// 全局整型变量
                 if (varDef->getInitVal() != nullptr) {
                     if (semanticAddExp(varDef->getInitVal()->getExp()->getAddExp()) == decl->getVarDecl()->getBType()) {
                         values->emplace_back(calAddExp(varDef->getInitVal()->getExp()->getAddExp()));
@@ -95,7 +95,7 @@ void Semantic::semanticArm7Var(Decl *decl, std::vector<Symbol *> *symbols) {
                                       CONST_FALSE, ARRAY_FALSE, nullptr, values);
 
                 arm7Var->setMemoryLoc(GLOBAL_VAR_POS);
-            } else {
+            } else {    /// 全局数组变量
                 auto *subs = new std::vector<int>();  /// 下标
                 int len = 1;  /// 元素总个数
                 for (ConstExp *constExp:*varDef->getConstExps()) {
@@ -359,7 +359,8 @@ std::vector<int> *Semantic::calConstArrayInitVals(ConstInitVal *constInitVal, st
         }
     }
     if (valuesRet->size() < len) {  // 长度不足补零
-        for (int i = 0; i < len - valuesRet->size(); i++) {
+        int lenNow = valuesRet->size();
+        for (int i = 0; i < len - lenNow; i++) {
             valuesRet->push_back(0);
         }
     } else if (valuesRet->size() > len) {
@@ -399,7 +400,8 @@ std::vector<int> *Semantic::calVarArrayInitVals(InitVal *initVal, std::vector<in
         }
     }
     if (valuesRet->size() < len) {  // 长度不足补零
-        for (int i = 0; i < len - valuesRet->size(); i++) {
+        int lenNow = valuesRet->size();
+        for (int i = 0; i < len - lenNow; i++) {
             valuesRet->push_back(0);
         }
     }
@@ -942,10 +944,14 @@ int Semantic::semanticLValIntAux(LVal *lVal) {
 
 int Semantic::semanticLVal(LVal *lVal) {
     // 也有可能是数组
+    int a;
     if (lVal->getExps()->empty()) {  // 整型
-        return semanticLValIntAux(lVal);
+        a=  semanticLValIntAux(lVal);
+        return a;
     } else {  // 整型数组
-        return semanticLValIntStarAux(lVal);
+//        return semanticLValIntStarAux(lVal);
+         a = semanticLValIntStarAux(lVal);
+        return a;
     }  // 整型、整型数组
 }
 
