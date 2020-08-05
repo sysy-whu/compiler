@@ -913,6 +913,12 @@ ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts, int ifGet
 
                 return armStrReg;
             }
+        } else if (lVal->getType() == LVAL_ARRAY_PARAM_INT_STAR || lVal->getType() == LVAL_ARRAY_LOCAL_INT_STAR) {
+            auto *armStrReg = armRegManager->getFreeArmReg(ArmStmts);
+            auto *armLdrStmt = new ArmStmt(ARM_STMT_ADD, armStrReg->getRegName().c_str(),
+                                           "fp", ("#" + std::to_string(lVal->getIntPos())).c_str());
+            ArmStmts->emplace_back(armLdrStmt);
+            return armStrReg;
         } else {
             return armRegManager->getArmRegByNamePos(lVal->getIdent().c_str(), lVal->getIntPos(), ArmStmts);
         }
