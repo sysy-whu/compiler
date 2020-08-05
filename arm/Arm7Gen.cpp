@@ -755,11 +755,11 @@ ArmReg *Arm7Gen::genMulExp(MulExp *mulExp, std::vector<ArmStmt *> *ArmStmts) {
         // 右边的
         ArmReg *unaryRet = genUnaryExp(mulExp->getUnaryExp(), ArmStmts);
         /// 锁定乘数一元表达式 中间结果，Arm7Var,防止被误分配为 armRegRet
-        unaryRet->setIfLock(ARM_REG_LOCK_TRUE);
+        mulRet->setIfLock(ARM_REG_LOCK_TRUE);
         /// 此时r0可能被Lock了,故虽然可能div/mod不能一步到位得到r0
         ArmReg *armRegRet = armRegManager->getFreeArmReg(ArmStmts);
         /// 解锁加数加法式中间结果
-        unaryRet->setIfLock(ARM_REG_LOCK_FALSE);
+        mulRet->setIfLock(ARM_REG_LOCK_FALSE);
         // 左边的 mul pop 到 armRegRet
         auto *popStmt = new ArmStmt(ARM_STMT_POP, ("{" + armRegRet->getRegName() + " }").c_str());
         ArmStmts->emplace_back(popStmt);

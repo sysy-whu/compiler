@@ -22,8 +22,11 @@ ArmReg *ArmRegManager::getFreeArmReg(std::vector<ArmStmt *> *armStmts) {
         } else {
             if (armRegI->getIfLock() == ARM_REG_LOCK_FALSE) {
                 /// if(armRegRet Locked) return armRegI; else if(armRegRet numBigger) return armRegI;
-                armRegRet = armRegRet->getIfLock() == ARM_REG_LOCK_TRUE ? armRegI :
-                            armRegI->getNewNum() < armRegRet->getNewNum() ? armRegI : armRegRet;
+                if(armRegRet->getIfLock() == ARM_REG_LOCK_TRUE){
+                    armRegRet = armRegI;
+                }else{
+                    armRegRet = armRegI->getNewNum() < armRegRet->getNewNum() ? armRegI : armRegRet;
+                }
             }
         }
     }
