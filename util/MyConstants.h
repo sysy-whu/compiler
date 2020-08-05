@@ -203,9 +203,9 @@ static const int ARM_REG_LOCK_FALSE = 0;
 
 static const int STR_ASCII_TYPE = -255;
 
-/// 自定义库函数
-static const std::string FUNC_MINE_DIV_ZT = "div_zt";
-static const std::string FUNC_MINE_MOD_ZT = "mod_zt";
+/// 库函数
+static const std::string FUNC_MINE_DIV_ZT = "__aeabi_idiv";
+static const std::string FUNC_MINE_MOD_ZT = "__aeabi_idivmod";
 
 // Extern func
 static const std::string putFStr = "putf";

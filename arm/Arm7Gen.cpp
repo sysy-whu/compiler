@@ -809,10 +809,10 @@ ArmReg *Arm7Gen::genMulExp(MulExp *mulExp, std::vector<ArmStmt *> *ArmStmts) {
             /// bl	   mod_zt / div_zt
             /// mov	   rFree, r0
             if (mulExp->getOpType() == OP_BO_DIV) {
-                auto *blDivStmt = new ArmStmt(ARM_STMT_BL, "div_zt");
+                auto *blDivStmt = new ArmStmt(ARM_STMT_BL, FUNC_MINE_DIV_ZT.c_str());
                 ArmStmts->emplace_back(blDivStmt);
             } else if (mulExp->getOpType() == OP_BO_REM) {
-                auto *blRemStmt = new ArmStmt(ARM_STMT_BL, "mod_zt");
+                auto *blRemStmt = new ArmStmt(ARM_STMT_BL, FUNC_MINE_MOD_ZT.c_str());
                 ArmStmts->emplace_back(blRemStmt);
             }
             auto *movRFreeStmt = new ArmStmt(ARM_STMT_MOV, armRegRet->getRegName().c_str(), "r0");
