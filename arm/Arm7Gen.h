@@ -59,16 +59,23 @@ private:
     ArmBlock *genBlock(Block *block, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
                        std::vector<ArmStmt *> *lastBlockStmts);
 
-    ArmBlock *genStmt(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
-                      std::vector<ArmStmt *> *lastBlockStmts);
+//    ArmBlock *genStmt(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
+//                      std::vector<ArmStmt *> *lastBlockStmts);
+    /// 返回必须有时要分配但有分配的结束 labelBlock 块
+    ArmBlock *genStmt(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock);
 
     void addArmRetStmts(std::vector<ArmStmt *> *ArmStmts);
 
-    ArmBlock *genStmtAuxIf(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
-                           std::vector<ArmStmt *> *lastBlockStmts);
+//    ArmBlock *genStmtAuxIf(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
+//                           std::vector<ArmStmt *> *lastBlockStmts);
+//
+//    ArmBlock *genStmtAuxWhile(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
+//                              std::vector<ArmStmt *> *lastBlockStmts);
 
-    ArmBlock *genStmtAuxWhile(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
-                              std::vector<ArmStmt *> *lastBlockStmts);
+    /// 返回必须要分配但有分配的结束 labelBlock 块
+    void genStmtAuxIf(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock);
+    /// 返回必须要分配但有分配的结束 labelBlock 块
+    void genStmtAuxWhile(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock);
 
     ///===-----------------------------------------------------------------------===///
     /// 表达式 计算 不生成代码
@@ -96,14 +103,18 @@ private:
 
     std::vector<Exp *> *genVarArrayInitVals(InitVal *initVal, std::vector<int> *subs);
 
-    ArmReg *genCondExp(Cond *cond, std::vector<ArmBlock *> *basicBlocks,
-                       ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName);
-
-    ArmReg *genLOrExp(LOrExp *lOrExp, std::vector<ArmBlock *> *basicBlocks,
-                      ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName);
-
-    ArmReg *genLAndExp(LAndExp *lAndExp, std::vector<ArmBlock *> *basicBlocks,
-                       ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName);
+//    ArmReg *genCondExp(Cond *cond, std::vector<ArmBlock *> *basicBlocks,
+//                       ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName);
+//
+//    ArmReg *genLOrExp(LOrExp *lOrExp, std::vector<ArmBlock *> *basicBlocks,
+//                      ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName);
+//
+//    ArmReg *genLAndExp(LAndExp *lAndExp, std::vector<ArmBlock *> *basicBlocks,
+//                       ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName);
+    /// 返回比较结果寄存器, 引用参数返回必分配且已经分配好的 labelBlock
+    ArmReg *genLOrExp(LOrExp *lOrExp, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock);
+    /// 返回比较结果寄存器, 引用参数返回必分配且已经分配好的 labelBlock
+    ArmReg *genLAndExp(LAndExp *lAndExp, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock);
 
     ArmReg *genEqExp(EqExp *eqExp, std::vector<ArmStmt *> *ArmStmts);
 

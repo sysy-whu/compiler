@@ -17,6 +17,9 @@ private:
     std::string opd3;
 
 public:
+    ArmStmt(int opType) :
+            opType(opType), opd1(OPD_NULL), opd2(OPD_NULL), opd3(OPD_NULL) {};
+
     ArmStmt(int opType, const char *opd1) :
             opType(opType), opd1(opd1), opd2(OPD_NULL), opd3(OPD_NULL) {};
 
@@ -40,6 +43,10 @@ public:
 
     [[nodiscard]] const std::string &getOpd3() const {
         return opd3;
+    }
+
+    void setBlockBrOpd1(const char *opd1_) {
+        ArmStmt::opd1 = opd1_;
     }
 
 private:
