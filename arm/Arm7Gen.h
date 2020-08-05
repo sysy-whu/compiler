@@ -6,6 +6,24 @@
 #include "../parser/Parse.h"
 #include "ArmRegManager.h"
 
+class BlockReg{
+private:
+    ArmBlock *armBlock;
+
+    ArmReg *armReg;
+
+public:
+    BlockReg(ArmBlock *armBlock1, ArmReg *armReg1):armBlock(armBlock1), armReg(armReg1){};
+
+    [[nodiscard]] ArmBlock *getArmBlock() const {
+        return armBlock;
+    }
+
+    [[nodiscard]] ArmReg *getArmReg() const {
+        return armReg;
+    }
+};
+
 class Arm7Gen {
 private:
     /// 抽象语法树->语法分析器结果
@@ -73,9 +91,9 @@ private:
 //                              std::vector<ArmStmt *> *lastBlockStmts);
 
     /// 返回必须要分配但有分配的结束 labelBlock 块
-    void genStmtAuxIf(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock);
+    ArmBlock *genStmtAuxIf(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock);
     /// 返回必须要分配但有分配的结束 labelBlock 块
-    void genStmtAuxWhile(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock);
+    ArmBlock *genStmtAuxWhile(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock);
 
     ///===-----------------------------------------------------------------------===///
     /// 表达式 计算 不生成代码
@@ -112,9 +130,9 @@ private:
 //    ArmReg *genLAndExp(LAndExp *lAndExp, std::vector<ArmBlock *> *basicBlocks,
 //                       ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName);
     /// 返回比较结果寄存器, 引用参数返回必分配且已经分配好的 labelBlock
-    ArmReg *genLOrExp(LOrExp *lOrExp, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock);
+    BlockReg *genLOrExp(LOrExp *lOrExp, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock);
     /// 返回比较结果寄存器, 引用参数返回必分配且已经分配好的 labelBlock
-    ArmReg *genLAndExp(LAndExp *lAndExp, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock);
+    BlockReg *genLAndExp(LAndExp *lAndExp, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock);
 
     ArmReg *genEqExp(EqExp *eqExp, std::vector<ArmStmt *> *ArmStmts);
 
