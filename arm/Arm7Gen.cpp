@@ -904,7 +904,9 @@ ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts, int ifGet
                                              ("#:upper16:" + lVal->getIdent()).c_str());
             ArmStmts->emplace_back(armLMovWStmt);
             ArmStmts->emplace_back(armLMovTStmt);
-            if (ifGetPos == 0) {
+            if (lVal->getType() == LVAL_ARRAY_GLOBAL_INT_STAR) {
+                return armStrReg;
+            } else if (ifGetPos == 0) {
                 auto *armLdrStmt = new ArmStmt(ARM_STMT_LDR, armStrReg->getRegName().c_str(),
                                                ("[" + armStrReg->getRegName() + "]").c_str());
                 ArmStmts->emplace_back(armLdrStmt);
