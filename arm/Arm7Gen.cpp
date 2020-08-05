@@ -71,12 +71,21 @@ void Arm7Gen::genArm7Func(FuncDef *funcDef, std::vector<ArmBlock *> *armBlocks) 
             auto *armStmtPush = new ArmStmt(ARM_STMT_PUSH, "{r4, fp, lr}");
             auto *armStmtAdd = new ArmStmt(ARM_STMT_ADD, "fp", "sp",
                                            ("#" + std::to_string(PUSH_NUM_DEFAULT * 4 - 4)).c_str());
-            /// 此句负数 capacity 转正
-            auto *armStmtSub = new ArmStmt(ARM_STMT_SUB, "sp", "sp",
-                                           ("#" + std::to_string(0 - symbol->getArm7Func()->getCapacity())).c_str());
             armStmts->emplace_back(armStmtPush);
             armStmts->emplace_back(armStmtAdd);
+
+            /// 此句负数 capacity 转正
+            int capacityTemp = 0 - symbol->getArm7Func()->getCapacity();
+            while(capacityTemp > 1024){
+                auto *armStmtSub = new ArmStmt(ARM_STMT_SUB, "sp", "sp",
+                                               ("#" + std::to_string(1024)).c_str());
+                armStmts->emplace_back(armStmtSub);
+                capacityTemp -= 1024;
+            }
+            auto *armStmtSub = new ArmStmt(ARM_STMT_SUB, "sp", "sp",
+                                           ("#" + std::to_string(capacityTemp)).c_str());
             armStmts->emplace_back(armStmtSub);
+            capacityTemp -= 1024;
 
             /// 寄存器传递的参数
             auto *params = symbol->getArm7Func()->getParams();
