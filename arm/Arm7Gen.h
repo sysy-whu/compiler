@@ -57,18 +57,18 @@ private:
     ///===-----------------------------------------------------------------------===///
 
     ArmBlock *genBlock(Block *block, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
-                         std::vector<ArmStmt *> *lastBlockStmts);
+                       std::vector<ArmStmt *> *lastBlockStmts);
 
     ArmBlock *genStmt(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
-                        std::vector<ArmStmt *> *lastBlockStmts);
+                      std::vector<ArmStmt *> *lastBlockStmts);
 
     void addArmRetStmts(std::vector<ArmStmt *> *ArmStmts);
 
     ArmBlock *genStmtAuxIf(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
-                             std::vector<ArmStmt *> *lastBlockStmts);
+                           std::vector<ArmStmt *> *lastBlockStmts);
 
     ArmBlock *genStmtAuxWhile(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
-                                std::vector<ArmStmt *> *lastBlockStmts);
+                              std::vector<ArmStmt *> *lastBlockStmts);
 
     ///===-----------------------------------------------------------------------===///
     /// 表达式 计算 不生成代码
@@ -97,13 +97,13 @@ private:
     std::vector<Exp *> *genVarArrayInitVals(InitVal *initVal, std::vector<int> *subs);
 
     ArmReg *genCondExp(Cond *cond, std::vector<ArmBlock *> *basicBlocks,
-                       ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts,const char *newBlockName);
+                       ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName);
 
     ArmReg *genLOrExp(LOrExp *lOrExp, std::vector<ArmBlock *> *basicBlocks,
-                      ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts, const char *newBlockName);
+                      ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName);
 
     ArmReg *genLAndExp(LAndExp *lAndExp, std::vector<ArmBlock *> *basicBlocks,
-                       ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts,const char *newBlockName);
+                       ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName);
 
     ArmReg *genEqExp(EqExp *eqExp, std::vector<ArmStmt *> *ArmStmts);
 
