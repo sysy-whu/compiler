@@ -915,21 +915,26 @@ ArmReg *Arm7Gen::genPrimaryExp(PrimaryExp *primaryExp, std::vector<ArmStmt *> *A
         return genLVal(primaryExp->getLVal(), ArmStmts, 0);
     } else {
         auto *armDegNum = armRegManager->getFreeArmReg(ArmStmts);
-        if (primaryExp->getNumber() > 65536) {
-            /// movw rX #低16位
-            /// movt rX #高16位
-            auto *armMovWStmt = new ArmStmt(ARM_STMT_MOVW, armDegNum->getRegName().c_str(),
-                                            ("#" + std::to_string(Util::getLower16(primaryExp->getNumber()))).c_str());
-            auto *armMovTStmt = new ArmStmt(ARM_STMT_MOVT, armDegNum->getRegName().c_str(),
-                                            ("#" + std::to_string(Util::getUpper16(primaryExp->getNumber()))).c_str());
-            ArmStmts->emplace_back(armMovWStmt);
-            ArmStmts->emplace_back(armMovTStmt);
-        } else {
-            /// mov rX #NUMBER
-            auto *armMovStmt = new ArmStmt(ARM_STMT_MOV, armDegNum->getRegName().c_str(),
-                                           ("#" + std::to_string(primaryExp->getNumber())).c_str());
-            ArmStmts->emplace_back(armMovStmt);
-        }
+//        if (primaryExp->getNumber() > 65536) {
+//            /// movw rX #低16位
+//            /// movt rX #高16位
+//            auto *armMovWStmt = new ArmStmt(ARM_STMT_MOVW, armDegNum->getRegName().c_str(),
+//                                            ("#" + std::to_string(Util::getLower16(primaryExp->getNumber()))).c_str());
+//            auto *armMovTStmt = new ArmStmt(ARM_STMT_MOVT, armDegNum->getRegName().c_str(),
+//                                            ("#" + std::to_string(Util::getUpper16(primaryExp->getNumber()))).c_str());
+//            ArmStmts->emplace_back(armMovWStmt);
+//            ArmStmts->emplace_back(armMovTStmt);
+//        } else {
+//            /// mov rX #NUMBER
+//            auto *armMovStmt = new ArmStmt(ARM_STMT_MOV, armDegNum->getRegName().c_str(),
+//                                           ("#" + std::to_string(primaryExp->getNumber())).c_str());
+//            ArmStmts->emplace_back(armMovStmt);
+//        }
+
+        /// ldr rX, =DIGIT_NUMBER
+        auto *armMovStmt = new ArmStmt(ARM_STMT_LDR, armDegNum->getRegName().c_str(),
+                                       ("=" + std::to_string(primaryExp->getNumber())).c_str());
+        ArmStmts->emplace_back(armMovStmt);
         return armDegNum;
     }
 }
