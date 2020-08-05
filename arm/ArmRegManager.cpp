@@ -43,12 +43,11 @@ ArmReg *ArmRegManager::getFreeArmReg(std::vector<ArmStmt *> *armStmts) {
 }
 
 ArmReg *ArmRegManager::getArmRegByArmVar(Arm7Var *arm7Var, std::vector<ArmStmt *> *armStmts) {
-    for (auto *armReg:*armRegs) {
-        /// TODO
-        /// 这种比较方法还待确认
-        if (armReg->getArm7Var() == arm7Var)
-            return armReg;
-    }
+//    for (auto *armReg:*armRegs) {
+//        /// 这种比较方法确认
+//        if (armReg->getArm7Var() == arm7Var)
+//            return armReg;
+//    }
     auto *armRegRet = getFreeArmReg(armStmts);
     auto *armLdr = new ArmStmt(ARM_STMT_LDR, armRegRet->getRegName().c_str(),
                                ("[fp, #" + std::to_string(arm7Var->getMemoryLoc()) + "]").c_str());
@@ -58,13 +57,12 @@ ArmReg *ArmRegManager::getArmRegByArmVar(Arm7Var *arm7Var, std::vector<ArmStmt *
 
 
 ArmReg *ArmRegManager::getArmRegByNamePos(const char *name, int memoryLoc, std::vector<ArmStmt *> *armStmts) {
-    for (auto *armReg:*armRegs) {
-        /// TODO
-        /// 这种比较方法还待确认
-        if (armReg->getArm7Var() != nullptr && armReg->getArm7Var()->getIdent() == name &&
-            armReg->getArm7Var()->getMemoryLoc() == memoryLoc)
-            return armReg;
-    }
+//    for (auto *armReg:*armRegs) {
+//        /// 这种比较方法确认
+//        if (armReg->getArm7Var() != nullptr && armReg->getArm7Var()->getIdent() == name &&
+//            armReg->getArm7Var()->getMemoryLoc() == memoryLoc)
+//            return armReg;
+//    }
     auto *armRegRet = getFreeArmReg(armStmts);
     auto *armLdr = new ArmStmt(ARM_STMT_LDR, armRegRet->getRegName().c_str(),
                                ("[fp, #" + std::to_string(memoryLoc) + "]").c_str());
@@ -73,13 +71,12 @@ ArmReg *ArmRegManager::getArmRegByNamePos(const char *name, int memoryLoc, std::
 }
 
 ArmReg *ArmRegManager::getArmRegByLVal(LVal *lVal, std::vector<ArmStmt *> *armStmts) {
-    for (auto *armReg:*armRegs) {
-        /// TODO
-        /// 这种比较方法还待确认
-        if (armReg->getArm7Var() != nullptr && armReg->getArm7Var()->getIdent() == lVal->getIdent() &&
-            armReg->getArm7Var()->getMemoryLoc() == lVal->getIntPos())
-            return armReg;
-    }
+//    for (auto *armReg:*armRegs) {
+//        /// 这种比较方法确认
+//        if (armReg->getArm7Var() != nullptr && armReg->getArm7Var()->getIdent() == lVal->getIdent() &&
+//            armReg->getArm7Var()->getMemoryLoc() == lVal->getIntPos())
+//            return armReg;
+//    }
     return nullptr;
 }
 

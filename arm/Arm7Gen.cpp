@@ -814,12 +814,14 @@ ArmReg *Arm7Gen::genMulExp(MulExp *mulExp, std::vector<ArmStmt *> *ArmStmts) {
             if (mulExp->getOpType() == OP_BO_DIV) {
                 auto *blDivStmt = new ArmStmt(ARM_STMT_BL, FUNC_MINE_DIV_ZT.c_str());
                 ArmStmts->emplace_back(blDivStmt);
+                auto *movRFreeStmt = new ArmStmt(ARM_STMT_MOV, armRegRet->getRegName().c_str(), "r0");
+                ArmStmts->emplace_back(movRFreeStmt);
             } else if (mulExp->getOpType() == OP_BO_REM) {
                 auto *blRemStmt = new ArmStmt(ARM_STMT_BL, FUNC_MINE_MOD_ZT.c_str());
                 ArmStmts->emplace_back(blRemStmt);
+                auto *movRFreeStmt = new ArmStmt(ARM_STMT_MOV, armRegRet->getRegName().c_str(), "r1");
+                ArmStmts->emplace_back(movRFreeStmt);
             }
-            auto *movRFreeStmt = new ArmStmt(ARM_STMT_MOV, armRegRet->getRegName().c_str(), "r0");
-            ArmStmts->emplace_back(movRFreeStmt);
 
             /// pop    {r0,? r1,? r2,? r3}
             for (int i = 0; i < 4; i++) {
