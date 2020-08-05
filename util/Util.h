@@ -23,6 +23,13 @@ public:
 
     static void setIfO2(int o2) { ifO2 = o2; }
 
+    static int getUpper16(int bigNum) {
+        return (unsigned int)bigNum>>16;
+    };
+    static int getLower16(int bigNum) {
+        return bigNum & 0xFFFF;
+    };
+
     /**
      * handle params from console
      * @param argc: number of params
@@ -32,5 +39,6 @@ public:
     static int handleParams(int argc, char **argv);
 
 };
+
 
 #endif //COMPILER_UTIL_H

@@ -103,6 +103,113 @@ mod_zt:
 	ldr	fp, [sp], #4
 	bx	lr
 	.text
+	.global a
+	.data
+	.align 2
+	.type a, %object
+	.size a,100
+a:
+	.word 1
+	.word 2
+	.word 3
+	.word 4
+	.word 5
+	.word 0
+	.word 0
+	.word 0
+	.word 0
+	.word 0
+	.word 0
+	.word 0
+	.word 0
+	.word 0
+	.word 0
+	.word 0
+	.word 0
+	.word 0
+	.word 0
+	.word 0
+	.word 0
+	.word 0
+	.word 0
+	.word 0
+	.word 0
+	.text
+	.align 2
+	.global func
+	.syntax unified
+	.arm
+	.fpu vfp
+	.type func, %function
+func:
+	push {r4, fp, lr}
+	add fp,sp,#8
+	sub sp,sp,#24
+	str r0,[fp, #-12]
+	mov r1,#0
+	str r1,[fp, #-16]
+	mov r1,#0
+	str r1,[fp, #-20]
+	mov r1,#0
+	str r1,[fp, #-24]
+.L9:
+	ldr r1,[fp, #-16]
+	mov r2,#5
+	cmp r1,r2
+	movlt r1,#1
+	movge r1,#0
+	cmp r1,#0
+	beq .L10
+.L11:
+	ldr r1,[fp, #-20]
+	mov r2,#5
+	cmp r1,r2
+	movlt r1,#1
+	movge r1,#0
+	cmp r1,#0
+	beq .L12
+	ldr r1,[fp, #-12]
+	ldr r2,[fp, #-16]
+	mov r3,#4
+	mul r2,r3,r2
+	add r1,r2,r1
+	ldr r2,[fp, #-20]
+	mov r3,#4
+	mul r2,r3,r2
+	add r1,r2,r1
+	ldr r1,[r1]
+	push {r1 }
+	ldr r1,[fp, #-24]
+	pop {r2 }
+	add r2,r1,r2
+	str r2,[fp, #-24]
+	mov r1,#1
+	push {r1 }
+	ldr r1,[fp, #-20]
+	pop {r2 }
+	add r2,r1,r2
+	str r2,[fp, #-20]
+	b .L11
+.L12:
+	mov r1,#1
+	push {r1 }
+	ldr r1,[fp, #-16]
+	pop {r2 }
+	add r2,r1,r2
+	str r2,[fp, #-16]
+	mov r1,#0
+	str r1,[fp, #-20]
+	b .L9
+.L10:
+	ldr r1,[fp, #-24]
+	mov r0,r1
+	sub sp,fp,#8
+	pop {r4, fp, pc}
+	str r0,[fp, #-12]
+	sub sp, fp, #8
+	@ sp needed
+	pop {r4,fp, pc}
+	.text
 	.align 2
 	.global main
 	.syntax unified
@@ -112,12 +219,12 @@ mod_zt:
 main:
 	push {r4, fp, lr}
 	add fp,sp,#8
-	sub sp,sp,#12
-	bl getch
-	str r0,[fp, #-12]
-	ldr r0,[fp, #-12]
+	sub sp,sp,#8
+	movw r0,#:lower16:a
+	movt r0,#:upper16:a
+	bl func
 	bl putint
-	ldr r0,[fp, #-12]
+	mov r0,#0
 	sub sp,fp,#8
 	pop {r4, fp, pc}
 	sub sp, fp, #8
