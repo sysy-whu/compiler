@@ -611,7 +611,7 @@ ArmReg *Arm7Gen::genEqExp(EqExp *eqExp, std::vector<ArmStmt *> *ArmStmts) {
         eqRet->setIfLock(ARM_REG_LOCK_TRUE);
         auto *relRet = genRelExp(eqExp->getRelExp(), ArmStmts);
         // 比较eqRet和eqRet
-        ArmStmts->emplace_back(new ArmStmt(ARM_STMT_CMP, relRet->getRegName().c_str(), eqRet->getRegName().c_str()));
+        ArmStmts->emplace_back(new ArmStmt(ARM_STMT_CMP, eqRet->getRegName().c_str(), relRet->getRegName().c_str()));
         eqRet->setIfLock(ARM_REG_LOCK_FALSE);
         auto *armRegFree = armRegManager->getFreeArmReg(ArmStmts);
         switch (eqExp->getOpType()) {
@@ -637,7 +637,7 @@ ArmReg *Arm7Gen::genRelExp(RelExp *relExp, std::vector<ArmStmt *> *ArmStmts) {
         auto *addRet = genAddExp(relExp->getAddExp(), ArmStmts);
         addRet->setIfLock(ARM_REG_LOCK_TRUE);
         // 比较relRet和addRet
-        ArmStmts->emplace_back(new ArmStmt(ARM_STMT_CMP, addRet->getRegName().c_str(), relRet->getRegName().c_str()));
+        ArmStmts->emplace_back(new ArmStmt(ARM_STMT_CMP, relRet->getRegName().c_str(), addRet->getRegName().c_str()));
         relRet->setIfLock(ARM_REG_LOCK_FALSE);
         addRet->setIfLock(ARM_REG_LOCK_FALSE);
         auto *armRegFree = armRegManager->getFreeArmReg(ArmStmts);
