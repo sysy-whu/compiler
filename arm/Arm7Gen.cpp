@@ -299,18 +299,21 @@ ArmBlock *Arm7Gen::genStmt(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, Arm
                                                    ("[" + armRegPos->getRegName() + "]").c_str());
                     lastBlockStmts->emplace_back(armStmtStr);
                 } else {
-                    auto *armRegLVal = armRegManager->getArmRegByLVal(stmt->getLVal(), lastBlockStmts);
-                    if (armRegLVal == nullptr) {
-                        auto *armStmtStr = new ArmStmt(ARM_STMT_STR, rRet->getRegName().c_str(),
-                                                       stmt->getLVal()->getBaseMemoryPos().c_str());
-                        lastBlockStmts->emplace_back(armStmtStr);
-                    } else {
-                        if (armRegLVal->getRegName() != rRet->getRegName()) {
-                            auto *armStmtMov = new ArmStmt(ARM_STMT_MOV, armRegLVal->getRegName().c_str(),
-                                                           rRet->getRegName().c_str());
-                            lastBlockStmts->emplace_back(armStmtMov);
-                        }
-                    }
+                    auto *armStmtStr = new ArmStmt(ARM_STMT_STR, rRet->getRegName().c_str(),
+                                                   stmt->getLVal()->getBaseMemoryPos().c_str());
+                    lastBlockStmts->emplace_back(armStmtStr);
+//                    auto *armRegLVal = armRegManager->getArmRegByLVal(stmt->getLVal(), lastBlockStmts);
+//                    if (armRegLVal == nullptr) {
+//                        auto *armStmtStr = new ArmStmt(ARM_STMT_STR, rRet->getRegName().c_str(),
+//                                                       stmt->getLVal()->getBaseMemoryPos().c_str());
+//                        lastBlockStmts->emplace_back(armStmtStr);
+//                    } else {
+//                        if (armRegLVal->getRegName() != rRet->getRegName()) {
+//                            auto *armStmtMov = new ArmStmt(ARM_STMT_MOV, armRegLVal->getRegName().c_str(),
+//                                                           rRet->getRegName().c_str());
+//                            lastBlockStmts->emplace_back(armStmtMov);
+//                        }
+//                    }
                 }
             } else {
                 /// str rRet [lVal]
