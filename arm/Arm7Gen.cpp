@@ -357,18 +357,13 @@ ArmBlock *Arm7Gen::genStmtAuxIf(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks
     lastBlockStmts->emplace_back(armCmp0Stmt);
     lastBlockStmts->emplace_back(armBBodyStmt);
 
-    /// 分配 .L_End blockName
-    /// 可能有的 else块语句们
-    /// b.LEnd
-    auto *endBlockName = new std::string(".L" + std::to_string(blockName++));
-    auto *endStmts = new std::vector<ArmStmt *>();
-    auto *endBlock = new ArmBlock(endBlockName->c_str(), endStmts);
-    basicBlocks->emplace_back(endBlock);
+    ArmBlock *unsureElseBlock = nullptr;
+    ArmBlock *unsureBodyBlock;
 
     if (stmt->getElseBody() != nullptr) {
-        auto *unsureBlock1 = genStmt(stmt->getElseBody(), basicBlocks, lastBlock, lastBlockStmts);
-        auto armBEndStmt = new ArmStmt(ARM_STMT_B, unsureBlock1->getBlockName().c_str());
-        unsureBlock1->getArmStmts()->emplace_back(armBEndStmt);
+        unsureElseBlock = genStmt(stmt->getElseBody(), basicBlocks, lastBlock, lastBlockStmts);
+    }else{
+        unsureElseBlock = lastBlock;
     }
 
     /// 分配 .LBodyBlock blockName
@@ -379,10 +374,23 @@ ArmBlock *Arm7Gen::genStmtAuxIf(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks
     auto *armBodyBlock = new ArmBlock(bodyBlockName->c_str(), armBodyStmts);
     basicBlocks->emplace_back(armBodyBlock);
 
-    auto *unsureBlock2 = genStmt(stmt->getStmtBrBody(), basicBlocks, armBodyBlock, armBodyStmts);
-    auto *armBCondStmt = new ArmStmt(ARM_STMT_B, unsureBlock2->getBlockName().c_str());
-    unsureBlock2->getArmStmts()->emplace_back(armBCondStmt);
+    unsureBodyBlock = genStmt(stmt->getStmtBrBody(), basicBlocks, armBodyBlock, armBodyStmts);
 
+    /// 分配 .L_End blockName
+    /// 可能有的 else块语句们
+    /// b.LEnd
+    auto *endBlockName = new std::string(".L" + std::to_string(blockName++));
+    auto *endStmts = new std::vector<ArmStmt *>();
+    auto *endBlock = new ArmBlock(endBlockName->c_str(), endStmts);
+
+    auto armBEndStmt = new ArmStmt(ARM_STMT_B, endBlock->getBlockName().c_str());
+    unsureBodyBlock->getArmStmts()->emplace_back(armBEndStmt);
+    unsureElseBlock->getArmStmts()->emplace_back(armBEndStmt);
+
+//    auto *armBCondStmt = new ArmStmt(ARM_STMT_B, endBlock->getBlockName().c_str());
+//    unsureBlock2->getArmStmts()->emplace_back(armBCondStmt);
+
+    basicBlocks->emplace_back(endBlock);
     /// 返回 .LEnd BlockName
     return endBlock;
 }
