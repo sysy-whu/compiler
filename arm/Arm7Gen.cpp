@@ -444,7 +444,7 @@ ArmBlock *Arm7Gen::genStmtAuxWhile(Stmt *stmt, std::vector<ArmBlock *> *basicBlo
 
 //    auto *armRegCond = genCondExp(stmt->getCond(), basicBlocks, armCondBlock, armCondStmts, newBlockCondName->c_str());
     auto *newCondBlockName = new std::string(lastBlock->getBlockName());
-    auto *armRegCond = genCondExp(stmt->getCond(), basicBlocks, lastBlock, lastBlockStmts,*newCondBlockName);
+    auto *armRegCond = genCondExp(stmt->getCond(), basicBlocks, armCondBlock, armCondStmts,*newCondBlockName);
 
     if(*newCondBlockName != lastBlock->getBlockName()){
         auto *newCondArmStmts = new std::vector<ArmStmt *>();
