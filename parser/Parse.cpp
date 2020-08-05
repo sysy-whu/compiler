@@ -823,133 +823,135 @@ UnaryExp *Parse::parseUnaryExp() {
 }
 
 /**
- * 乘除模表达式 MulExp → UnaryExp | UnaryExp ('*' | '/' | '%') MulExp
+ * 乘除模表达式 MulExp → UnaryExp | MulExp ('*' | '/' | '%') UnaryExp
  * @return
  */
 MulExp *Parse::parseMulExp() {
-    MulExp *mulExpInner = nullptr;
     auto *locs = new std::list<SourceLocation *>();
-    int opType = OP_NULL;
 
     UnaryExp *unaryExpInner = parseUnaryExp();
-    if (tokens.at(step).getType() == OP_BO_MUL || tokens.at(step).getType() == OP_BO_DIV ||
-        tokens.at(step).getType() == OP_BO_REM) {
-        opType = tokens.at(step).getType();
+    auto *mulExpInner = new MulExp(nullptr, unaryExpInner, OP_NULL, new std::list<SourceLocation *>());
+    while (tokens.at(step).getType() == OP_BO_MUL ||
+           tokens.at(step).getType() == OP_BO_DIV || tokens.at(step).getType() == OP_BO_REM) {
+        int opType = tokens.at(step).getType();
         auto *opLoc = new SourceLocation(tokens.at(step).getRow(), tokens.at(step).getStartColumn());
         locs->emplace_back(opLoc);
         step++;  // eat op
-        mulExpInner = parseMulExp();
+
+        unaryExpInner = parseUnaryExp();
+        mulExpInner = new MulExp(mulExpInner, unaryExpInner, opType, locs);
     }
 
-    auto *mulExpRet = new MulExp(mulExpInner, unaryExpInner, opType, locs);
-    return mulExpRet;
+    return mulExpInner;
 }
 
 /**
- * 加减表达式 AddExp → MulExp | MulExp ('+' | '−') AddExp
+ * 加减表达式 AddExp → MulExp | AddExp ('+' | '−') MulExp
  * @return
  */
 AddExp *Parse::parseAddExp() {
-    AddExp *addExpInner = nullptr;
     auto *locs = new std::list<SourceLocation *>();
-    int opType = OP_NULL;
 
     MulExp *mulExpInner = parseMulExp();
-    if (tokens.at(step).getType() == OP_BO_ADD || tokens.at(step).getType() == OP_BO_SUB) {
-        opType = tokens.at(step).getType();
+    auto *addExpInner = new AddExp(nullptr, mulExpInner, OP_NULL, new std::list<SourceLocation *>());
+    while (tokens.at(step).getType() == OP_BO_ADD || tokens.at(step).getType() == OP_BO_SUB) {
+        int opType = tokens.at(step).getType();
         auto *opLoc = new SourceLocation(tokens.at(step).getRow(), tokens.at(step).getStartColumn());
         locs->emplace_back(opLoc);
         step++;  // eat op
-        addExpInner = parseAddExp();
+
+        mulExpInner = parseMulExp();
+        addExpInner = new AddExp(addExpInner, mulExpInner, opType, locs);
     }
 
-    auto *addExpRet = new AddExp(addExpInner, mulExpInner, opType, locs);
-    return addExpRet;
+    return addExpInner;
 }
 
 /**
- * 关系表达式 RelExp → AddExp | AddExp ('<' | '>' | '<=' | '>=') RelExp
+ * 关系表达式 RelExp → AddExp | RelExp ('<' | '>' | '<=' | '>=') AddExp
  * @return
  */
 RelExp *Parse::parseRelExp() {
-    RelExp *relExpInner = nullptr;
     auto *locs = new std::list<SourceLocation *>();
-    int opType = OP_NULL;
 
     AddExp *addExpInner = parseAddExp();
+    auto *relExpInner = new RelExp(nullptr, addExpInner, OP_NULL, new std::list<SourceLocation *>());
     if (tokens.at(step).getType() == OP_BO_GT || tokens.at(step).getType() == OP_BO_GTE ||
         tokens.at(step).getType() == OP_BO_LT || tokens.at(step).getType() == OP_BO_LTE) {
-        opType = tokens.at(step).getType();
+        int opType = tokens.at(step).getType();
         auto *opLoc = new SourceLocation(tokens.at(step).getRow(), tokens.at(step).getStartColumn());
         locs->emplace_back(opLoc);
         step++;  // eat op
-        relExpInner = parseRelExp();
+
+        addExpInner = parseAddExp();
+        relExpInner = new RelExp(relExpInner, addExpInner, opType, locs);
     }
 
-    auto *relExpRet = new RelExp(relExpInner, addExpInner, opType, locs);
-    return relExpRet;
+    return relExpInner;
 }
 
 /**
- * 相等性表达式 EqExp → RelExp | RelExp ('==' | '!=') EqExp
+ * 相等性表达式 EqExp → RelExp | EqExp ('==' | '!=') RelExp
  * @return
  */
 EqExp *Parse::parseEqExp() {
-    EqExp *eqExpInner = nullptr;
     auto *locs = new std::list<SourceLocation *>();
-    int opType = OP_NULL;
 
     RelExp *relExpInner = parseRelExp();
+    auto *eqExpInner = new EqExp(nullptr, relExpInner, OP_NULL, new std::list<SourceLocation *>());
     if (tokens.at(step).getType() == OP_BO_EQ || tokens.at(step).getType() == OP_BO_NEQ) {
-        opType = tokens.at(step).getType();
+        int opType = tokens.at(step).getType();
         auto *opLoc = new SourceLocation(tokens.at(step).getRow(), tokens.at(step).getStartColumn());
         locs->emplace_back(opLoc);
         step++;  // eat op
-        eqExpInner = parseEqExp();
+
+        relExpInner = parseRelExp();
+        eqExpInner = new EqExp(eqExpInner, relExpInner, opType, locs);
     }
 
-    auto *eqExpRet = new EqExp(eqExpInner, relExpInner, opType, locs);
-    return eqExpRet;
+    return eqExpInner;
 }
 
 /**
- * 逻辑与表达式 LAndExp → EqExp | EqExp '&&' LAndExp
+ * 逻辑与表达式 LAndExp → EqExp | LAndExp  && EqExp
  * @return
  */
 LAndExp *Parse::parseLAndExp() {
-    LAndExp *lAndExpInner = nullptr;
     auto *locs = new std::list<SourceLocation *>();
 
     EqExp *eqExpInner = parseEqExp();
+    auto *lAndExpInner = new LAndExp(nullptr, eqExpInner, new std::list<SourceLocation *>());
     if (tokens.at(step).getType() == OP_BO_AND) {
         auto *opLoc = new SourceLocation(tokens.at(step).getRow(), tokens.at(step).getStartColumn());
         locs->emplace_back(opLoc);
         step++;  // eat op
-        lAndExpInner = parseLAndExp();
+
+        eqExpInner = parseEqExp();
+        lAndExpInner = new LAndExp(lAndExpInner, eqExpInner, locs);
     }
 
-    auto *lAndExpRet = new LAndExp(lAndExpInner, eqExpInner, locs);
-    return lAndExpRet;
+    return lAndExpInner;
 }
 
 /**
- * 逻辑或表达式 LOrExp → LAndExp | LAndExp '||' LOrExp
+ * 逻辑或表达式 LOrExp → LAndExp | LOrExp || LAndExp
  * @return
  */
 LOrExp *Parse::parseLOrExp() {
-    LOrExp *lOrExpInner = nullptr;
     auto *locs = new std::list<SourceLocation *>();
 
     LAndExp *lAndExpInner = parseLAndExp();
+    auto *lOrExpInner = new LOrExp(nullptr, lAndExpInner, new std::list<SourceLocation *>());;
     if (tokens.at(step).getType() == OP_BO_OR) {
         auto *opLoc = new SourceLocation(tokens.at(step).getRow(), tokens.at(step).getStartColumn());
         locs->emplace_back(opLoc);
         step++;  // eat op
-        lOrExpInner = parseLOrExp();
+
+        lAndExpInner = parseLAndExp();
+        lOrExpInner = new LOrExp(lOrExpInner, lAndExpInner, locs);
     }
 
-    auto *lOrExpRet = new LOrExp(lOrExpInner, lAndExpInner, locs);
-    return lOrExpRet;
+    return lOrExpInner;
 }
 
 /**
