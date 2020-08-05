@@ -121,7 +121,7 @@ void Semantic::semanticArm7Func(FuncDef *funcDef, std::vector<Symbol *> *symbolG
     funcNameNow = funcDef->getIdent();
     levelNow++;
     /// 因为每次分配空间时，capacity 都会提前减，这里应该是sp当前实际位置-4
-    capacity = (PUSH_NUM_DEFAULT - 1) * -4;
+    capacity = (PUSH_NUM_DEFAULT-1) * -4;
 
     if (funcDef->getFuncFParams() != nullptr) {
         for (int i = 0; i < funcDef->getFuncFParams()->getFuncFParams()->size(); i++) {
@@ -144,7 +144,7 @@ void Semantic::semanticArm7Func(FuncDef *funcDef, std::vector<Symbol *> *symbolG
                 Error::errorSim("something wrong in semanticArm7Func funcFParam->getBType()");
                 exit(-1);
             }
-            if (i >= 4) {
+            if (i < 4) {
                 capacity -= 4;  /// 由于所存为引用变量，此处无论参数类型均分配四字节数
                 arm7Var->setMemoryLoc(capacity);
             } else {
