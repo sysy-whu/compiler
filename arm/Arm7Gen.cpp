@@ -237,7 +237,7 @@ void Arm7Gen::genArm7Var(BlockItem *blockItem, std::vector<ArmStmt *> *armStmts)
 ///===-----------------------------------------------------------------------===///
 
 ArmBlock *Arm7Gen::genBlock(Block *block, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock,
-                              std::vector<ArmStmt *> *lastBlockStmts) {
+                            std::vector<ArmStmt *> *lastBlockStmts) {
     levelNow++;
 
     ArmBlock *tmpBlock = lastBlock;
@@ -362,7 +362,7 @@ ArmBlock *Arm7Gen::genStmtAuxIf(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks
 
     if (stmt->getElseBody() != nullptr) {
         unsureElseBlock = genStmt(stmt->getElseBody(), basicBlocks, lastBlock, lastBlockStmts);
-    }else{
+    } else {
         unsureElseBlock = lastBlock;
     }
 
@@ -685,7 +685,7 @@ ArmReg *Arm7Gen::genAddExp(AddExp *addExp, std::vector<ArmStmt *> *ArmStmts) {
         auto *popStmt = new ArmStmt(ARM_STMT_POP, ("{" + armRegRet->getRegName() + " }").c_str());
         /// 以 armRegRet 为最终结果，因为 addRet 可能为某变量，其 ArmReg 有对应某个变量地址
         auto *armAddStmt = new ArmStmt(addExp->getOpType(), armRegRet->getRegName().c_str(),
-                                       armRegRet->getRegName().c_str(), addRet->getRegName().c_str());
+                                       addRet->getRegName().c_str(), armRegRet->getRegName().c_str());
         ArmStmts->emplace_back(popStmt);
         ArmStmts->emplace_back(armAddStmt);
 
@@ -697,22 +697,25 @@ ArmReg *Arm7Gen::genMulExp(MulExp *mulExp, std::vector<ArmStmt *> *ArmStmts) {
     if (mulExp->getOpType() == OP_NULL) {
         return genUnaryExp(mulExp->getUnaryExp(), ArmStmts);
     } else {
-        /// 乘数一元表达式中间结果，Arm7Var 成员变量不一定为 null
-        ArmReg *unaryRet = genUnaryExp(mulExp->getUnaryExp(), ArmStmts);
-        /// 中间结果压栈，不用管是否释放寄存器，null时可被直接用；非null时可被重复利用
-        auto *pushStmt = new ArmStmt(ARM_STMT_PUSH, ("{" + unaryRet->getRegName() + " }").c_str());
-        ArmStmts->emplace_back(pushStmt);
         /// 乘数乘法式中间结果，Arm7Var 成员变量可为 null-->因此，可能会被误分配为 armRegRet
+        // 左边的
         ArmReg *mulRet = genMulExp(mulExp->getMulExp(), ArmStmts);
-        /// 锁定乘数乘法式中间结果，Arm7Var,防止被误分配为 armRegRet
-        mulRet->setIfLock(ARM_REG_LOCK_TRUE);
+        /// 中间结果压栈，不用管是否释放寄存器，null时可被直接用；非null时可被重复利用
+        auto *pushStmt = new ArmStmt(ARM_STMT_PUSH, ("{" + mulRet->getRegName() + " }").c_str());
+        ArmStmts->emplace_back(pushStmt);
+        /// 乘数一元表达式中间结果，Arm7Var 成员变量不一定为 null
+        // 右边的
+        ArmReg *unaryRet = genUnaryExp(mulExp->getUnaryExp(), ArmStmts);
+        /// 锁定乘数一元表达式 中间结果，Arm7Var,防止被误分配为 armRegRet
+        unaryRet->setIfLock(ARM_REG_LOCK_TRUE);
         /// 此时r0可能被Lock了,故虽然可能div/mod不能一步到位得到r0
         ArmReg *armRegRet = armRegManager->getFreeArmReg(ArmStmts);
         /// 解锁加数加法式中间结果
-        mulRet->setIfLock(ARM_REG_LOCK_FALSE);
-
+        unaryRet->setIfLock(ARM_REG_LOCK_FALSE);
+        // 左边的 mul pop 到 armRegRet
         auto *popStmt = new ArmStmt(ARM_STMT_POP, ("{" + armRegRet->getRegName() + " }").c_str());
         ArmStmts->emplace_back(popStmt);
+
         /// 此时 mulRet->mulRet unaryRet->armRegRet
         if (mulExp->getOpType() == OP_BO_MUL) {
             /// 以 armRegRet 为最终结果，因为 mulRet 可能为某变量，其 ArmReg 有对应某个变量地址
@@ -729,8 +732,8 @@ ArmReg *Arm7Gen::genMulExp(MulExp *mulExp, std::vector<ArmStmt *> *ArmStmts) {
             for (int i = 0; i < 4; i++) {
                 armRegManager->pushOneArmReg(i, ArmStmts);
             }
-
-            if (mulRet->getRegName() == "r0") {
+            // 右边的在r0的话，要先入栈，把左边的放到r0覆盖，再出栈到r1
+            if (unaryRet->getRegName() == "r0") {
                 /// push   {r0 }
                 /// mov    r0 rFree
                 /// pop    {r1 }
@@ -740,15 +743,15 @@ ArmReg *Arm7Gen::genMulExp(MulExp *mulExp, std::vector<ArmStmt *> *ArmStmts) {
                 ArmStmts->emplace_back(pushR0Stmt);
                 ArmStmts->emplace_back(movR0Stmt);
                 ArmStmts->emplace_back(popR1Stmt);
-            } else {
+            } else {                 // 右边的不在r0,那挪一下就行
                 if (armRegRet->getRegName() != "r0") {
                     /// mov    r0,    rFree
                     auto *movR0Stmt = new ArmStmt(ARM_STMT_MOV, "r0", armRegRet->getRegName().c_str());
                     ArmStmts->emplace_back(movR0Stmt);
                 }
-                if (mulRet->getRegName() != "r1") {
+                if (unaryRet->getRegName() != "r1") {
                     /// mov    r1,    rR
-                    auto *movR1Stmt = new ArmStmt(ARM_STMT_MOV, "r1", mulRet->getRegName().c_str());
+                    auto *movR1Stmt = new ArmStmt(ARM_STMT_MOV, "r1", unaryRet->getRegName().c_str());
                     ArmStmts->emplace_back(movR1Stmt);
                 }
 
