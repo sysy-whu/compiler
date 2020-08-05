@@ -876,7 +876,7 @@ RelExp *Parse::parseRelExp() {
 
     AddExp *addExpInner = parseAddExp();
     auto *relExpInner = new RelExp(nullptr, addExpInner, OP_NULL, new std::list<SourceLocation *>());
-    if (tokens.at(step).getType() == OP_BO_GT || tokens.at(step).getType() == OP_BO_GTE ||
+    while (tokens.at(step).getType() == OP_BO_GT || tokens.at(step).getType() == OP_BO_GTE ||
         tokens.at(step).getType() == OP_BO_LT || tokens.at(step).getType() == OP_BO_LTE) {
         int opType = tokens.at(step).getType();
         auto *opLoc = new SourceLocation(tokens.at(step).getRow(), tokens.at(step).getStartColumn());
@@ -899,7 +899,7 @@ EqExp *Parse::parseEqExp() {
 
     RelExp *relExpInner = parseRelExp();
     auto *eqExpInner = new EqExp(nullptr, relExpInner, OP_NULL, new std::list<SourceLocation *>());
-    if (tokens.at(step).getType() == OP_BO_EQ || tokens.at(step).getType() == OP_BO_NEQ) {
+    while (tokens.at(step).getType() == OP_BO_EQ || tokens.at(step).getType() == OP_BO_NEQ) {
         int opType = tokens.at(step).getType();
         auto *opLoc = new SourceLocation(tokens.at(step).getRow(), tokens.at(step).getStartColumn());
         locs->emplace_back(opLoc);
@@ -921,7 +921,7 @@ LAndExp *Parse::parseLAndExp() {
 
     EqExp *eqExpInner = parseEqExp();
     auto *lAndExpInner = new LAndExp(nullptr, eqExpInner, new std::list<SourceLocation *>());
-    if (tokens.at(step).getType() == OP_BO_AND) {
+    while (tokens.at(step).getType() == OP_BO_AND) {
         auto *opLoc = new SourceLocation(tokens.at(step).getRow(), tokens.at(step).getStartColumn());
         locs->emplace_back(opLoc);
         step++;  // eat op
@@ -942,7 +942,7 @@ LOrExp *Parse::parseLOrExp() {
 
     LAndExp *lAndExpInner = parseLAndExp();
     auto *lOrExpInner = new LOrExp(nullptr, lAndExpInner, new std::list<SourceLocation *>());;
-    if (tokens.at(step).getType() == OP_BO_OR) {
+    while (tokens.at(step).getType() == OP_BO_OR) {
         auto *opLoc = new SourceLocation(tokens.at(step).getRow(), tokens.at(step).getStartColumn());
         locs->emplace_back(opLoc);
         step++;  // eat op
