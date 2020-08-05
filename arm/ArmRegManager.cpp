@@ -154,3 +154,15 @@ void ArmRegManager::popAllArmReg(std::vector<ArmStmt *> *ArmStmts) {
     }
 }
 
+ArmReg *ArmRegManager::getOneArmReg(int i, std::vector<ArmStmt *> *ArmStmts) {
+    if (armRegs->at(i)->getArm7Var() != nullptr) {
+        auto *armSTRStmt =
+                new ArmStmt(ARM_STMT_STR, armRegs->at(i)->getRegName().c_str(),
+                            ("[fp, #" + std::to_string(armRegs->at(i)->getArm7Var()->getMemoryLoc()) + "]").c_str());
+        ArmStmts->emplace_back(armSTRStmt);
+        armRegs->at(i)->setArm7Var(nullptr);
+    }
+
+    return armRegs->at(i);
+}
+

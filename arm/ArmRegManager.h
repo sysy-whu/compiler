@@ -30,6 +30,8 @@ public:
 
     void freeAllArmReg(std::vector<ArmStmt *> *ArmStmts);
 
+    ArmReg *getOneArmReg(int i, std::vector<ArmStmt *> *ArmStmts);
+
     void freeOneArmReg(int i, std::vector<ArmStmt *> *ArmStmts);
 
     void pushOneArmReg(int i, std::vector<ArmStmt *> *ArmStmts);

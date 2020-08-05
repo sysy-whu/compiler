@@ -945,7 +945,7 @@ ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts, int ifGet
             lVal->getBaseMemoryPos() == std::to_string(GLOBAL_VAR_POS) || lVal->getIntPos() == GLOBAL_VAR_POS) {
             /// movw	rX, #:lower16:gR
             /// movt	rX, #:upper16:gR
-            auto *armStrReg = armRegManager->getFreeArmReg(ArmStmts);
+            auto *armStrReg = armRegManager->getOneArmReg(9, ArmStmts);
 
             auto *armLMovWStmt = new ArmStmt(ARM_STMT_MOVW, armStrReg->getRegName().c_str(),
                                              ("#:lower16:" + lVal->getIdent()).c_str());
@@ -981,7 +981,7 @@ ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts, int ifGet
 //                                                           ArmStmts);
 //        }
 
-        ArmReg *armRegLVal = armRegManager->getFreeArmReg(ArmStmts);
+        ArmReg *armRegLVal = armRegManager->getOneArmReg(9, ArmStmts);
         armRegLVal->setIfLock(ARM_REG_LOCK_TRUE);
         armRegLVal->setArm7Var(nullptr);
         /// 获得不同情况下数组的位置（内存地址）
