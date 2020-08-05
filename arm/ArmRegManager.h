@@ -36,7 +36,11 @@ public:
 
     void popOneArmReg(int i, std::vector<ArmStmt *> *ArmStmts);
 
-//    static int getNewestNum();
+    void pushAllArmReg(std::vector<ArmStmt *> *ArmStmts);
+
+    void popAllArmReg(std::vector<ArmStmt *> *ArmStmts);
+
+    //    static int getNewestNum();
 //
 //    static void setNewestNum(int newestNum_);
 //

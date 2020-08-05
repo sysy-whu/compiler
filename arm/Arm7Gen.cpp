@@ -767,14 +767,7 @@ ArmReg *Arm7Gen::genMulExp(MulExp *mulExp, std::vector<ArmStmt *> *ArmStmts) {
             ArmStmts->emplace_back(armMulStmt);
         } else {
             /// DIV / REM 需要调用函数,注意为：r0 = r0 OP(/or%) r1;
-            /// 注意这里不敢调用 __aeabi_idiv 因为我们知道 mov_zt/dic_zt 用了r0,r1,r2,r3
-            /// 故此处:mod_zt/div_zt 函数内记得保护r2、r3现场;或者这里 free/push+pop 掉r2,r3。目前后者
-            /// 而若是调用系统库函数，可能会毁了我们的寄存器现场状态。并考虑到运算多时提前push/pop全会得不偿失。
 
-            /// push    {r0,? r1,? r2,? r3}
-            for (int i = 0; i < 4; i++) {
-                armRegManager->pushOneArmReg(i, ArmStmts);
-            }
             // 右边的在r0的话，要先入栈，把左边的放到r0覆盖，再出栈到r1
             if (unaryRet->getRegName() == "r0") {
                 /// push   {r0 }
@@ -797,9 +790,9 @@ ArmReg *Arm7Gen::genMulExp(MulExp *mulExp, std::vector<ArmStmt *> *ArmStmts) {
                     auto *movR1Stmt = new ArmStmt(ARM_STMT_MOV, "r1", unaryRet->getRegName().c_str());
                     ArmStmts->emplace_back(movR1Stmt);
                 }
-
             }
 
+            armRegManager->freeAllArmReg(ArmStmts);
             /// bl	   mod_zt / div_zt
             /// mov	   rFree, r0
             if (mulExp->getOpType() == OP_BO_DIV) {
@@ -812,11 +805,6 @@ ArmReg *Arm7Gen::genMulExp(MulExp *mulExp, std::vector<ArmStmt *> *ArmStmts) {
                 ArmStmts->emplace_back(blRemStmt);
                 auto *movRFreeStmt = new ArmStmt(ARM_STMT_MOV, armRegRet->getRegName().c_str(), "r1");
                 ArmStmts->emplace_back(movRFreeStmt);
-            }
-
-            /// pop    {r0,? r1,? r2,? r3}
-            for (int i = 0; i < 4; i++) {
-                armRegManager->popOneArmReg(i, ArmStmts);
             }
         }
         return armRegRet;
@@ -854,26 +842,6 @@ ArmReg *Arm7Gen::genUnaryExp(UnaryExp *unaryExp, std::vector<ArmStmt *> *ArmStmt
         /// 函数调用 有参数
         /// 万法归宗之 LVal 永存真实地址->则无论参数数组还是局部数组,永远先ldr再add好了
         /// 注意此处要求，局部数组声明时。
-        static const std::string putFStr = "putf";
-        static const std::string stopTimeStr = "stoptime";
-        static const std::string startTimeStr = "starttime";
-        static const std::string putArrayStr = "putarray";
-        static const std::string putChStr = "putch";
-        static const std::string putIntStr = "putint";
-        static const std::string getArrayStr = "getarray";
-        static const std::string getChStr = "getch";
-        static const std::string getIntStr = "getint";
-        if (unaryExp->getIdent() == putFStr ||
-            unaryExp->getIdent() == stopTimeStr ||
-            unaryExp->getIdent() == startTimeStr ||
-            unaryExp->getIdent() == putArrayStr ||
-            unaryExp->getIdent() == putChStr ||
-            unaryExp->getIdent() == putIntStr ||
-            unaryExp->getIdent() == getArrayStr ||
-            unaryExp->getIdent() == getChStr ||
-            unaryExp->getIdent() == getIntStr) {
-            armRegManager->freeAllArmReg(ArmStmts);
-        }
 
         if (unaryExp->getFuncRParams() != nullptr) {
             auto *exps = unaryExp->getFuncRParams()->getExps();
@@ -931,7 +899,7 @@ ArmReg *Arm7Gen::genUnaryExp(UnaryExp *unaryExp, std::vector<ArmStmt *> *ArmStmt
                 armRegManager->getArmRegs()->at(i)->setIfLock(ARM_REG_LOCK_FALSE);
             }
         }
-
+        armRegManager->freeAllArmReg(ArmStmts);
         /// bl funcName
         auto *blFuncStmt = new ArmStmt(ARM_STMT_BL, unaryExp->getIdent().c_str());
         ArmStmts->emplace_back(blFuncStmt);
@@ -1531,9 +1499,9 @@ void Arm7Gen::genStmtAuxWhile(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, 
 }
 
 ArmReg *Arm7Gen::genLOrExp(LOrExp *lOrExp, std::vector<ArmBlock *> *basicBlocks, ArmBlock *lastBlock) {
-    if(lOrExp->getLOrExp() == nullptr){
+    if (lOrExp->getLOrExp() == nullptr) {
         return genLAndExp(lOrExp->getLAndExp(), basicBlocks, lastBlock);
-    }else{
+    } else {
         // 此处可能改变 lastBlock; 但跟 0 比较的语句，以及比较后跳转语句，应正常追加
         auto *lAndRet = genLAndExp(lOrExp->getLAndExp(), basicBlocks, lastBlock);
 

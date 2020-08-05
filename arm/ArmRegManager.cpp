@@ -22,9 +22,9 @@ ArmReg *ArmRegManager::getFreeArmReg(std::vector<ArmStmt *> *armStmts) {
         } else {
             if (armRegI->getIfLock() == ARM_REG_LOCK_FALSE) {
                 /// if(armRegRet Locked) return armRegI; else if(armRegRet numBigger) return armRegI;
-                if(armRegRet->getIfLock() == ARM_REG_LOCK_TRUE){
+                if (armRegRet->getIfLock() == ARM_REG_LOCK_TRUE) {
                     armRegRet = armRegI;
-                }else{
+                } else {
                     armRegRet = armRegI->getNewNum() < armRegRet->getNewNum() ? armRegI : armRegRet;
                 }
             }
@@ -137,6 +137,20 @@ void ArmRegManager::freeOneArmReg(int i, std::vector<ArmStmt *> *ArmStmts) {
                             ("[fp, #" + std::to_string(armRegs->at(i)->getArm7Var()->getMemoryLoc()) + "]").c_str());
         ArmStmts->emplace_back(armSTRStmt);
         armRegs->at(i)->setArm7Var(nullptr);
+    }
+}
+
+void ArmRegManager::pushAllArmReg(std::vector<ArmStmt *> *ArmStmts) {
+    for (int i = 0; i < armRegs->size(); i++) {
+        auto *pushRXStmt = new ArmStmt(ARM_STMT_PUSH, ("{r" + std::to_string(i) + " }").c_str());
+        ArmStmts->emplace_back(pushRXStmt);
+    }
+}
+
+void ArmRegManager::popAllArmReg(std::vector<ArmStmt *> *ArmStmts) {
+    for (int i = 0; i < armRegs->size(); i++) {
+        auto *popRXStmt = new ArmStmt(ARM_STMT_POP, ("{r" + std::to_string(i) + " }").c_str());
+        ArmStmts->emplace_back(popRXStmt);
     }
 }
 
