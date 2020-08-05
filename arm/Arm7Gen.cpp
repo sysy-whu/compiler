@@ -904,15 +904,13 @@ ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts, int ifGet
                                              ("#:upper16:" + lVal->getIdent()).c_str());
             ArmStmts->emplace_back(armLMovWStmt);
             ArmStmts->emplace_back(armLMovTStmt);
-            if (lVal->getType() == LVAL_ARRAY_GLOBAL_INT_STAR) {
-                return armStrReg;
-            } else if (ifGetPos == 0) {
+            if (ifGetPos == 0) {
                 auto *armLdrStmt = new ArmStmt(ARM_STMT_LDR, armStrReg->getRegName().c_str(),
                                                ("[" + armStrReg->getRegName() + "]").c_str());
                 ArmStmts->emplace_back(armLdrStmt);
                 return armStrReg;
-
             } else {
+
                 return armStrReg;
             }
         } else if (lVal->getType() == LVAL_ARRAY_PARAM_INT_STAR || lVal->getType() == LVAL_ARRAY_LOCAL_INT_STAR) {
@@ -925,7 +923,7 @@ ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts, int ifGet
             return armRegManager->getArmRegByNamePos(lVal->getIdent().c_str(), lVal->getIntPos(), ArmStmts);
         }
     } else {  // 数组
-/// 数组起点地址
+        /// 数组起点地址
 //        ArmReg *armRegLVal = nullptr;
 //        if (lVal->getType() != LVAL_ARRAY_GLOBAL_INT && lVal->getType() != LVAL_ARRAY_GLOBAL_INT_STAR) {
 //            armRegLVal = armRegManager->getArmRegByNamePos(lVal->getIdent().c_str(), lVal->getIntPos(),
@@ -933,8 +931,7 @@ ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts, int ifGet
 //        }
 
         ArmReg *armRegLVal = armRegManager->getFreeArmReg(ArmStmts);
-        armRegLVal->
-                setIfLock(ARM_REG_LOCK_TRUE);
+        armRegLVal->setIfLock(ARM_REG_LOCK_TRUE);
         armRegLVal->setArm7Var(nullptr);
         /// 获得不同情况下数组的位置（内存地址）
         switch (lVal->getType()) {
@@ -970,40 +967,40 @@ ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts, int ifGet
                 Error::errorSim("wrong when gen at LVal Array");
                 exit(-1);
         }
-/// 索引！索引！
-        for (int i = 0;i < lVal->getExps()->size(); i++) {
+        /// 索引！索引！
+        for (int i = 0; i < lVal->getExps()->size(); i++) {
             auto *armRegRet = genAddExp(lVal->getExps()->at(i)->getAddExp(), ArmStmts);
             armRegRet->setIfLock(ARM_REG_LOCK_TRUE);
             int subLenRem = 1;
-            for (int j = i + 1;j < lVal->getSubs()->size(); j++) {
+            for (int j = i + 1; j < lVal->getSubs()->size(); j++) {
                 subLenRem *= lVal->getSubs()->at(j);
             }
 
             if (subLenRem != 1) {
-/// mov  rFree  subLenRem
+                /// mov  rFree  subLenRem
                 auto *armRegLenRem = armRegManager->getFreeArmReg(ArmStmts);
                 auto *armLenMovStmt = new ArmStmt(ARM_STMT_MOV, armRegLenRem->getRegName().c_str(),
                                                   ("#" + std::to_string(subLenRem * 4)).c_str());
                 ArmStmts->emplace_back(armLenMovStmt);
                 armRegRet->setIfLock(ARM_REG_LOCK_FALSE);
-/// mul rRegRet rRegRet rFree
+                /// mul rRegRet rRegRet rFree
                 armRegRet->setArm7Var(nullptr);
                 auto *armMulStmt = new ArmStmt(ARM_STMT_MUL, armRegRet->getRegName().c_str(),
                                                armRegLenRem->getRegName().c_str(), armRegRet->getRegName().c_str());
                 ArmStmts->emplace_back(armMulStmt);
             } else {
-/// mov  rFree  subLenRem
+                /// mov  rFree  subLenRem
                 auto *armRegLenRem = armRegManager->getFreeArmReg(ArmStmts);
                 auto *armLenMovStmt = new ArmStmt(ARM_STMT_MOV, armRegLenRem->getRegName().c_str(), ("#4"));
                 ArmStmts->emplace_back(armLenMovStmt);
                 armRegRet->setIfLock(ARM_REG_LOCK_FALSE);
-/// mul rRegRet rRegRet rFree
+                /// mul rRegRet rRegRet rFree
                 armRegRet->setArm7Var(nullptr);
                 auto *armMulStmt = new ArmStmt(ARM_STMT_MUL, armRegRet->getRegName().c_str(),
                                                armRegLenRem->getRegName().c_str(), armRegRet->getRegName().c_str());
                 ArmStmts->emplace_back(armMulStmt);
             }
-/// add rRegRet rRegRet rLVal
+            /// add rRegRet rRegRet rLVal
             auto *armAddStmt = new ArmStmt(ARM_STMT_ADD, armRegLVal->getRegName().c_str(),
                                            armRegRet->getRegName().c_str(), armRegLVal->getRegName().c_str());
             ArmStmts->emplace_back(armAddStmt);
@@ -1037,7 +1034,7 @@ ArmReg *Arm7Gen::genLVal(LVal *lVal, std::vector<ArmStmt *> *ArmStmts, int ifGet
                 exit(-1);
         }
         armRegLVal->setIfLock(ARM_REG_LOCK_FALSE);
-        returnarmRegLVal;
+        return armRegLVal;
     }
 }
 
