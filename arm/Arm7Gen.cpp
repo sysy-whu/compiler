@@ -76,7 +76,7 @@ void Arm7Gen::genArm7Func(FuncDef *funcDef, std::vector<ArmBlock *> *armBlocks) 
 
             /// 此句负数 capacity 转正
             int capacityTemp = 0 - symbol->getArm7Func()->getCapacity();
-            while(capacityTemp > 1024){
+            while (capacityTemp > 1024) {
                 auto *armStmtSub = new ArmStmt(ARM_STMT_SUB, "sp", "sp",
                                                ("#" + std::to_string(1024)).c_str());
                 armStmts->emplace_back(armStmtSub);
@@ -298,9 +298,18 @@ ArmBlock *Arm7Gen::genStmt(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks, Arm
                                                    ("[" + armRegPos->getRegName() + "]").c_str());
                     lastBlockStmts->emplace_back(armStmtStr);
                 } else {
-                    auto *armStmtStr = new ArmStmt(ARM_STMT_STR, rRet->getRegName().c_str(),
-                                                   stmt->getLVal()->getBaseMemoryPos().c_str());
-                    lastBlockStmts->emplace_back(armStmtStr);
+                    auto *armRegLVal = armRegManager->getArmRegByLVal(stmt->getLVal(), lastBlockStmts);
+                    if (armRegLVal == nullptr) {
+                        auto *armStmtStr = new ArmStmt(ARM_STMT_STR, rRet->getRegName().c_str(),
+                                                       stmt->getLVal()->getBaseMemoryPos().c_str());
+                        lastBlockStmts->emplace_back(armStmtStr);
+                    } else {
+                        if (armRegLVal->getRegName() != rRet->getRegName()) {
+                            auto *armStmtMov = new ArmStmt(ARM_STMT_MOV, armRegLVal->getRegName().c_str(),
+                                                           rRet->getRegName().c_str());
+                            lastBlockStmts->emplace_back(armStmtMov);
+                        }
+                    }
                 }
             } else {
                 /// str rRet [lVal]

@@ -22,13 +22,15 @@ public:
 
     ArmReg *getFreeArmReg(std::vector<ArmStmt *> *armStmts);
 
-    ArmReg *getArmRegByArmVar(Arm7Var *arm7Var,std::vector<ArmStmt *> *armStmts);
+    ArmReg *getArmRegByArmVar(Arm7Var *arm7Var, std::vector<ArmStmt *> *armStmts);
 
-    ArmReg *getArmRegByNamePos(const char *name, int memoryLoc,std::vector<ArmStmt *> *armStmts);
+    ArmReg *getArmRegByNamePos(const char *name, int memoryLoc, std::vector<ArmStmt *> *armStmts);
 
-    void freeAllArmReg( std::vector<ArmStmt *> *ArmStmts);
+    ArmReg *getArmRegByLVal(LVal *lVal, std::vector<ArmStmt *> *armStmts);
 
-    void freeOneArmReg(int i,  std::vector<ArmStmt *> *ArmStmts);
+    void freeAllArmReg(std::vector<ArmStmt *> *ArmStmts);
+
+    void freeOneArmReg(int i, std::vector<ArmStmt *> *ArmStmts);
 
     void pushOneArmReg(int i, std::vector<ArmStmt *> *ArmStmts);
 
@@ -59,7 +61,7 @@ private:
 
 public:
     ArmReg(const char *regName, Arm7Var *arm7Var, int newNum) :
-    regName(regName), arm7Var(arm7Var), newNum(newNum), ifLock(ARM_REG_LOCK_FALSE) {};
+            regName(regName), arm7Var(arm7Var), newNum(newNum), ifLock(ARM_REG_LOCK_FALSE) {};
 
     [[nodiscard]] const std::string &getRegName() const {
         return regName;

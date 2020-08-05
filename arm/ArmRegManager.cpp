@@ -69,6 +69,16 @@ ArmReg *ArmRegManager::getArmRegByNamePos(const char *name, int memoryLoc, std::
     return armRegRet;
 }
 
+ArmReg *ArmRegManager::getArmRegByLVal(LVal *lVal, std::vector<ArmStmt *> *armStmts) {
+    for (auto *armReg:*armRegs) {
+        /// TODO
+        /// 这种比较方法还待确认
+        if (armReg->getArm7Var() != nullptr && armReg->getArm7Var()->getIdent() == lVal->getIdent() &&
+            armReg->getArm7Var()->getMemoryLoc() == lVal->getIntPos())
+            return armReg;
+    }
+    return nullptr;
+}
 
 //int ArmRegManager::getNewestNum() {
 //    return newestNum;
@@ -129,3 +139,4 @@ void ArmRegManager::freeOneArmReg(int i, std::vector<ArmStmt *> *ArmStmts) {
         armRegs->at(i)->setArm7Var(nullptr);
     }
 }
+
