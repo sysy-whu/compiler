@@ -369,7 +369,7 @@ ArmBlock *Arm7Gen::genStmtAuxIf(Stmt *stmt, std::vector<ArmBlock *> *basicBlocks
     auto *armRegCond = genCondExp(stmt->getCond(), basicBlocks, lastBlock, lastBlockStmts,
                                   *newCondBlockName);
 
-    if(*newCondBlockName != lastBlock->getBlockName()){
+    if (*newCondBlockName != lastBlock->getBlockName()) {
         auto *newCondArmStmts = new std::vector<ArmStmt *>();
         auto *newCondBlock = new ArmBlock(newCondBlockName->c_str(), newCondArmStmts);
         basicBlocks->emplace_back(newCondBlock);
@@ -444,9 +444,9 @@ ArmBlock *Arm7Gen::genStmtAuxWhile(Stmt *stmt, std::vector<ArmBlock *> *basicBlo
 
 //    auto *armRegCond = genCondExp(stmt->getCond(), basicBlocks, armCondBlock, armCondStmts, newBlockCondName->c_str());
     auto *newCondBlockName = new std::string(lastBlock->getBlockName());
-    auto *armRegCond = genCondExp(stmt->getCond(), basicBlocks, armCondBlock, armCondStmts,*newCondBlockName);
+    auto *armRegCond = genCondExp(stmt->getCond(), basicBlocks, armCondBlock, armCondStmts, *newCondBlockName);
 
-    if(*newCondBlockName != lastBlock->getBlockName()){
+    if (*newCondBlockName != lastBlock->getBlockName()) {
         auto *newCondArmStmts = new std::vector<ArmStmt *>();
         auto *newCondBlock = new ArmBlock(newCondBlockName->c_str(), newCondArmStmts);
         basicBlocks->emplace_back(newCondBlock);
@@ -857,6 +857,26 @@ ArmReg *Arm7Gen::genUnaryExp(UnaryExp *unaryExp, std::vector<ArmStmt *> *ArmStmt
         /// 函数调用 有参数
         /// 万法归宗之 LVal 永存真实地址->则无论参数数组还是局部数组,永远先ldr再add好了
         /// 注意此处要求，局部数组声明时。
+        static const std::string putFStr = "putf";
+        static const std::string stopTimeStr = "stoptime";
+        static const std::string startTimeStr = "starttime";
+        static const std::string putArrayStr = "putarray";
+        static const std::string putChStr = "putch";
+        static const std::string putIntStr = "putint";
+        static const std::string getArrayStr = "getarray";
+        static const std::string getChStr = "getch";
+        static const std::string getIntStr = "getint";
+        if (unaryExp->getIdent() == putFStr ||
+            unaryExp->getIdent() == stopTimeStr ||
+            unaryExp->getIdent() == startTimeStr ||
+            unaryExp->getIdent() == putArrayStr ||
+            unaryExp->getIdent() == putChStr ||
+            unaryExp->getIdent() == putIntStr ||
+            unaryExp->getIdent() == getArrayStr ||
+            unaryExp->getIdent() == getChStr ||
+            unaryExp->getIdent() == getIntStr) {
+            armRegManager->freeAllArmReg(ArmStmts);
+        }
 
         if (unaryExp->getFuncRParams() != nullptr) {
             auto *exps = unaryExp->getFuncRParams()->getExps();
