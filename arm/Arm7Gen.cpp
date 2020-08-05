@@ -535,7 +535,8 @@ ArmReg *Arm7Gen::genLOrExp(LOrExp *lOrExp, std::vector<ArmBlock *> *basicBlocks,
                            ArmBlock *lastBlock, std::vector<ArmStmt *> *lastBlockStmts, std::string &newBlockName) {
     if (lOrExp->getLOrExp() == nullptr) {
         auto *lAndRet = genLAndExp(lOrExp->getLAndExp(), basicBlocks, lastBlock, lastBlockStmts, newBlockName);
-        if (lastBlock->getBlockName() != newBlockName) {
+        // 这里可能修复了标签重复
+        if (lastBlock->getBlockName() != newBlockName  && lastBlock->getBlockName() < newBlockName) {
             auto *armNewStmts = new std::vector<ArmStmt *>();
             auto *newBlock = new ArmBlock(newBlockName.c_str(), armNewStmts);
             basicBlocks->emplace_back(newBlock);
